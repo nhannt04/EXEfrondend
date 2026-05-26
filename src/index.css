@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-heritage-amber: #D97706;      /* Rich deep warm amber */
+  --color-heritage-dark: #92400E;       /* Deep mahogany amber */
+  --color-heritage-gold: #F59E0B;       /* Warm sunny gold */
+  --color-ricefield-green: #15803D;     /* Natural deep green */
+  --color-ricefield-light: #22C55E;     /* Vibrant field green */
+  --color-ricefield-dark: #14532D;      /* Deep forest green */
+  
+  --color-dark-bg: #FAF9F5;             /* Warm historic cream wall background */
+  --color-dark-card: #FFFFFF;           /* Crisp clean card background */
+  --color-dark-border: rgba(0, 0, 0, 0.07); /* Super subtle light borders */
+  
+  --font-outfit: "Outfit", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+/* Custom styles and overrides for the bright friendly theme */
+body {
+  font-family: var(--font-inter);
+  background-color: var(--color-dark-bg);
+  color: #374151; /* Dark slate text */
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-outfit);
+  color: #1F2937; /* Deep charcoal headings */
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-dark-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-heritage-amber);
+}
+
+/* Glassmorphism custom classes - LIGHT premium style */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 119, 6, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Custom micro-animations */
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 14px 6px rgba(217, 119, 6, 0.1);
+  }
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 3s infinite;
+}
+
+/* Smooth fade-in transition */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+/* Smooth fade-in-up transition with delay support */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Floating micro-animation for local elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Scale-up micro-animation for modal panels */
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-up {
+  animation: scale-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Sliding entrance from right */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Rotate slow animation */
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card shimmer reflect highlight on hover */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-trigger {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-trigger::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.shimmer-trigger:hover::after {
+  animation: shimmer 1.2s ease-in-out;
+}
+
+/* Animated gradient text shimmer for headings */
+@keyframes text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #D97706 0%,
+    #F59E0B 25%,
+    #15803D 50%,
+    #F59E0B 75%,
+    #D97706 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 4s linear infinite;
+}
+
+/* Pulse ring ripple for live indicators */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Bounce in for CTA icons */
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Stagger delay utilities */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* Page slide transition */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Gradient border glow effect for focused cards */
+.glow-amber {
+  box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  transition: box-shadow 0.3s ease;
+}
+.glow-amber:hover {
+  box-shadow: 0 0 20px 4px rgba(217, 119, 6, 0.12),
+              0 4px 24px -4px rgba(217, 119, 6, 0.15);
+}
+
+/* Smooth number count up animation baseline */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Heritage pattern background overlay */
+.heritage-pattern {
+  background-image: radial-gradient(circle at 20% 80%, rgba(217, 119, 6, 0.06) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(21, 128, 61, 0.05) 0%, transparent 50%),
+                    radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 70%);
+}
+
+/* Shake animation for input/alert errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
