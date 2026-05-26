@@ -18,8 +18,8 @@ export default {
         'ricefield-dark': '#14532D',
       },
       fontFamily: {
-        outfit: ['Outfit', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'],
+        outfit: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        inter: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
     },
   },
