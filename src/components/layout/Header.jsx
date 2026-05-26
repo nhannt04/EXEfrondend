@@ -63,10 +63,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
         </div>
         <div>
           <span className="font-outfit text-xl font-bold tracking-tight text-gray-900 group-hover:text-heritage-amber transition-colors duration-300">
-            HIS<span className="text-heritage-amber">TRA</span>
+            Travel<span className="text-heritage-amber">ist</span>
           </span>
           <span className="block text-[9px] text-gray-400 font-medium tracking-widest uppercase leading-none mt-0.5">
-            Hoi An Smart Planner
+            Your Journey, Your Stories
           </span>
         </div>
       </div>
