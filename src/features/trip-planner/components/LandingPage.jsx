@@ -17,10 +17,36 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const [radarRadius, setRadarRadius] = useState(5);
   const [scanning, setScanning] = useState(false);
   const [radarResults, setRadarResults] = useState([]);
+  const [geolocating, setGeolocating] = useState(false);
 
-  // Hoi An Center Coordinates
-  const [userLat] = useState(15.8771);
-  const [userLng] = useState(108.3267);
+  // User Real Location from Geolocation API (fallback to Hoi An if not available)
+  const [userLat, setUserLat] = useState(15.8771);
+  const [userLng, setUserLng] = useState(108.3267);
+
+  // Get user's real location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      setGeolocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLat(position.coords.latitude);
+          setUserLng(position.coords.longitude);
+          setGeolocating(false);
+          console.log('Location detected:', position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn('Geolocation error, using default Hoi An coordinates:', error.message);
+          setGeolocating(false);
+          // Keep default Hoi An coordinates
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+  }, []);
 
   const mapBackendSpotToSpotlight = (s) => {
     return {
@@ -61,16 +87,35 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   }, []);
 
   const handleRadarScan = async () => {
+    // Request fresh location before scanning
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          setUserLat(position.coords.latitude);
+          setUserLng(position.coords.longitude);
+          await performRadarScan(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn('Could not get fresh location, using last known:', error.message);
+          performRadarScan(userLat, userLng);
+        }
+      );
+    } else {
+      performRadarScan(userLat, userLng);
+    }
+  };
+
+  const performRadarScan = async (lat, lng) => {
     setScanning(true);
     setRadarResults([]);
     try {
-      const response = await spotService.getNearbySpots(userLat, userLng, radarRadius);
+      const response = await spotService.getNearbySpots(lat, lng, radarRadius);
       if (response && response.success) {
         setRadarResults(response.data);
       }
     } catch (err) {
       console.error("Radar scan error:", err);
-      alert("Lỗi khi kết nối với Radar GPS!");
+      alert(language === 'vi' ? "Lỗi khi kết nối với Radar GPS!" : "Error connecting to GPS Radar!");
     } finally {
       setScanning(false);
     }
