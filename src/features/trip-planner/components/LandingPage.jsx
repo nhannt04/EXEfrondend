@@ -280,7 +280,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 <option value={1}>1.0 km ({language === 'vi' ? 'Đi bộ' : 'Walking'})</option>
                 <option value={2}>2.0 km ({language === 'vi' ? 'Xe đạp' : 'Cycling'})</option>
                 <option value={5}>5.0 km ({language === 'vi' ? 'Xe máy / Ô tô' : 'Driving'})</option>
-                <option value={10}>10.0 km ({language === 'vi' ? 'Toàn vùng' : 'All Area'})</option>
+                <option value={50}>50.0 km ({language === 'vi' ? 'Toàn vùng' : 'All Area'})</option>
               </select>
             </div>
 
