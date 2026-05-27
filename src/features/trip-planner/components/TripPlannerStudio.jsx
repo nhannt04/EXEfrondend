@@ -3,193 +3,8 @@ import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, Refre
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import tripService from '../../../services/tripService';
-
-const SPOTS_DATABASE = {
-  Homestay: {
-    Healing: {
-      name: { vi: 'Little Pie Homestay', en: 'Little Pie Homestay' },
-      cost: 450000,
-      lat: 15.8821,
-      lng: 108.3371,
-      img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Bình yên, có vườn tranh tre truyền thống rất thích hợp để tĩnh dưỡng.',
-        en: 'Peaceful nooks featuring traditional bamboo gardens. Great for wellness retreats.'
-      }
-    },
-    'Ẩm thực': {
-      name: { vi: 'Thanh Binh Riverside Hotel', en: 'Thanh Binh Riverside Hotel' },
-      cost: 950000,
-      lat: 15.8768,
-      lng: 108.3235,
-      img: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Nằm ngay sát sông Hoài, đi bộ 3 phút tới ngay chợ đêm ăn vặt.',
-        en: 'Located right next to Hoai River. A 3-minute stroll takes you to the night food market.'
-      }
-    },
-    'Khám phá': {
-      name: { vi: 'Vinh Hung Heritage Hotel', en: 'Vinh Hung Heritage Hotel' },
-      cost: 1200000,
-      lat: 15.8775,
-      lng: 108.3262,
-      img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Ngôi nhà cổ hơn 100 năm tuổi phong cách di sản độc đáo.',
-        en: 'A historic merchant house with over 100 years of living heritage and unique local style.'
-      }
-    },
-    'Nghỉ dưỡng': {
-      name: { vi: 'An Villa Hoi An Resort', en: 'An Villa Hoi An Resort' },
-      cost: 2400000,
-      lat: 15.8892,
-      lng: 108.3512,
-      img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Resort khép kín biệt lập sang trọng, có hồ bơi sinh thái mộc mạc.',
-        en: 'Secluded premium boutique resort featuring a natural ecological swimming pool.'
-      }
-    },
-    LuxurySwap: {
-      name: { vi: 'Four Seasons The Nam Hai', en: 'Four Seasons The Nam Hai' },
-      cost: 7500000,
-      lat: 15.9189,
-      lng: 108.3235,
-      img: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Đẳng cấp nghỉ dưỡng 5 sao quốc tế, ngắm hoàng hôn siêu đỉnh.',
-        en: 'Five-star ultra-luxury oceanfront experience. World-class sunset views.'
-      }
-    }
-  },
-  Cafe: [
-    {
-      name: { vi: 'FeFe Coffee', en: 'FeFe Coffee' },
-      cost: 45000,
-      lat: 15.8835,
-      lng: 108.3421,
-      img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Cafe hạt local tự rang củi thủ công cực thơm, ẩn giữa đồng lúa.',
-        en: 'Locally grown beans wood-roasted on-site, hidden deep in Cam Chau green fields.'
-      }
-    },
-    {
-      name: { vi: 'Faifo Coffee', en: 'Faifo Coffee' },
-      cost: 65000,
-      lat: 15.8773,
-      lng: 108.3281,
-      img: 'https://images.unsplash.com/photo-1463797900201-d172f2360243?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Góc ban công ngắm toàn cảnh mái ngói rêu phong Phố cổ cực hot.',
-        en: 'Famous rooftop spot providing panoramic views over the historic terracotta roofs.'
-      }
-    },
-    {
-      name: { vi: 'Reaching Out Teahouse', en: 'Reaching Out Teahouse' },
-      cost: 85000,
-      lat: 15.8770,
-      lng: 108.3275,
-      img: 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Trà đạo yên tĩnh tuyệt đối do các bạn khiếm thính phục vụ, cực kỳ healing.',
-        en: 'A completely silent oasis of tea served elegantly by hearing-impaired staff.'
-      }
-    }
-  ],
-  Food: [
-    {
-      name: { vi: 'Cơm Gà Bà Buội', en: 'Ba Buoi Chicken Rice' },
-      cost: 55000,
-      lat: 15.8779,
-      lng: 108.3292,
-      img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Cơm gà xé truyền thống chuẩn vị Hội An, nước sốt lòng đậm đà.',
-        en: 'Traditional hand-shredded chicken rice with a secret, rich giblet gravy.'
-      }
-    },
-    {
-      name: { vi: 'Bánh Mì Phượng', en: 'Phuong Bread' },
-      cost: 35000,
-      lat: 15.8774,
-      lng: 108.3312,
-      img: 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Bánh mì ngon nhất thế giới do Anthony Bourdain khen ngợi, vỏ giòn pate béo ngậy.',
-        en: 'Globally praised crunchy baguettes stuffed with rich local pâté and savory meats.'
-      }
-    },
-    {
-      name: { vi: "Vy's Market Restaurant", en: "Vy's Market Restaurant" },
-      cost: 180000,
-      lat: 15.8761,
-      lng: 108.3228,
-      img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Nhà hàng buffet món ăn dân dã Việt Nam, tái hiện chợ ẩm thực truyền thống.',
-        en: 'Vibrant indoor food market displaying dozens of live-cooking authentic street eats.'
-      }
-    },
-    {
-      name: { vi: 'Morning Glory Signature', en: 'Morning Glory Signature' },
-      cost: 450000,
-      lat: 15.8765,
-      lng: 108.3255,
-      img: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Nhà hàng sang trọng ven sông Hoài chuyên ẩm thực Hội An nâng tầm cao cấp.',
-        en: 'High-end riverside restaurant serving refined versions of traditional Hoi An classics.'
-      }
-    }
-  ],
-  Activity: [
-    {
-      name: { vi: 'Đi thuyền thả hoa đăng sông Hoài', en: 'Hoai River Lantern Boat Ride' },
-      cost: 50000,
-      lat: 15.8763,
-      lng: 108.3248,
-      img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Trải nghiệm tâm linh, ngắm phố hội lung linh đèn lồng trôi trên mặt nước.',
-        en: 'Float lanterns on the river while taking in the candle-lit historic views.'
-      }
-    },
-    {
-      name: { vi: 'Workshop tự tay làm Đèn Lồng', en: 'Handmade Lantern Craft Workshop' },
-      cost: 150000,
-      lat: 15.8788,
-      lng: 108.3325,
-      img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Được nghệ nhân hướng dẫn tỉ mỉ xếp tre dán lụa tạo ra đèn lồng của riêng mình.',
-        en: 'Under professional guidance, bend bamboo frames and glue silk to construct a lantern.'
-      }
-    },
-    {
-      name: { vi: 'Trải nghiệm Rừng dừa Bảy Mẫu thúng xoay', en: 'Bay Mau Nipa Palm Basket Boat Spin' },
-      cost: 120000,
-      lat: 15.8675,
-      lng: 108.3685,
-      img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Vui nhộn và tràn ngập năng lượng khi chèo thúng đung đưa giữa rừng dừa ngập mặn.',
-        en: 'Vibrant, high-energy basket boat spinning and fishing inside mangrove waterways.'
-      }
-    },
-    {
-      name: { vi: 'Cham Island Snorkeling Tour', en: 'Cham Island Snorkeling Tour' },
-      cost: 850000,
-      lat: 15.8725,
-      lng: 108.3850,
-      img: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=300&q=80',
-      reason: {
-        vi: 'Tour cano cao tốc lặn biển ngắm san hô đảo Cù Lao Chàm tuyệt đẹp.',
-        en: 'Speedboat tour to Cham Island for rich coral diving, pristine beaches and fresh catches.'
-      }
-    }
-  ]
-};
+import authService from '../../../services/authService';
+import spotService from '../../../services/spotService';
 
 const LOADING_FACTS_VI = [
   "Hội An có hơn 1360 di tích kiến trúc cổ được xếp hạng bảo tồn.",
@@ -241,6 +56,117 @@ export default function TripPlannerStudio({ prefill }) {
   const [transportMode, setTransportMode] = useState('motorbike'); // 'foot', 'bike', 'motorbike', 'car'
   const [isMapMaximized, setIsMapMaximized] = useState(false); // Maximize toggle
   const [activeModalView, setActiveModalView] = useState('map'); // 'map' | 'details'
+
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [savedItineraries, setSavedItineraries] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [tripTitle, setTripTitle] = useState('');
+  const [activePlannerTab, setActivePlannerTab] = useState('studio');
+  const [allDbSpots, setAllDbSpots] = useState([]);
+
+  // Load saved itineraries
+  const fetchSavedItineraries = async () => {
+    const user = authService.getCurrentUser();
+    if (!user) return;
+    try {
+      const response = await tripService.getMyItineraries();
+      if (response && response.success) {
+        setSavedItineraries(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved itineraries:", err);
+    }
+  };
+
+  // Run initial check and listen to auth state changes
+  useEffect(() => {
+    const handleAuthStateChanged = () => {
+      const user = authService.getCurrentUser();
+      setCurrentUser(user);
+      if (user) {
+        fetchSavedItineraries();
+      } else {
+        setSavedItineraries([]);
+      }
+    };
+
+    handleAuthStateChanged();
+
+    window.addEventListener('auth-state-changed', handleAuthStateChanged);
+    return () => {
+      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+    };
+  }, []);
+
+  const handleSaveItinerary = async () => {
+    if (!currentUser || !itinerary) {
+      alert(language === 'vi' ? "Vui lòng đăng nhập để lưu lịch trình!" : "Please login to save your itinerary!");
+      window.dispatchEvent(new Event('auth-required'));
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const response = await tripService.saveItinerary({
+        title: tripTitle || (language === 'vi' ? 'Lịch trình Hội An' : 'Hoi An Itinerary'),
+        totalDays: days,
+        totalBudget: budget,
+        travelStyle: style,
+        groupType: 'couple',
+        tripData: JSON.stringify(itinerary)
+      });
+      if (response && response.success) {
+        alert(language === 'vi' ? "Lưu lịch trình thành công!" : "Itinerary saved successfully!");
+        setShowSaveModal(false);
+        fetchSavedItineraries();
+      } else {
+        alert(language === 'vi' ? "Lỗi khi lưu lịch trình!" : "Failed to save itinerary!");
+      }
+    } catch (err) {
+      console.error("Failed to save itinerary:", err);
+      if (err.response?.status === 401) {
+        alert(language === 'vi' ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!" : "Session expired. Please login again!");
+        setShowSaveModal(false);
+        window.dispatchEvent(new Event('auth-required'));
+      } else {
+        alert(language === 'vi' ? "Đã có lỗi xảy ra!" : "An error occurred!");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSaved = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm(language === 'vi' ? "Bạn chắc chắn muốn xóa lịch trình này?" : "Are you sure you want to delete this itinerary?")) return;
+    try {
+      const response = await tripService.deleteItinerary(id);
+      if (response && response.success) {
+        setSavedItineraries(savedItineraries.filter(item => item.id !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete itinerary:", err);
+      alert(language === 'vi' ? "Xóa thất bại!" : "Deletion failed!");
+    }
+  };
+
+  const handleLoadSaved = (savedTrip) => {
+    try {
+      const parsedData = JSON.parse(savedTrip.tripData);
+      setItinerary(parsedData);
+      setDays(savedTrip.totalDays);
+      setBudget(savedTrip.totalBudget);
+      setStyle(savedTrip.travelStyle);
+      setActiveDay(1);
+      if (parsedData.length > 0) {
+        setSelectedSpot(parsedData[0].accommodation);
+      }
+      setActivePlannerTab('studio');
+    } catch (err) {
+      console.error("Failed to load saved itinerary:", err);
+      alert("Lỗi dữ liệu lịch trình không hợp lệ!");
+    }
+  };
 
   const facts = language === 'vi' ? LOADING_FACTS_VI : LOADING_FACTS_EN;
 
@@ -317,6 +243,22 @@ export default function TripPlannerStudio({ prefill }) {
     };
   };
 
+  // Load spots from database for swapping
+  useEffect(() => {
+    const fetchDbSpots = async () => {
+      try {
+        const response = await spotService.getSpots();
+        if (response && response.success) {
+          const mapped = response.data.map(mapBackendSpotToFrontend).filter(Boolean);
+          setAllDbSpots(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load spots from database for swapping:", err);
+      }
+    };
+    fetchDbSpots();
+  }, []);
+
   const handleGenerate = async () => {
     setLoading(true);
     setHasOptimized(false);
@@ -337,9 +279,11 @@ export default function TripPlannerStudio({ prefill }) {
         const backendData = response.data;
         const generatedDays = backendData.days.map((d) => {
           const staySpot = d.spots.find(s => s.slot === 'STAY')?.spot;
-          const morningSpot = d.spots.find(s => s.slot === 'MORNING')?.spot;
-          const afternoonSpot = d.spots.find(s => s.slot === 'AFTERNOON')?.spot;
-          const eveningSpot = d.spots.find(s => s.slot === 'EVENING')?.spot;
+          const mappedSlots = d.spots.map(s => ({
+            slot: s.slot,
+            time: s.time,
+            spot: mapBackendSpotToFrontend(s.spot)
+          }));
 
           return {
             day: d.day,
@@ -352,9 +296,11 @@ export default function TripPlannerStudio({ prefill }) {
               lat: 15.8770,
               lng: 108.3262
             },
-            morning: mapBackendSpotToFrontend(morningSpot),
-            afternoon: mapBackendSpotToFrontend(afternoonSpot),
-            evening: mapBackendSpotToFrontend(eveningSpot)
+            slots: mappedSlots,
+            // Backwards compatibility for other elements accessing fixed fields
+            morning: mapBackendSpotToFrontend(d.spots.find(s => s.slot === 'MORNING')?.spot),
+            afternoon: mapBackendSpotToFrontend(d.spots.find(s => s.slot === 'AFTERNOON')?.spot),
+            evening: mapBackendSpotToFrontend(d.spots.find(s => s.slot === 'EVENING')?.spot)
           };
         });
 
@@ -372,30 +318,80 @@ export default function TripPlannerStudio({ prefill }) {
     }
   };
 
-  const handleSwapSpot = (dayIndex, slot) => {
+  const handleSwapSpot = (dayIndex, slotKey) => {
     if (!itinerary) return;
     
     const nextItinerary = [...itinerary];
-    const targetSlot = nextItinerary[dayIndex][slot];
-    
-    let newSpot;
-    if (slot === 'morning') {
-      const items = SPOTS_DATABASE.Cafe.filter(c => c.name[language] !== targetSlot.name[language]);
-      newSpot = items[Math.floor(Math.random() * items.length)];
-    } else if (slot === 'afternoon') {
-      const items = SPOTS_DATABASE.Activity.filter(a => a.name[language] !== targetSlot.name[language]);
-      newSpot = items[Math.floor(Math.random() * items.length)];
-    } else {
-      const items = SPOTS_DATABASE.Food.filter(f => f.name[language] !== targetSlot.name[language]);
-      newSpot = items[Math.floor(Math.random() * items.length)];
+    let targetSpot = null;
+    let isDynamic = false;
+    let slotName = slotKey;
+
+    if (nextItinerary[dayIndex].slots) {
+      const dynamicSlot = nextItinerary[dayIndex].slots.find(s => s.slot.toLowerCase() === slotKey.toLowerCase());
+      if (dynamicSlot) {
+        targetSpot = dynamicSlot.spot;
+        isDynamic = true;
+        slotName = dynamicSlot.slot;
+      }
     }
     
-    const swaped = { ...newSpot };
-    nextItinerary[dayIndex][slot] = swaped;
-    setItinerary(nextItinerary);
+    if (!targetSpot) {
+      targetSpot = nextItinerary[dayIndex][slotKey];
+    }
+    
+    if (!targetSpot) return;
+    
+    let newSpot = null;
+    
+    if (allDbSpots && allDbSpots.length > 0) {
+      let categoryToFind = 'cafe';
+      const upperSlot = slotName.toUpperCase();
+      if (upperSlot.includes('LUNCH') || upperSlot.includes('FOOD') || upperSlot.includes('EVENING')) {
+        categoryToFind = 'food';
+      } else if (upperSlot.includes('MORNING') || upperSlot.includes('AFTERNOON') || upperSlot.includes('SIGHTSEEING')) {
+        categoryToFind = 'sightseeing';
+      }
+      
+      let dbItems = allDbSpots.filter(s => 
+        s.category?.toLowerCase() === categoryToFind && 
+        s.name[language] !== targetSpot.name[language]
+      );
+      
+      if (dbItems.length === 0) {
+        dbItems = allDbSpots.filter(s => 
+          s.category?.toLowerCase() !== 'stay' && 
+          s.name[language] !== targetSpot.name[language]
+        );
+      }
+      
+      if (dbItems.length > 0) {
+        newSpot = dbItems[Math.floor(Math.random() * dbItems.length)];
+      }
+    }
+    
+    if (newSpot) {
+      const swaped = { ...newSpot };
+      if (isDynamic) {
+        nextItinerary[dayIndex].slots = nextItinerary[dayIndex].slots.map(s => {
+          if (s.slot.toLowerCase() === slotKey.toLowerCase()) {
+            return { ...s, spot: swaped };
+          }
+          return s;
+        });
+        if (slotKey.toLowerCase() === 'morning') nextItinerary[dayIndex].morning = swaped;
+        if (slotKey.toLowerCase() === 'afternoon') nextItinerary[dayIndex].afternoon = swaped;
+        if (slotKey.toLowerCase() === 'evening') nextItinerary[dayIndex].evening = swaped;
+      } else {
+        nextItinerary[dayIndex][slotKey] = swaped;
+      }
+      
+      setItinerary(nextItinerary);
 
-    if (selectedSpot && selectedSpot.lat === targetSlot.lat && selectedSpot.lng === targetSlot.lng) {
-      setSelectedSpot(swaped);
+      if (selectedSpot && selectedSpot.lat === targetSpot.lat && selectedSpot.lng === targetSpot.lng) {
+        setSelectedSpot(swaped);
+      }
+    } else {
+      console.warn("No suitable spots found in database for swapping.");
     }
   };
 
@@ -411,14 +407,24 @@ export default function TripPlannerStudio({ prefill }) {
       if (d.accommodation) {
         accCost += (d.accommodation.cost || 0) * (adults + children / 2);
       }
-      if (d.morning) {
-        foodCost += (d.morning.cost || 0) * (adults + children);
-      }
-      if (d.evening) {
-        foodCost += (d.evening.cost || 0) * (adults + children);
-      }
-      if (d.afternoon) {
-        actCost += (d.afternoon.cost || 0) * (adults + children);
+      
+      if (d.slots) {
+        d.slots.forEach(s => {
+          if (s.slot === 'STAY') return; // STAY is counted in accommodation
+          const cost = (s.spot?.cost || 0) * (adults + children);
+          if (s.slot === 'LUNCH' || s.spot?.category?.toLowerCase() === 'food') {
+            foodCost += cost;
+          } else if (s.slot?.includes('CAFE') || s.spot?.category?.toLowerCase() === 'cafe') {
+            foodCost += cost;
+          } else {
+            actCost += cost;
+          }
+        });
+      } else {
+        // Fallback for old loaded formats
+        if (d.morning) foodCost += (d.morning.cost || 0) * (adults + children);
+        if (d.evening) foodCost += (d.evening.cost || 0) * (adults + children);
+        if (d.afternoon) actCost += (d.afternoon.cost || 0) * (adults + children);
       }
       transCost += 150000;
     });
@@ -517,7 +523,37 @@ export default function TripPlannerStudio({ prefill }) {
         </p>
       </div>
 
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Tab Switcher - Premium Design */}
+      <div className="flex bg-gray-100 p-1 rounded-xl shadow-inner border border-gray-200 relative z-20">
+        <button
+          onClick={() => setActivePlannerTab('studio')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 border-none cursor-pointer ${
+            activePlannerTab === 'studio'
+              ? 'bg-white text-heritage-amber shadow-sm'
+              : 'text-gray-500 hover:text-gray-900 bg-transparent'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          {language === 'vi' ? 'Sinh Lịch Trình AI' : 'AI Trip Planner'}
+        </button>
+        <button
+          onClick={() => {
+            setActivePlannerTab('saved');
+            fetchSavedItineraries();
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 border-none cursor-pointer ${
+            activePlannerTab === 'saved'
+              ? 'bg-white text-heritage-amber shadow-sm'
+              : 'text-gray-500 hover:text-gray-900 bg-transparent'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          {language === 'vi' ? '🎒 Lịch Trình Của Tôi' : '🎒 My Saved Itineraries'}
+        </button>
+      </div>
+
+      {activePlannerTab === 'studio' ? (
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Side - Input Panel - Apple Shimmer */}
         <div className="lg:col-span-4 bg-white border border-gray-200 p-6 rounded-2xl flex flex-col gap-5 shadow-sm shimmer-trigger">
           <h3 className="font-outfit text-lg font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 relative z-10">
@@ -701,12 +737,28 @@ export default function TripPlannerStudio({ prefill }) {
                   </div>
                 </div>
 
-                <div className="flex justify-end relative z-10">
+                <div className="flex gap-2 justify-end relative z-10">
+                  <button
+                    onClick={() => {
+                      if (!currentUser) {
+                        alert(language === 'vi' ? "Vui lòng đăng nhập để lưu lịch trình!" : "Please login to save your itinerary!");
+                        window.dispatchEvent(new Event('auth-required'));
+                        return;
+                      }
+                      setTripTitle(language === 'vi' ? `Chuyến đi Hội An ${days} Ngày` : `Hoi An ${days}-Day Journey`);
+                      setShowSaveModal(true);
+                    }}
+                    className="px-3.5 py-2 bg-ricefield-green hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.03] active:scale-95 transition-all duration-300 shadow-md cursor-pointer border-none"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    {language === 'vi' ? 'Lưu Lịch Trình' : 'Save Itinerary'}
+                  </button>
+
                   {isOverBudget ? (
                     <button
                       onClick={handleOptimizeBudget}
                       disabled={optimizing}
-                      className="w-full md:w-auto px-4 py-2.5 bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 animate-pulse-gold hover:scale-[1.03] active:scale-95 transition-transform duration-300 shadow-md cursor-pointer border-none"
+                      className="px-4 py-2.5 bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 animate-pulse-gold hover:scale-[1.03] active:scale-95 transition-transform duration-300 shadow-md cursor-pointer border-none"
                     >
                       <ShieldAlert className="w-4 h-4 flex-shrink-0" />
                       {optimizing ? t('optimizing') : t('optimizeButton')}
@@ -787,69 +839,103 @@ export default function TripPlannerStudio({ prefill }) {
                   ) : null}
 
                   {/* Timeline elements with Cascading Delay Animations */}
-                  {[
-                    { slot: 'morning', label: t('morning'), icon: Sunrise, color: 'text-amber-500 bg-amber-50 border-amber-200', delay: '[animation-delay:200ms]' },
-                    { slot: 'afternoon', label: t('afternoon'), icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200', delay: '[animation-delay:300ms]' },
-                    { slot: 'evening', label: t('evening'), icon: Moon, color: 'text-indigo-600 bg-indigo-50 border-indigo-200', delay: '[animation-delay:400ms]' }
-                  ].map(({ slot, label, icon: Icon, color, delay }) => {
-                    const item = itinerary[activeDay - 1][slot];
-                    if (!item) return null;
-                    const isFocus = selectedSpot && selectedSpot.lat === item.lat && selectedSpot.lng === item.lng;
-                    return (
-                      <div 
-                        key={slot} 
-                        onClick={() => setSelectedSpot(item)}
-                        className={`relative flex gap-4 bg-white border p-4 rounded-2xl group hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer shimmer-trigger animate-fade-in-up ${delay} ${
-                          isFocus 
-                            ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {/* Timeline node */}
-                        <div className="flex flex-col items-center relative z-10">
-                          <div className={`p-2 rounded-xl border ${color} flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                            <Icon className="w-4 h-4" />
+                  {(() => {
+                    const activeDayData = itinerary[activeDay - 1];
+                    const displaySlots = activeDayData.slots
+                      ? activeDayData.slots.filter(s => s.slot !== 'STAY')
+                      : [
+                          { slot: 'morning', spot: activeDayData.morning, time: '08:00 - 09:30' },
+                          { slot: 'afternoon', spot: activeDayData.afternoon, time: '14:30 - 16:00' },
+                          { slot: 'evening', spot: activeDayData.evening, time: '19:00 - 20:30' }
+                        ].filter(s => s.spot);
+
+                    const getSlotInfo = (slotKey) => {
+                      const key = slotKey?.toUpperCase() || '';
+                      if (key.includes('MORNING') && !key.includes('CAFE')) {
+                        return { label: language === 'vi' ? '☀️ Tham quan Sáng' : '☀️ Morning Sightseeing', icon: Sunrise, color: 'text-amber-500 bg-amber-50 border-amber-200' };
+                      }
+                      if (key.includes('CAFE')) {
+                        return { label: language === 'vi' ? '☕ Cà phê & Thư giãn' : '☕ Coffee & Chill', icon: Compass, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+                      }
+                      if (key.includes('LUNCH') || key.includes('FOOD')) {
+                        return { label: language === 'vi' ? '🍴 Bữa trưa / Ẩm thực' : '🍴 Lunch / Local Taste', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                      }
+                      if (key.includes('AFTERNOON')) {
+                        return { label: language === 'vi' ? '🌇 Tham quan Chiều' : '🌇 Afternoon Sightseeing', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                      }
+                      if (key.includes('EVENING')) {
+                        return { label: language === 'vi' ? '🏮 Hoạt động Tối' : '🏮 Evening Experience', icon: Moon, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' };
+                      }
+                      return { label: language === 'vi' ? '📌 Trải nghiệm' : '📌 Activity', icon: Compass, color: 'text-gray-500 bg-gray-50 border-gray-200' };
+                    };
+
+                    return displaySlots.map((s, idx) => {
+                      const item = s.spot;
+                      if (!item) return null;
+                      const { label, icon: Icon, color } = getSlotInfo(s.slot);
+                      const isFocus = selectedSpot && selectedSpot.lat === item.lat && selectedSpot.lng === item.lng;
+                      const delay = `[animation-delay:${200 + idx * 100}ms]`;
+                      const timeStr = s.time ? s.time : (language === 'vi' ? 'Lịch trình dự kiến' : 'Estimated schedule');
+
+                      return (
+                        <div 
+                          key={`${s.slot}-${idx}`} 
+                          onClick={() => setSelectedSpot(item)}
+                          className={`relative flex gap-4 bg-white border p-4 rounded-2xl group hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer shimmer-trigger animate-fade-in-up ${delay} ${
+                            isFocus 
+                              ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {/* Timeline node */}
+                          <div className="flex flex-col items-center relative z-10">
+                            <div className={`p-2 rounded-xl border ${color} flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="w-0.5 h-full bg-gray-150 mt-2 group-last:hidden" />
                           </div>
-                          <div className="w-0.5 h-full bg-gray-150 mt-2 group-last:hidden" />
+
+                          {/* Content */}
+                          <div className="flex-grow relative z-10">
+                            <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                              <span>{label}</span>
+                              <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
+                            </div>
+                            <div className="flex justify-between items-start gap-2 mt-1">
+                              <h4 className={`font-outfit text-sm font-bold transition-colors ${
+                                isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
+                              }`}>
+                                {item.name?.[language] || 'Địa điểm tham quan'}
+                              </h4>
+                              <span className="text-xs font-extrabold text-heritage-amber flex-shrink-0">
+                                {(item.cost || 0) > 0 ? `${(item.cost || 0).toLocaleString()}đ` : t('free')}
+                              </span>
+                            </div>
+
+                            <p className="text-[10.5px] text-gray-500 leading-relaxed mt-1 flex items-start gap-1">
+                              <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
+                              <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
+                            </p>
+
+                            {/* Interchange actions */}
+                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                              <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSwapSpot(activeDay - 1, s.slot);
+                                }}
+                                className="text-[10px] hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                                {t('swapSpot')}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-
-                        {/* Content */}
-                        <div className="flex-grow relative z-10">
-                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-                          <div className="flex justify-between items-start gap-2 mt-1">
-                            <h4 className={`font-outfit text-sm font-bold transition-colors ${
-                              isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
-                            }`}>
-                              {item.name?.[language] || 'Địa điểm tham quan'}
-                            </h4>
-                            <span className="text-xs font-extrabold text-heritage-amber flex-shrink-0">
-                              {(item.cost || 0) > 0 ? `${(item.cost || 0).toLocaleString()}đ` : t('free')}
-                            </span>
-                          </div>
-
-                          <p className="text-[10.5px] text-gray-500 leading-relaxed mt-1 flex items-start gap-1">
-                            <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
-                            <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
-                          </p>
-
-                          {/* Interchange actions */}
-                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-                            <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSwapSpot(activeDay - 1, slot);
-                              }}
-                              className="text-[10px] hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                              {t('swapSpot')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
 
                 {/* Costs Breakdown & Dynamic Google Maps Sidebar Column */}
@@ -1014,6 +1100,145 @@ export default function TripPlannerStudio({ prefill }) {
           )}
         </div>
       </div>
+      ) : (
+        <div className="w-full max-w-5xl bg-white border border-gray-200 rounded-3xl p-8 flex flex-col gap-6 shadow-sm">
+          <h3 className="font-outfit text-xl font-bold text-gray-900 border-b border-gray-100 pb-4">
+            🎒 {language === 'vi' ? 'Lịch trình bạn đã lưu' : 'Your Saved Itineraries'}
+          </h3>
+
+          {!currentUser && (
+            <div className="text-center py-10 flex flex-col items-center gap-3">
+              <span className="text-4xl">🔑</span>
+              <p className="text-sm font-semibold text-gray-500">
+                {language === 'vi' ? 'Vui lòng đăng nhập để xem lịch trình đã lưu của bạn!' : 'Please login to view your saved itineraries!'}
+              </p>
+            </div>
+          )}
+
+          {currentUser && savedItineraries.length === 0 && (
+            <div className="text-center py-12 flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl">
+              <Calendar className="w-8 h-8 text-gray-300 animate-float" />
+              <div>
+                <p className="text-sm font-bold text-gray-800">
+                  {language === 'vi' ? 'Chưa có lịch trình nào được lưu!' : 'No itineraries saved yet!'}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {language === 'vi' ? 'Hãy dùng tính năng Sinh Lịch Trình AI và bấm Lưu để lưu giữ kỷ niệm.' : 'Generate a trip with AI and save it to cloud.'}
+                </p>
+              </div>
+              <button
+                onClick={() => setActivePlannerTab('studio')}
+                className="mt-2 px-4 py-2 bg-heritage-amber text-white rounded-xl text-xs font-bold border-none hover:bg-heritage-gold cursor-pointer transition-colors"
+              >
+                {language === 'vi' ? 'Trải nghiệm sinh ngay' : 'Try AI Planner'}
+              </button>
+            </div>
+          )}
+
+          {currentUser && savedItineraries.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {savedItineraries.map((saved) => (
+                <div
+                  key={saved.id}
+                  onClick={() => handleLoadSaved(saved)}
+                  className="group border border-gray-200 hover:border-heritage-amber hover:shadow-md bg-white p-5 rounded-2xl flex flex-col gap-4 transition-all duration-300 cursor-pointer relative"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-outfit font-extrabold text-base text-gray-900 group-hover:text-heritage-gold transition-colors">
+                        {saved.title}
+                      </h4>
+                      <span className="text-[10px] text-gray-400 font-bold block mt-0.5">
+                        📅 {language === 'vi' ? 'Ngày lưu:' : 'Saved at:'} {new Date(saved.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteSaved(saved.id, e)}
+                      className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                      title={language === 'vi' ? 'Xóa lịch trình' : 'Delete Itinerary'}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
+                      <span className="text-xs font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
+                    </div>
+                    <div className="flex flex-col border-x border-gray-200">
+                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
+                      <span className="text-xs font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
+                      <span className="text-xs font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 justify-end text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                    <span>{language === 'vi' ? 'Mở lịch trình này' : 'Open this itinerary'}</span>
+                    <span>➔</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Save Title Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white border border-gray-200 w-full max-w-md rounded-3xl p-6 flex flex-col gap-5 shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h4 className="font-outfit text-base font-extrabold text-gray-900 flex items-center gap-2">
+                💾 {language === 'vi' ? 'Đặt tên lịch trình' : 'Name Your Itinerary'}
+              </h4>
+              <button 
+                onClick={() => setShowSaveModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg border-none bg-transparent cursor-pointer"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                {language === 'vi' ? 'Tên chuyến đi của bạn' : 'Your Journey Name'}
+              </label>
+              <input
+                type="text"
+                value={tripTitle}
+                onChange={(e) => setTripTitle(e.target.value)}
+                placeholder={language === 'vi' ? 'Ví dụ: Kỷ niệm Hội An 3 Ngày Chữa Lành' : 'e.g. Beautiful Hoi An healing days'}
+                className="w-full border border-gray-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber font-semibold text-gray-800"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end mt-2">
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs rounded-xl border-none cursor-pointer transition-colors"
+              >
+                {language === 'vi' ? 'Hủy' : 'Cancel'}
+              </button>
+              <button
+                onClick={handleSaveItinerary}
+                disabled={isSaving}
+                className="px-4 py-2 bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl border-none cursor-pointer transition-colors flex items-center gap-1.5"
+              >
+                {isSaving ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                {language === 'vi' ? 'Lưu ngay' : 'Save now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULLSCREEN IN-APP MAP MODAL VIEWER OVERLAY */}
       {isMapMaximized && itinerary && (

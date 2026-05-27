@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [newSpotLat, setNewSpotLat] = useState(15.8771);
   const [newSpotLng, setNewSpotLng] = useState(108.3267);
   const [newSpotCrowdLevel, setNewSpotCrowdLevel] = useState('low');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchingLocation, setSearchingLocation] = useState(false);
   
   // Inquiries Reply States
   const [replyText, setReplyText] = useState('');
@@ -91,6 +93,45 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Quick location geocoding via OpenStreetMap Nominatim with Multi-stage Fallback
+  const handleGeocodeSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearchingLocation(true);
+    try {
+      // Stage 1: Thử tìm kiếm chính xác nguyên văn chuỗi người dùng nhập trước
+      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+      let data = await res.json();
+      
+      // Stage 2: Nếu không thấy, thử bổ sung ngữ cảnh địa phương Hội An
+      if ((!data || data.length === 0) && !searchQuery.toLowerCase().includes("hội an") && !searchQuery.toLowerCase().includes("hoi an")) {
+        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ", Hoi An, Vietnam")}`);
+        data = await res.json();
+      }
+
+      // Stage 3: Nếu vẫn không thấy, đơn giản hóa chuỗi (lọc bỏ các từ thừa/gây nhiễu như Đà Nẵng nếu có)
+      if (!data || data.length === 0) {
+        const simplifiedQuery = searchQuery
+          .replace(/(Đà Nẵng|Da Nang|Việt Nam|Vietnam|Việt N)/gi, "")
+          .trim();
+        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedQuery + (simplifiedQuery.toLowerCase().includes("hội an") ? "" : ", Hoi An"))}`);
+        data = await res.json();
+      }
+
+      if (data && data.length > 0) {
+        const first = data[0];
+        setNewSpotLat(Number(parseFloat(first.lat).toFixed(6)));
+        setNewSpotLng(Number(parseFloat(first.lon).toFixed(6)));
+      } else {
+        alert('Không tìm thấy địa điểm này! Vui lòng thử nhập ngắn gọn hơn (Ví dụ: "52 Nguyễn Thị Minh Khai Hội An").');
+      }
+    } catch (err) {
+      console.error("Geocoding lookup error:", err);
+      alert('Không thể kết nối tới dịch vụ bản đồ OpenStreetMap!');
+    } finally {
+      setSearchingLocation(false);
+    }
+  };
 
   // CRUD: Add Spot
   const handleAddSpotSubmit = async (e) => {
@@ -564,6 +605,31 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              {/* Tiện ích Tìm tọa độ địa chỉ nhanh */}
+              <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl flex flex-col gap-2 shadow-inner">
+                <div className="flex items-center gap-1.5 text-heritage-amber">
+                  <MapPin className="w-3.5 h-3.5 animate-bounce" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest">Tra Cứu Bản Đồ Tự Động</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nhập địa chỉ (ví dụ: An Bang Beach, Hoi An...)"
+                    className="flex-grow px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-white"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGeocodeSearch}
+                    disabled={searchingLocation}
+                    className="px-4 py-2 bg-ricefield-green hover:bg-ricefield-light disabled:bg-gray-300 text-white text-xs font-bold rounded-xl border-none cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                  >
+                    {searchingLocation ? '...' : 'Tìm Tọa Độ'}
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-gray-500">Phân loại</label>
@@ -594,29 +660,42 @@ export default function AdminDashboard() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">Kinh độ (Latitude)</label>
+                  <label className="text-xs font-bold text-gray-400">Vĩ độ (Latitude) [Khóa]</label>
                   <input
                     type="number"
-                    step="0.0001"
                     value={newSpotLat}
-                    onChange={(e) => setNewSpotLat(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-100 text-gray-400 cursor-not-allowed select-none"
+                    disabled
+                    readOnly
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">Vĩ độ (Longitude)</label>
+                  <label className="text-xs font-bold text-gray-400">Kinh độ (Longitude) [Khóa]</label>
                   <input
                     type="number"
-                    step="0.0001"
                     value={newSpotLng}
-                    onChange={(e) => setNewSpotLng(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-100 text-gray-400 cursor-not-allowed select-none"
+                    disabled
+                    readOnly
                     required
                   />
                 </div>
               </div>
+
+              {/* Bản đồ định vị Google Maps xem trước thời gian thực */}
+              {newSpotLat && newSpotLng && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Định Vị Thực Tế Bản Đồ</label>
+                  <iframe 
+                    src={`https://maps.google.com/maps?q=${newSpotLat},${newSpotLng}&z=16&output=embed`}
+                    className="w-full h-32 rounded-2xl border border-gray-200 shadow-sm"
+                    allowFullScreen=""
+                    loading="lazy"
+                  />
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-500">Mật độ đông đúc (Crowd level)</label>
@@ -629,6 +708,12 @@ export default function AdminDashboard() {
                   <option value="medium">🟡 Vừa (Medium)</option>
                   <option value="high">🔴 Cao (High)</option>
                 </select>
+                <div className="bg-amber-50/70 border border-amber-150 p-3 rounded-2xl text-[10px] text-amber-800 leading-relaxed font-semibold">
+                  <span className="font-extrabold uppercase tracking-wider block mb-1 text-amber-900">💡 Mẹo phân loại Mật độ:</span>
+                  • <span className="font-extrabold text-emerald-600">Thấp (Low)</span>: Resort nghỉ dưỡng yên tĩnh, quán cà phê ngắm đồng ruộng, bãi biển vắng.<br />
+                  • <span className="font-extrabold text-amber-600">Vừa (Medium)</span>: Quán ăn gia đình ấm cúng, workshop tre truyền thống, chùa đền địa phương.<br />
+                  • <span className="font-extrabold text-red-500">Cao (High)</span>: Phố đi bộ lúc lên đèn cuối tuần, bến thuyền hoa đăng, quán ăn thương hiệu có hàng dài xếp hàng.
+                </div>
               </div>
 
               <button

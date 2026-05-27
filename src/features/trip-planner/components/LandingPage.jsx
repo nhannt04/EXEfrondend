@@ -7,11 +7,30 @@ import spotService from '../../../services/spotService';
 export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const { language, t } = useLanguage();
   const [days, setDays] = useState(3);
-  const [budget, setBudget] = useState(5); // in millions VND
+  const [budget, setBudget] = useState(5);
   const [style, setStyle] = useState('Healing');
 
-  // Dynamic spots from backend Neon
+  // Featured spots + filter
+  const [allFeaturedSpots, setAllFeaturedSpots] = useState([]);
   const [spots, setSpots] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [categorySpots, setCategorySpots] = useState({ sightseeing: [], cafe: [], food: [], stay: [] });
+  const [loadingSpots, setLoadingSpots] = useState(true);
+
+  const FILTERS = [
+    { key: 'all',         labelVi: 'Tất cả',    labelEn: 'All' },
+    { key: 'sightseeing', labelVi: 'Tham quan',  labelEn: 'Sightseeing' },
+    { key: 'food',        labelVi: 'Ẩm thực',   labelEn: 'Food' },
+    { key: 'cafe',        labelVi: 'Cà phê',     labelEn: 'Cafe' },
+    { key: 'stay',        labelVi: 'Chỗ nghỉ',  labelEn: 'Stay' },
+  ];
+
+  const CATEGORY_LABELS = {
+    sightseeing: { vi: '🏛️ Di sản & Tham quan', en: '🏛️ Sightseeing & Heritage' },
+    cafe:        { vi: '☕ Cafe & Chill',         en: '☕ Cafe & Chill' },
+    food:        { vi: '🍜 Ẩm thực đặc sản',     en: '🍜 Local Food' },
+    stay:        { vi: '🏨 Chỗ nghỉ & Healing',  en: '🏨 Stay & Healing' },
+  };
 
   // Radar scanner states
   const [radarRadius, setRadarRadius] = useState(5);
@@ -48,43 +67,52 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
     }
   }, []);
 
-  const mapBackendSpotToSpotlight = (s) => {
-    return {
-      id: s.id,
-      name: { vi: s.nameVi, en: s.nameEn },
-      category: {
-        vi: s.category === 'sightseeing' ? 'Tham quan' : s.category === 'cafe' ? 'Cà phê' : s.category === 'stay' ? 'Chỗ nghỉ' : 'Ẩm thực',
-        en: s.category.toUpperCase()
-      },
-      rating: s.rating || 4.8,
-      reviews: Math.floor(Math.random() * 150) + 50,
-      image: s.imageUrl || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
-      style: {
-        vi: s.tags.split(',')[0].toUpperCase() + ' / Chill',
-        en: s.tags.split(',')[0].toUpperCase() + ' / Chill'
-      },
-      price: {
-        vi: s.averageCost > 0 ? `${s.averageCost.toLocaleString()}đ` : 'Miễn phí',
-        en: s.averageCost > 0 ? `${s.averageCost.toLocaleString()}đ` : 'Free of Charge'
-      },
-      desc: { vi: s.descriptionVi || 'Một điểm check-in độc đáo tại Hội An.', en: s.descriptionEn || 'A beautiful check-in spot in Hoi An.' }
-    };
-  };
+  const mapSpot = (s) => ({
+    id: s.id,
+    raw: s,
+    name:     { vi: s.nameVi, en: s.nameEn },
+    category: { vi: s.category === 'sightseeing' ? 'Tham quan' : s.category === 'cafe' ? 'Cà phê' : s.category === 'stay' ? 'Chỗ nghỉ' : 'Ẩm thực', en: s.category },
+    rating:   s.rating || 4.8,
+    image:    (s.images && s.images.length > 0) ? s.images[0].imageUrl : 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
+    tag:      s.tags ? s.tags.split(',')[0].trim() : s.category,
+    price:    { vi: s.averageCost > 0 ? `${(s.averageCost).toLocaleString()}đ` : 'Miễn phí', en: s.averageCost > 0 ? `${(s.averageCost).toLocaleString()}đ` : 'Free' },
+    desc:     { vi: s.descriptionVi || '', en: s.descriptionEn || '' },
+  });
 
   useEffect(() => {
-    const fetchSpots = async () => {
+    const fetchAll = async () => {
+      setLoadingSpots(true);
       try {
-        const response = await spotService.getSpots();
-        if (response && response.success && response.data.length > 0) {
-          const mapped = response.data.map(mapBackendSpotToSpotlight);
-          setSpots(mapped.slice(0, 4));
+        // 1. Featured 8 random spots
+        const res = await spotService.getFeaturedSpots(8);
+        if (res?.success && res.data.length > 0) {
+          const mapped = res.data.map(mapSpot);
+          setAllFeaturedSpots(mapped);
+          setSpots(mapped);
         }
+        // 2. Top 4 per category
+        const cats = ['sightseeing', 'cafe', 'food', 'stay'];
+        const results = await Promise.all(cats.map(c => spotService.getTopByCategory(c, 4)));
+        const newCatSpots = {};
+        cats.forEach((c, i) => { newCatSpots[c] = results[i]?.success ? results[i].data.map(mapSpot) : []; });
+        setCategorySpots(newCatSpots);
       } catch (err) {
-        console.error("Could not load dynamic spots from backend:", err);
+        console.error('Could not load spots:', err);
+      } finally {
+        setLoadingSpots(false);
       }
     };
-    fetchSpots();
+    fetchAll();
   }, []);
+
+  // Filter featured spots client-side
+  useEffect(() => {
+    if (activeFilter === 'all') {
+      setSpots(allFeaturedSpots);
+    } else {
+      setSpots(allFeaturedSpots.filter(s => s.raw.category === activeFilter));
+    }
+  }, [activeFilter, allFeaturedSpots]);
 
   const handleRadarScan = async () => {
     // Request fresh location before scanning
@@ -170,77 +198,113 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
         </div>
       </section>
 
-      {/* Local Hidden Gems Spotlight */}
+      {/* ── Featured Spots Spotlight ─────────────────────────── */}
       <section className="max-w-6xl w-full px-6 py-16 flex flex-col gap-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 border-b border-gray-200/80 pb-4">
           <div>
-            <span className="text-[10px] text-ricefield-green font-extrabold uppercase tracking-widest block mb-1">
-              {t('localSpotlight')}
-            </span>
-            <h2 className="font-outfit text-3xl sm:text-4xl font-extrabold text-gray-900">
-              {t('hiddenGems')}
-            </h2>
+            <span className="text-[10px] text-ricefield-green font-extrabold uppercase tracking-widest block mb-1">{t('localSpotlight')}</span>
+            <h2 className="font-outfit text-3xl sm:text-4xl font-extrabold text-gray-900">{t('hiddenGems')}</h2>
           </div>
-          <p className="text-gray-500 text-xs sm:text-sm max-w-md">
-            {t('hiddenGemsDesc')}
-          </p>
+          <p className="text-gray-500 text-xs sm:text-sm max-w-md">{t('hiddenGemsDesc')}</p>
         </div>
 
-        {/* Spots Cards Grid with Shimmer Hover wave */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {spots.map((spot) => (
-            <div
-              key={spot.id}
-              className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-heritage-amber/40 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col group shimmer-trigger"
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`px-4 py-1.5 rounded-full text-xs font-extrabold border transition-all duration-200 cursor-pointer ${
+                activeFilter === f.key
+                  ? 'bg-heritage-amber text-white border-heritage-amber shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-heritage-amber/60 hover:text-heritage-amber'
+              }`}
             >
-              {/* Image Container */}
-              <div className="relative h-44 overflow-hidden bg-gray-100">
-                <img
-                  src={spot.image}
-                  alt={spot.name[language]}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">
-                  {spot.category[language]}
-                </span>
-
-                {/* Style indicator */}
-                <span className="absolute bottom-3 right-3 bg-ricefield-green text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md z-10">
-                  {spot.style[language].split(' / ')[0]}
-                </span>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 flex flex-col flex-grow gap-2 relative z-10">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors">
-                    {spot.name[language]}
-                  </h3>
-                  <div className="flex items-center gap-1 text-[11px] text-heritage-amber font-bold">
-                    <Star className="w-3 h-3 fill-heritage-amber text-heritage-amber" />
-                    <span>{spot.rating}</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
-                  {spot.desc[language]}
-                </p>
-
-                <div className="border-t border-gray-100 mt-4 pt-3 flex justify-between items-center text-[10px]">
-                  <span className="text-gray-400 font-semibold">{t('estimateCost')}</span>
-                  <span className="text-gray-900 font-extrabold">{spot.price[language]}</span>
-                </div>
-
-                <button
-                  onClick={() => handleSelectSpot(spot.style[language])}
-                  className="w-full mt-3 py-2.5 text-center border border-gray-200 hover:border-heritage-amber hover:bg-heritage-amber/5 rounded-xl text-xs text-gray-600 hover:text-heritage-amber transition-all duration-300 font-extrabold cursor-pointer bg-gray-50/50"
-                >
-                  {t('planByGu')}
-                </button>
-              </div>
-            </div>
+              {language === 'vi' ? f.labelVi : f.labelEn}
+            </button>
           ))}
         </div>
+
+        {/* Spots Grid */}
+        {loadingSpots ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
+            ))}
+          </div>
+        ) : spots.length === 0 ? (
+          <div className="text-center text-gray-400 py-12 text-sm">
+            {language === 'vi' ? 'Không có địa điểm nào trong danh mục này.' : 'No spots found in this category.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {spots.map((spot) => (
+              <div key={spot.id} className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-heritage-amber/40 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col group">
+                <div className="relative h-44 overflow-hidden bg-gray-100">
+                  <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">{spot.category[language]}</span>
+                  <span className="absolute bottom-3 right-3 bg-ricefield-green text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md z-10">{spot.tag}</span>
+                </div>
+                <div className="p-5 flex flex-col flex-grow gap-2">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors line-clamp-1">{spot.name[language]}</h3>
+                    <div className="flex items-center gap-1 text-[11px] text-heritage-amber font-bold flex-shrink-0 ml-1">
+                      <Star className="w-3 h-3 fill-heritage-amber text-heritage-amber" />
+                      <span>{spot.rating}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{spot.desc[language]}</p>
+                  <div className="border-t border-gray-100 mt-auto pt-3 flex justify-between items-center text-[10px]">
+                    <span className="text-gray-400 font-semibold">{t('estimateCost')}</span>
+                    <span className="text-gray-900 font-extrabold">{spot.price[language]}</span>
+                  </div>
+                  <button
+                    onClick={() => { setPlannerPrefill({ days: 3, budget: 4000000, style: spot.tag }); setActiveTab('planner'); }}
+                    className="w-full mt-2 py-2.5 border border-gray-200 hover:border-heritage-amber hover:bg-heritage-amber/5 rounded-xl text-xs text-gray-600 hover:text-heritage-amber transition-all duration-300 font-extrabold cursor-pointer bg-gray-50/50"
+                  >{t('planByGu')}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Category Sections ─────────────────────────────────── */}
+      <section className="max-w-6xl w-full px-6 pb-12 flex flex-col gap-10">
+        {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
+          categorySpots[cat]?.length > 0 && (
+            <div key={cat} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-outfit text-xl font-extrabold text-gray-900">{language === 'vi' ? label.vi : label.en}</h3>
+                <button
+                  onClick={() => { setActiveFilter(cat); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="text-[11px] text-heritage-amber font-extrabold hover:underline cursor-pointer"
+                >{language === 'vi' ? 'Xem thêm →' : 'See more →'}</button>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {categorySpots[cat].map(spot => (
+                  <div key={spot.id} className="flex-shrink-0 w-52 bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                    onClick={() => { setPlannerPrefill({ days: 2, budget: 3000000, style: spot.tag }); setActiveTab('planner'); }}
+                  >
+                    <div className="h-32 overflow-hidden bg-gray-100">
+                      <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="p-3 flex flex-col gap-1">
+                      <p className="text-xs font-extrabold text-gray-900 line-clamp-1 group-hover:text-heritage-amber transition-colors">{spot.name[language]}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-gray-400">{spot.price[language]}</span>
+                        <div className="flex items-center gap-0.5 text-[10px] text-heritage-amber font-bold">
+                          <Star className="w-2.5 h-2.5 fill-heritage-amber" />
+                          {spot.rating}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        ))}
       </section>
 
       {/* GPS Nearby Radar Scanner Section */}

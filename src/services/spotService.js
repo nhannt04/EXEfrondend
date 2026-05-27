@@ -18,6 +18,16 @@ const spotService = {
     });
   },
 
+  // Lấy N địa điểm nổi bật ngẫu nhiên cho trang chủ
+  getFeaturedSpots: async (limit = 8) => {
+    return await axiosClient.get('/spots/featured', { params: { limit } });
+  },
+
+  // Lấy top spots theo danh mục cho section phân loại
+  getTopByCategory: async (category, limit = 4) => {
+    return await axiosClient.get(`/spots/category/${category}`, { params: { limit } });
+  },
+
   createSpot: async (spotData) => {
     return await axiosClient.post('/spots', spotData);
   },

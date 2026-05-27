@@ -60,6 +60,7 @@ export default function CommunityFeed() {
       d.comments.forEach(c => {
         commentsMap[c.id] = {
           id: c.id,
+          userId: c.user ? c.user.id : null,
           userName: c.user ? c.user.fullName : 'Ẩn danh',
           userAvatar: c.user ? (c.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80') : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
           content: { vi: c.content, en: c.content },
@@ -78,6 +79,7 @@ export default function CommunityFeed() {
 
     return {
       id: d.id,
+      authorId: d.user ? d.user.id : null,
       user: {
         name: d.user ? d.user.fullName : 'Traveler',
         avatar: d.user ? (d.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80') : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
@@ -235,8 +237,9 @@ export default function CommunityFeed() {
         const c = response.data;
         const newComment = {
           id: c.id,
-          userName: c.userName,
-          userAvatar: c.userAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+          userId: c.user ? c.user.id : (currentUser?.id || null),
+          userName: c.user ? c.user.fullName : (currentUser?.fullName || 'Ẩn danh'),
+          userAvatar: c.user ? (c.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80') : (currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'),
           content: { vi: c.content, en: c.content },
           replies: []
         };
@@ -270,8 +273,9 @@ export default function CommunityFeed() {
           if (c.id === commentId) {
             const newReply = {
               id: `r_new_${Date.now()}`,
-              userName: language === 'vi' ? 'Bạn' : 'You',
-              userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+              userId: currentUser?.id || null,
+              userName: currentUser?.fullName || (language === 'vi' ? 'Bạn' : 'You'),
+              userAvatar: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
               content: { vi: text, en: text }
             };
             return {
@@ -614,7 +618,14 @@ export default function CommunityFeed() {
                                   className="w-7 h-7 rounded-full object-cover border border-gray-100"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
+                                    {post.authorId && comment.userId && post.authorId === comment.userId && (
+                                      <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                        {language === 'vi' ? 'Tác giả' : 'Author'}
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
                                 </div>
                               </div>
@@ -636,7 +647,14 @@ export default function CommunityFeed() {
                                         className="w-5.5 h-5.5 rounded-full object-cover border border-gray-150"
                                       />
                                       <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
+                                          {post.authorId && reply.userId && post.authorId === reply.userId && (
+                                            <span className="text-[7.5px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                              {language === 'vi' ? 'Tác giả' : 'Author'}
+                                            </span>
+                                          )}
+                                        </div>
                                         <p className="text-[11px] text-gray-600 mt-1 leading-normal">
                                           {reply.content[language]}
                                         </p>
