@@ -141,6 +141,10 @@ const translations = {
     mapStepDepart: 'Khởi hành từ vị trí của bạn (hoặc Homestay trung tâm).',
     mapStepFollow: 'Đi thẳng theo tuyến đường chỉ định để đến:',
     mapStepTip: 'Lưu ý bản địa: Tuyến đường này rất thơ mộng, hãy tận hưởng cảnh sắc hai bên đường nhé!',
+    mapActiveTab: 'Lộ Trình Đang Đi',
+    mapStartNav: 'Bắt đầu đi',
+    mapStopNav: 'Dừng dẫn đường',
+    mapNavigating: 'Đang định vị trực tiếp...',
 
     // Footer
     footerBrandDesc: 'Hệ thống gợi ý lịch trình du lịch thông minh và kết nối cộng đồng khám phá các giá trị văn hóa, ẩm thực local độc đáo của Phố cổ Hội An.',
@@ -295,6 +299,10 @@ const translations = {
     mapStepDepart: 'Depart from your active starting point (or central Homestay).',
     mapStepFollow: 'Follow the designated routing path directly to:',
     mapStepTip: 'Local recommendation: This route is highly scenic. Take in the local culture along the way!',
+    mapActiveTab: 'Active Journey',
+    mapStartNav: 'Start Navigation',
+    mapStopNav: 'Stop Navigation',
+    mapNavigating: 'Live GPS Active...',
 
     // Footer
     footerBrandDesc: 'Smart travel suggestion platform and community hubs dedicated to discovering local culture and authentic Hoi An heritage.',
