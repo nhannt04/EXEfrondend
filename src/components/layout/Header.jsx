@@ -27,14 +27,14 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
     try {
       const response = await authService.updateAvatar(currentUser.id, file);
       if (response && response.success) {
-        alert("Cập nhật ảnh đại diện thành công!");
+        alert(language === 'vi' ? "Cập nhật ảnh đại diện thành công!" : "Avatar updated successfully!");
         setDropdownOpen(false);
       } else {
-        alert("Không thể cập nhật ảnh đại diện!");
+        alert(language === 'vi' ? "Không thể cập nhật ảnh đại diện!" : "Failed to update avatar!");
       }
     } catch (err) {
       console.error(err);
-      alert("Đã xảy ra lỗi khi cập nhật ảnh đại diện!");
+      alert(language === 'vi' ? "Đã xảy ra lỗi khi cập nhật ảnh đại diện!" : "An error occurred while updating avatar!");
     }
   };
 
@@ -42,7 +42,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
     { id: 'home', label: t('home'), icon: null },
     { id: 'planner', label: t('aiPlanner'), icon: Sparkles },
     { id: 'social', label: t('community'), icon: Grid },
-    ...(currentUser?.role === 'ADMIN' ? [{ id: 'admin', label: 'Quản trị', icon: ShieldAlert }] : [])
+    ...(currentUser?.role === 'ADMIN' ? [{ id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: ShieldAlert }] : [])
   ];
 
   return (
@@ -110,7 +110,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-sm font-semibold text-gray-900">{currentUser.fullName}</span>
               <span className="text-[10px] text-ricefield-green font-bold">
-                {currentUser.role === 'ADMIN' ? 'Quản trị viên' : t('localMember')}
+                {currentUser.role === 'ADMIN' ? (language === 'vi' ? 'Quản trị viên' : 'Administrator') : t('localMember')}
               </span>
             </div>
 
@@ -138,7 +138,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
                   {/* Upload Avatar Label Trigger */}
                   <label className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer font-bold transition-all border-none bg-transparent m-0 select-none">
                     <UserIcon className="w-4 h-4 text-heritage-amber" />
-                    <span>Đổi ảnh đại diện</span>
+                    <span>{language === 'vi' ? 'Đổi ảnh đại diện' : 'Change Avatar'}</span>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -155,7 +155,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
                     className="w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 border-none bg-transparent cursor-pointer font-bold transition-all"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Đăng xuất</span>
+                    <span>{language === 'vi' ? 'Đăng xuất' : 'Log out'}</span>
                   </button>
                 </div>
               )}
@@ -167,7 +167,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-extrabold transition-all duration-300 shadow-md shadow-heritage-amber/15 cursor-pointer border-none scale-95 hover:scale-100"
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span>Đăng nhập</span>
+            <span>{language === 'vi' ? 'Đăng nhập' : 'Log in'}</span>
           </button>
         )}
 

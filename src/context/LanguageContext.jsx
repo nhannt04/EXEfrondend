@@ -15,7 +15,7 @@ const translations = {
     heroBadge: 'Hành trình cá nhân hóa bằng AI',
     heroTitle: 'Khám phá Hội An theo cách',
     heroTitleHighlight: 'Local thực thụ',
-    heroSubtitle: 'Nhập ngân sách, thời gian và gu của bạn. Trí tuệ nhân tạo của HISTRA sẽ lập tức thiết lập lịch trình ăn chơi, ngủ nghỉ tối ưu và tiết kiệm nhất.',
+    heroSubtitle: 'Nhập ngân sách, thời gian và gu của bạn. Trí tuệ nhân tạo của Travelist sẽ lập tức thiết lập lịch trình ăn chơi, ngủ nghỉ tối ưu và tiết kiệm nhất.',
     daysCount: 'Số ngày đi',
     budgetLabel: 'Ngân sách tổng',
     travelStyle: 'Phong cách',
@@ -106,12 +106,12 @@ const translations = {
     participate: 'Nhận Thách Thức',
 
     // Chatbot
-    botIntro: 'Chào bạn! Tôi là HISTRA Guide 🏮 - trợ lý ảo đồng hành cùng bạn suốt chuyến đi Hội An. Tôi tự động đồng bộ hóa lịch trình đang tạo của bạn để hỗ trợ chỉ đường, gợi ý quán ăn địa phương và thuyết minh lịch sử di tích thực tế. Bạn cần tôi hỗ trợ gì?',
-    botTitle: 'HISTRA Guide',
+    botIntro: 'Chào bạn! Tôi là Travelist Guide 🏮 - trợ lý ảo đồng hành cùng bạn suốt chuyến đi Hội An. Tôi tự động đồng bộ hóa lịch trình đang tạo của bạn để hỗ trợ chỉ đường, gợi ý quán ăn địa phương và thuyết minh lịch sử di tích thực tế. Bạn cần tôi hỗ trợ gì?',
+    botTitle: 'Travelist Guide',
     botSubtitle: 'Trợ lý du lịch ảo Hội An',
     botSuggestHeader: 'Gợi ý nhanh',
-    botInputPlaceholder: 'Hỏi HISTRA đường đi, quán ăn ngon...',
-    botTypeIndicator: 'HISTRA đang nhập...',
+    botInputPlaceholder: 'Hỏi Travelist đường đi, quán ăn ngon...',
+    botTypeIndicator: 'Travelist đang nhập...',
     suggestMeal: 'Trưa nay ăn gì ngon gần Little Pie Homestay?',
     suggestHistory: 'Lịch sử Chùa Cầu có nguồn gốc thế nào?',
     suggestSunset: 'Gu Healing nên đi đâu chill ngắm hoàng hôn?',
@@ -153,9 +153,9 @@ const translations = {
     footerLink4: 'Workshop làm đèn lồng, gốm',
     footerLink5: 'Lên lịch trình tự động',
     footerLink6: 'Tối ưu chi phí thực tế',
-    footerLink7: 'Trợ lý ảo HISTRA Guide',
+    footerLink7: 'Trợ lý ảo Travelist Guide',
     footerLink8: 'Sinh thông tin lịch sử tự động',
-    footerCopyright: '© 2026 HISTRA Project. Phát triển bởi Google Deepmind team & Bạn đồng hành.'
+    footerCopyright: '© 2026 Travelist Project. Phát triển bởi Google Deepmind team & Bạn đồng hành.'
   },
   en: {
     // Header
@@ -169,7 +169,7 @@ const translations = {
     heroBadge: 'AI-Personalized Itinerary Builder',
     heroTitle: 'Discover Hoi An like a',
     heroTitleHighlight: 'True Local',
-    heroSubtitle: 'Enter your budget, duration, and personal style. HISTRA\'s artificial intelligence will instantly craft the most optimal and cost-effective food, stay, and activities map.',
+    heroSubtitle: 'Enter your budget, duration, and personal style. Travelist\'s artificial intelligence will instantly craft the most optimal and cost-effective food, stay, and activities map.',
     daysCount: 'Number of Days',
     budgetLabel: 'Total Budget',
     travelStyle: 'Travel Style',
@@ -260,12 +260,12 @@ const translations = {
     participate: 'Accept Quest',
 
     // Chatbot
-    botIntro: 'Hello! I am HISTRA Guide 🏮 - your virtual companion throughout Hoi An. I dynamically sync your active itinerary to help with navigation, recommend local diners, and tell cultural stories. How can I help you today?',
-    botTitle: 'HISTRA Guide',
+    botIntro: 'Hello! I am Travelist Guide 🏮 - your virtual companion throughout Hoi An. I dynamically sync your active itinerary to help with navigation, recommend local diners, and tell cultural stories. How can I help you today?',
+    botTitle: 'Travelist Guide',
     botSubtitle: 'Virtual Travel Guide',
     botSuggestHeader: 'Quick Prompts',
-    botInputPlaceholder: 'Ask HISTRA for directions, top diners...',
-    botTypeIndicator: 'HISTRA is typing...',
+    botInputPlaceholder: 'Ask Travelist for directions, top diners...',
+    botTypeIndicator: 'Travelist is typing...',
     suggestMeal: 'What is good to eat near Little Pie Homestay?',
     suggestHistory: 'What is the history of the Japanese Bridge (Chua Cau)?',
     suggestSunset: 'Where can a Healing enthusiast go for sunset views?',
@@ -309,7 +309,7 @@ const translations = {
     footerLink6: 'Real Cost Estimator',
     footerLink7: 'Virtual Guide Assistant',
     footerLink8: 'AI History Generator',
-    footerCopyright: '© 2026 HISTRA Project. Engineered by Google Deepmind team & Travel Companions.'
+    footerCopyright: '© 2026 Travelist Project. Engineered by Google Deepmind team & Travel Companions.'
   }
 };
 
