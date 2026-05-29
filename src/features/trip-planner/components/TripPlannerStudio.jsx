@@ -20,6 +20,29 @@ const LOADING_FACTS_EN = [
   "Hoi An lanterns are crafted using salted bamboo frames soaked for 10 days and wrapped in luxurious Ha Dong silk."
 ];
 
+const HOI_AN_STREETS = [
+  'Đường Trần Phú', 'Đường Nguyễn Thái Học', 'Đường Bạch Đằng', 'Đường Phan Bội Châu',
+  'Đường Lê Lợi', 'Đường Hai Bà Trưng', 'Đường Hoàng Diệu', 'Đường Nguyễn Duy Hiệu',
+  'Đường Cửa Đại', 'Đường An Bàng', 'Đường Tứ Ngân 02', 'Đường Nguyễn Huệ',
+  'Đường Đinh Tiên Hoàng', 'Đường Phan Chu Trinh', 'Đường Lý Thường Kiệt', 'Đường Ngô Quyền'
+];
+
+const SPOTS_DATABASE = {
+  Homestay: {
+    Healing: { id: 'eco-01', name: { vi: 'Homestay Làng Rau Trà Quế', en: 'Tra Que Herb Village Homestay' }, lat: 15.9019, lng: 108.3456, category: 'stay', reason: { vi: 'Không gian xanh mát, giá bình dân, gần làng rau hữu cơ', en: 'Green peaceful space, affordable, near organic herb village' }, rating: '4.8' }
+  },
+  Cafe: [
+    { id: 'eco-cafe-01', name: { vi: 'Cà Phê Reaching Out', en: 'Reaching Out Tea House' }, lat: 15.8771, lng: 108.3290, category: 'cafe', reason: { vi: 'Quán cà phê im lặng dành cho người khiếm thính, rất độc đáo', en: 'Silent café run by hearing-impaired staff, truly unique' }, rating: '4.9' }
+  ],
+  Activity: [
+    { id: 'eco-act-01', name: { vi: 'Đạp Xe Làng Cổ', en: 'Ancient Village Cycling' }, lat: 15.8870, lng: 108.3350, category: 'activity', reason: { vi: 'Khám phá làng cổ bằng xe đạp, thân thiện môi trường', en: 'Explore ancient village by bicycle, eco-friendly' }, rating: '4.7' }
+  ],
+  Food: [
+    { id: 'eco-food-01', name: { vi: 'Nhà Hàng Morning Glory', en: 'Morning Glory Restaurant' }, lat: 15.8780, lng: 108.3280, category: 'food', reason: { vi: 'Ẩm thực Hội An truyền thống, sử dụng rau hữu cơ địa phương', en: 'Traditional Hoi An cuisine with local organic vegetables' }, rating: '4.8' },
+    { id: 'eco-food-02', name: { vi: 'Quán Cơm Gà Bà Buội', en: 'Ba Buoi Chicken Rice' }, lat: 15.8795, lng: 108.3268, category: 'food', reason: { vi: 'Cơm gà nổi tiếng nhất Hội An, phải thử một lần', en: 'Most famous chicken rice in Hoi An, a must-try' }, rating: '4.9' }
+  ]
+};
+
 const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -125,7 +148,7 @@ const LeafletMap = ({
       // Clear old markers & polylines
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
-      
+
       if (polylineRef.current) {
         polylineRef.current.remove();
         polylineRef.current = null;
@@ -396,10 +419,10 @@ const LeafletMap = ({
           transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
       `}</style>
-      <div 
-        id={mapContainerId} 
+      <div
+        id={mapContainerId}
         style={mapRotationStyle}
-        className={`w-full h-full relative z-10 transition-all duration-500 ${isNavigating ? 'leaflet-tilted' : ''} ${mapRotationActive ? 'leaflet-map-rotated' : ''}`} 
+        className={`w-full h-full relative z-10 transition-all duration-500 ${isNavigating ? 'leaflet-tilted' : ''} ${mapRotationActive ? 'leaflet-map-rotated' : ''}`}
       />
     </>
   );
@@ -434,6 +457,8 @@ export default function TripPlannerStudio({ prefill }) {
   const [userSpeed, setUserSpeed] = useState(0); // Speed in km/h
   const [userHeading, setUserHeading] = useState(null); // Compass heading degrees
   const watchIdRef = React.useRef(null);
+  const prevGpsPosRef = React.useRef(null); // Previous GPS position for heading calc
+  const prevGpsTimeRef = React.useRef(null); // Previous GPS timestamp for speed calc
 
   // Advanced Navigation States
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -634,62 +659,146 @@ export default function TripPlannerStudio({ prefill }) {
       return;
     }
 
+    if (!navigator.geolocation) {
+      alert(language === 'vi' ? "Trình duyệt không hỗ trợ GPS!" : "Your browser does not support GPS geolocation!");
+      return;
+    }
+
     setIsNavigating(true);
+    setActiveModalView('map');
     setTurnAlert('');
+    prevGpsPosRef.current = null;
+    prevGpsTimeRef.current = null;
 
     let osrmProfile = 'driving';
     if (transportMode === 'foot') osrmProfile = 'foot';
     else if (transportMode === 'bike') osrmProfile = 'bicycle';
 
-    const originLat = userLocation.lat;
-    const originLng = userLocation.lng;
+    // Step 1: Get accurate initial GPS position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const gpsLat = position.coords.latitude;
+        const gpsLng = position.coords.longitude;
+        setUserLocation({ lat: gpsLat, lng: gpsLng });
 
-    const routingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${originLng},${originLat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+        // Step 2: Fetch OSRM route from real GPS to destination (for polyline + maneuvers)
+        const routingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${gpsLng},${gpsLat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
 
-    const generateFallbackSimCoords = () => {
-      const stepsCount = 40;
-      const coords = [];
-      for (let i = 0; i <= stepsCount; i++) {
-        const lat = originLat + (selectedSpot.lat - originLat) * (i / stepsCount);
-        const lng = originLng + (selectedSpot.lng - originLng) * (i / stepsCount);
-        coords.push({ lat, lng });
-      }
-      setSimCoords(coords);
-      setSimIndex(0);
-      setAlternativeRoutes([{ distance: getDistanceKm(originLat, originLng, selectedSpot.lat, selectedSpot.lng) * 1000, duration: 900 }]);
-      setSelectedRouteIndex(0);
-      setActiveManeuvers([]);
-      setActiveStepIndex(0);
-      speakInstruction(language === 'vi' ? `Bắt đầu dẫn đường bằng GPS tới ${selectedSpot.name.vi}.` : `Starting GPS navigation to ${selectedSpot.name.en}.`);
-    };
+        fetch(routingUrl)
+          .then(res => res.json())
+          .then(data => {
+            if (data.routes && data.routes.length > 0) {
+              setAlternativeRoutes(data.routes);
+              setSelectedRouteIndex(0);
 
-    fetch(routingUrl)
-      .then(res => res.json())
-      .then(data => {
-        if (data.routes && data.routes.length > 0) {
-          setAlternativeRoutes(data.routes);
-          setSelectedRouteIndex(0);
-          
-          const primaryRoute = data.routes[0];
-          const coords = primaryRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-          setSimCoords(coords);
-          setSimIndex(0);
+              const primaryRoute = data.routes[0];
+              const coords = primaryRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+              setSimCoords(coords); // For polyline drawing only
+              setSimIndex(0);
 
-          // Parse intermediate steps and turn maneuvers
-          const steps = primaryRoute.legs?.[0]?.steps || [];
-          setActiveManeuvers(steps);
-          setActiveStepIndex(0);
+              const steps = primaryRoute.legs?.[0]?.steps || [];
+              setActiveManeuvers(steps);
+              setActiveStepIndex(0);
 
-          const targetName = selectedSpot.name[language]?.split(',')[0] || '';
-          speakInstruction(language === 'vi' ? `Bắt đầu dẫn đường tới ${targetName}. Hướng di chuyển thẳng.` : `Navigating to ${targetName}. Head straight.`);
-        } else {
-          generateFallbackSimCoords();
-        }
-      })
-      .catch(err => {
-        console.warn("OSRM routing fetch failed, generating fallback coordinates:", err);
-        generateFallbackSimCoords();
-      });
+              const totalDist = parseFloat((primaryRoute.distance / 1000).toFixed(1));
+              const totalDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+              setSimDistance(totalDist);
+              setSimDuration(totalDur);
+
+              if (steps.length > 0 && steps[0].name) {
+                setSimActiveStreet(steps[0].name);
+              }
+
+              const targetName = selectedSpot.name[language]?.split(',')[0] || '';
+              speakInstruction(language === 'vi' ? `Bắt đầu dẫn đường GPS tới ${targetName}.` : `Starting GPS navigation to ${targetName}.`);
+            } else {
+              setSimCoords([]);
+              setActiveManeuvers([]);
+              setSimDistance(getDistanceKm(gpsLat, gpsLng, selectedSpot.lat, selectedSpot.lng));
+              speakInstruction(language === 'vi' ? `Dẫn đường GPS trực tiếp tới ${selectedSpot.name.vi}.` : `Direct GPS navigation to ${selectedSpot.name.en}.`);
+            }
+          })
+          .catch(err => {
+            console.warn("OSRM routing failed:", err);
+            setSimCoords([]);
+            setActiveManeuvers([]);
+            setSimDistance(getDistanceKm(gpsLat, gpsLng, selectedSpot.lat, selectedSpot.lng));
+          });
+
+        // Step 3: Start real-time GPS tracking (like Google Maps)
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const newLat = pos.coords.latitude;
+            const newLng = pos.coords.longitude;
+            const newPos = { lat: newLat, lng: newLng };
+            const now = Date.now();
+
+            setUserLocation(newPos);
+
+            // Real speed from GPS (m/s → km/h)
+            if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed >= 0) {
+              setUserSpeed(Math.round(pos.coords.speed * 3.6));
+            } else if (prevGpsPosRef.current && prevGpsTimeRef.current) {
+              const dt = (now - prevGpsTimeRef.current) / 1000;
+              if (dt > 0.5) {
+                const dKm = getDistanceKm(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng);
+                setUserSpeed(Math.min(Math.round((dKm / dt) * 3600), 200));
+              }
+            }
+
+            // Real heading from GPS
+            if (pos.coords.heading !== null && pos.coords.heading !== undefined && !isNaN(pos.coords.heading)) {
+              setUserHeading(pos.coords.heading);
+            } else if (prevGpsPosRef.current) {
+              const dist = getDistanceKm(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng);
+              if (dist > 0.003) {
+                setUserHeading(calculateHeading(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng));
+              }
+            }
+
+            // Remaining distance to destination
+            const remainDist = getDistanceKm(newLat, newLng, selectedSpot.lat, selectedSpot.lng);
+            setSimDistance(parseFloat(remainDist.toFixed(1)));
+
+            // Remaining duration estimate
+            let baseSpeed = 40;
+            if (transportMode === 'foot') baseSpeed = 5;
+            else if (transportMode === 'bike') baseSpeed = 15;
+            else if (transportMode === 'car') baseSpeed = 50;
+            setSimDuration(Math.max(1, Math.round((remainDist / baseSpeed) * 60)));
+
+            // Speed limit
+            const limit = transportMode === 'foot' ? 10 : transportMode === 'bike' ? 25 : transportMode === 'car' ? 60 : 50;
+            setSpeedLimit(limit);
+
+            // WS sync counter
+            if (wsConnected) {
+              setWsSyncedCount(prev => prev + 1);
+            }
+
+            // Arrival check (within 30m)
+            if (remainDist < 0.03) {
+              handleStopNavigation();
+              setTimeout(() => {
+                speakInstruction(language === 'vi' ? "Bạn đã đến nơi an toàn!" : "You have arrived!");
+                alert(language === 'vi' ? "🎉 Bạn đã đến địa điểm an toàn!" : "🎉 You have arrived at your destination!");
+              }, 100);
+            }
+
+            prevGpsPosRef.current = newPos;
+            prevGpsTimeRef.current = now;
+          },
+          (err) => console.warn("GPS watch error:", err),
+          { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+        );
+      },
+      (err) => {
+        console.warn("GPS initial position error:", err);
+        alert(language === 'vi' ? "Không thể lấy vị trí GPS. Vui lòng bật định vị!" : "Unable to get GPS. Please enable location!");
+        setIsNavigating(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
   };
 
   const handleStopNavigation = () => {
@@ -764,111 +873,50 @@ export default function TripPlannerStudio({ prefill }) {
 
   const lastSpeedAlertRef = React.useRef(0);
 
-  // Dynamic Navigation simulation interval runner (1.5s step ticks)
+  // Real-time GPS navigation: track turn maneuvers and street names based on actual position
   useEffect(() => {
-    let intervalId = null;
+    if (!isNavigating || !userLocation || activeManeuvers.length === 0) return;
 
-    if (isNavigating && simCoords.length > 0) {
-      intervalId = setInterval(() => {
-        setSimIndex(prevIndex => {
-          const nextIndex = prevIndex + 1;
-          if (nextIndex < simCoords.length) {
-            const currentPoint = simCoords[nextIndex];
-            setUserLocation(currentPoint);
+    // Find closest upcoming maneuver step based on real GPS position
+    if (activeStepIndex < activeManeuvers.length) {
+      const step = activeManeuvers[activeStepIndex];
+      if (step && step.location && Array.isArray(step.location) && step.location.length >= 2) {
+        const distToTurn = getDistanceKm(userLocation.lat, userLocation.lng, step.location[1], step.location[0]) * 1000;
 
-            // Compute dynamic route heading
-            if (nextIndex + 1 < simCoords.length) {
-              const nextPoint = simCoords[nextIndex + 1];
-              const heading = calculateHeading(currentPoint.lat, currentPoint.lng, nextPoint.lat, nextPoint.lng);
-              setUserHeading(heading);
-            }
+        // Update current street name from the active step
+        if (step.name) {
+          setSimActiveStreet(step.name);
+        }
 
-            // Sum up remaining distance segments
-            let remainingDist = 0;
-            for (let i = nextIndex; i < simCoords.length - 1; i++) {
-              remainingDist += getDistanceKm(simCoords[i].lat, simCoords[i].lng, simCoords[i + 1].lat, simCoords[i + 1].lng);
-            }
-            if (remainingDist === 0) {
-              remainingDist = getDistanceKm(currentPoint.lat, currentPoint.lng, selectedSpot.lat, selectedSpot.lng);
-            }
-            setSimDistance(parseFloat(remainingDist.toFixed(1)));
+        // Trigger turn alert when within 80 meters of next maneuver
+        if (distToTurn < 80) {
+          const modifier = step.maneuver?.modifier || '';
+          let turnLabel = '';
 
-            // Compute remaining duration
-            let baseSpeed = 40;
-            if (transportMode === 'foot') baseSpeed = 5;
-            else if (transportMode === 'bike') baseSpeed = 15;
-            else if (transportMode === 'car') baseSpeed = 50;
-
-            const durationMins = Math.max(1, Math.round((remainingDist / baseSpeed) * 60));
-            setSimDuration(durationMins);
-
-            // Speed fluctuations (jumping numbers)
-            const variance = transportMode === 'foot' ? 1 : transportMode === 'bike' ? 3 : 8;
-            const randomSpeed = Math.max(0, baseSpeed + Math.floor(Math.random() * variance * 2) - variance);
-            setUserSpeed(randomSpeed);
-
-            // Exceed speed limit check
-            const limit = transportMode === 'foot' ? 5 : transportMode === 'bike' ? 20 : transportMode === 'car' ? 60 : 50;
-            setSpeedLimit(limit);
-            if (randomSpeed > limit && Date.now() - lastSpeedAlertRef.current > 8000) {
-              speakInstruction(language === 'vi' ? "Cảnh báo! Bạn đang vượt quá tốc độ giới hạn! Vui lòng giảm tốc." : "Warning! You are exceeding the speed limit! Please slow down.");
-              lastSpeedAlertRef.current = Date.now();
-            }
-
-            // Dynamic street name cycler
-            const streetIdx = Math.floor(nextIndex / 4) % HOI_AN_STREETS.length;
-            setSimActiveStreet(HOI_AN_STREETS[streetIdx]);
-
-            // WebSocket broadcast sync heartbeat mock
-            if (wsConnected) {
-              setWsSyncedCount(prev => prev + 1);
-            }
-
-            // Parse intermediate turn maneuvers and alert popups
-            if (activeManeuvers && activeManeuvers.length > 0 && activeStepIndex < activeManeuvers.length) {
-              const step = activeManeuvers[activeStepIndex];
-              if (step && step.location) {
-                const distToTurn = getDistanceKm(currentPoint.lat, currentPoint.lng, step.location[1], step.location[0]) * 1000;
-                
-                if (distToTurn < 80) {
-                  const modifier = step.maneuver?.modifier || '';
-                  let turnLabel = '';
-                  
-                  if (language === 'vi') {
-                    const dir = modifier.includes('left') ? 'rẽ trái' : modifier.includes('right') ? 'rẽ phải' : 'đi thẳng';
-                    turnLabel = `Chuẩn bị ${dir} vào ${step.name || 'đường mới'} trong 50 mét!`;
-                  } else {
-                    const dir = modifier.includes('left') ? 'turn left' : modifier.includes('right') ? 'turn right' : 'go straight';
-                    turnLabel = `Prepare to ${dir} onto ${step.name || 'new road'} in 50 meters!`;
-                  }
-
-                  setTurnAlert(turnLabel);
-                  speakInstruction(turnLabel);
-                  setActiveStepIndex(prev => prev + 1);
-
-                  setTimeout(() => setTurnAlert(''), 4500);
-                }
-              }
-            }
-
-            return nextIndex;
+          if (language === 'vi') {
+            const dir = modifier.includes('left') ? 'rẽ trái' : modifier.includes('right') ? 'rẽ phải' : modifier.includes('uturn') ? 'quay đầu' : 'đi thẳng';
+            turnLabel = `Chuẩn bị ${dir} vào ${step.name || 'đường mới'} trong ${Math.round(distToTurn)} mét!`;
           } else {
-            clearInterval(intervalId);
-            handleStopNavigation();
-            setTimeout(() => {
-              speakInstruction(language === 'vi' ? "Bạn đã đến nơi lưu trú an toàn!" : "You have arrived safely at your destination!");
-              alert(language === 'vi' ? "🎉 Bạn đã đến địa điểm an toàn!" : "🎉 You have arrived at your destination!");
-            }, 100);
-            return prevIndex;
+            const dir = modifier.includes('left') ? 'turn left' : modifier.includes('right') ? 'turn right' : modifier.includes('uturn') ? 'make a U-turn' : 'go straight';
+            turnLabel = `Prepare to ${dir} onto ${step.name || 'new road'} in ${Math.round(distToTurn)} meters!`;
           }
-        });
-      }, 1500);
+
+          setTurnAlert(turnLabel);
+          speakInstruction(turnLabel);
+          setActiveStepIndex(prev => prev + 1);
+          setTimeout(() => setTurnAlert(''), 4500);
+        }
+      }
     }
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isNavigating, simCoords, transportMode, language, activeManeuvers, activeStepIndex, wsConnected]);
+    // Speed limit warning
+    const limit = transportMode === 'foot' ? 10 : transportMode === 'bike' ? 25 : transportMode === 'car' ? 60 : 50;
+    if (userSpeed > limit && Date.now() - lastSpeedAlertRef.current > 8000) {
+      speakInstruction(language === 'vi' ? "Cảnh báo! Bạn đang vượt quá tốc độ giới hạn!" : "Warning! Exceeding speed limit!");
+      lastSpeedAlertRef.current = Date.now();
+    }
+
+  }, [isNavigating, userLocation, activeManeuvers, activeStepIndex, transportMode, language, userSpeed]);
 
   // Geolocation watch cleanup on unmount
   useEffect(() => {
@@ -1174,20 +1222,18 @@ export default function TripPlannerStudio({ prefill }) {
     setTimeout(() => {
       if (!itinerary) return;
 
-      const optimizedItinerary = itinerary.map((d) => {
-        const ecoHomestay = SPOTS_DATABASE.Homestay.Healing;
-        const ecoMorning = SPOTS_DATABASE.Cafe[0];
-        const ecoAfternoon = SPOTS_DATABASE.Activity[0];
-        const ecoEvening = SPOTS_DATABASE.Food[1];
+      const ecoHomestay = SPOTS_DATABASE.Homestay.Healing;
+      const ecoMorning = SPOTS_DATABASE.Cafe[0];
+      const ecoAfternoon = SPOTS_DATABASE.Activity[0];
+      const ecoEvening = SPOTS_DATABASE.Food[1];
 
-        return {
-          ...d,
-          accommodation: { ...ecoHomestay },
-          morning: { ...ecoMorning },
-          afternoon: { ...ecoAfternoon },
-          evening: { ...ecoEvening }
-        };
-      });
+      const optimizedItinerary = itinerary.map((d) => ({
+        ...d,
+        accommodation: { ...ecoHomestay },
+        morning: { ...ecoMorning },
+        afternoon: { ...ecoAfternoon },
+        evening: { ...ecoEvening }
+      }));
 
       setItinerary(optimizedItinerary);
       setOptimizing(false);
@@ -1222,17 +1268,17 @@ export default function TripPlannerStudio({ prefill }) {
   const routeMetrics = getRouteMetrics();
 
   // Dynamic stats synced with simulation or multi-route alternatives
-  const activeDistance = isNavigating 
-    ? simDistance 
-    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex] 
-        ? parseFloat((alternativeRoutes[selectedRouteIndex].distance / 1000).toFixed(1)) 
-        : routeMetrics.distance);
+  const activeDistance = isNavigating
+    ? simDistance
+    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex]
+      ? parseFloat((alternativeRoutes[selectedRouteIndex].distance / 1000).toFixed(1))
+      : routeMetrics.distance);
 
-  const activeDuration = isNavigating 
-    ? simDuration 
-    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex] 
-        ? Math.max(1, Math.round(alternativeRoutes[selectedRouteIndex].duration / 60)) 
-        : routeMetrics.duration);
+  const activeDuration = isNavigating
+    ? simDuration
+    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex]
+      ? Math.max(1, Math.round(alternativeRoutes[selectedRouteIndex].duration / 60))
+      : routeMetrics.duration);
 
   const renderItineraryContent = () => {
     if (!itinerary) return null;
@@ -2156,7 +2202,7 @@ export default function TripPlannerStudio({ prefill }) {
             <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
               {/* Actual Map frame - Shown on mobile if 'map' is active, always shown on md+ */}
               <div className={`flex-grow h-full relative overflow-hidden bg-gray-50 ${activeModalView === 'map' ? 'flex' : 'hidden md:flex'}`}>
-                
+
                 {/* Dynamic Leaflet Map Component */}
                 <LeafletMap
                   spots={activeDaySpots}
@@ -2284,7 +2330,7 @@ export default function TripPlannerStudio({ prefill }) {
                               return language === 'vi' ? 'Đi thẳng theo chỉ dẫn trên bản đồ' : 'Drive straight following map guidelines';
                             })()}
                           </h4>
-                          
+
                           {/* Current Street Tag */}
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-[9px] bg-white/20 text-white font-extrabold uppercase px-1.5 py-0.5 rounded leading-none">Street</span>
@@ -2298,7 +2344,7 @@ export default function TripPlannerStudio({ prefill }) {
                           <span className="text-sm font-black font-outfit text-white leading-none">
                             {(() => {
                               const step = activeManeuvers?.[activeStepIndex];
-                              if (step && userLocation) {
+                              if (step && step.location && Array.isArray(step.location) && step.location.length >= 2 && userLocation) {
                                 const dist = getDistanceKm(userLocation.lat, userLocation.lng, step.location[1], step.location[0]) * 1000;
                                 return dist > 1000 ? `${(dist / 1000).toFixed(1)} km` : `${Math.round(dist)} m`;
                               }
@@ -2437,83 +2483,7 @@ export default function TripPlannerStudio({ prefill }) {
                   </div>
                 )}
 
-                {/* Floating Circular Controls Dashboard Panel */}
-                <div className="absolute right-4 top-4 z-[40] flex flex-col gap-3">
-                  {/* Dark Mode Tile Switcher Toggle */}
-                  <button
-                    onClick={() => {
-                      const nextDark = !isDarkMode;
-                      setIsDarkMode(nextDark);
-                      speakInstruction(language === 'vi'
-                        ? (nextDark ? "Đã chuyển sang chế độ tối ban đêm." : "Đã chuyển sang chế độ sáng vệ tinh.")
-                        : (nextDark ? "Switched to night dark mode." : "Switched to satellite light mode.")
-                      );
-                    }}
-                    className={`w-11 h-11 rounded-full border-none shadow-lg backdrop-blur-md flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${isDarkMode ? 'bg-slate-900/90 border border-slate-700 text-yellow-450 shadow-slate-950/40' : 'bg-white/90 border border-gray-200/50 text-slate-800'}`}
-                    title={language === 'vi' ? 'Bật/Tắt chế độ tối' : 'Toggle Dark Mode'}
-                  >
-                    {isDarkMode ? <Sun className="w-5 h-5 text-yellow-455 animate-spin-slow" /> : <Moon className="w-5 h-5 text-indigo-650 animate-float" />}
-                  </button>
 
-                  {/* Voice guidance speech toggle */}
-                  <button
-                    onClick={() => {
-                      const nextSpeech = !speechEnabled;
-                      setSpeechEnabled(nextSpeech);
-                      if (nextSpeech) {
-                        speakInstruction(language === 'vi' ? "Đã bật âm thanh hướng dẫn giọng nói." : "Voice guidance instructions active.");
-                      }
-                    }}
-                    className={`w-11 h-11 rounded-full border-none shadow-lg backdrop-blur-md flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${speechEnabled ? 'bg-emerald-500/95 border border-emerald-400 text-white shadow-emerald-500/20' : 'bg-white/95 dark:bg-slate-900/95 border border-gray-200/50 dark:border-slate-800 text-gray-400 dark:text-slate-500'}`}
-                    title={language === 'vi' ? 'Hướng dẫn giọng nói' : 'Voice Guidance'}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      {speechEnabled ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6H4.51c-.88 0-1.704.507-1.938 1.354A9.01 9.01 0 002.25 12c0 .83.112 1.633.322 2.396C2.806 15.244 3.63 15.75 4.51 15.75H6.75l4.72 4.72a.75.75 0 001.28-.53V3.77a.75.75 0 00-1.28-.53L6.75 8.25z" />
-                      )}
-                    </svg>
-                  </button>
-
-                  {/* Map rotation auto-align vehicular toggle */}
-                  <button
-                    onClick={() => {
-                      const nextRot = !mapRotationActive;
-                      setMapRotationActive(nextRot);
-                      if (nextRot) {
-                        speakInstruction(language === 'vi' ? "Đã bật xoay bản đồ theo hướng di chuyển." : "Auto-rotating map container to vehicle direction.");
-                      }
-                    }}
-                    className={`w-11 h-11 rounded-full border-none shadow-lg backdrop-blur-md flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 ${mapRotationActive ? 'bg-indigo-650 text-white shadow-indigo-600/20' : 'bg-white/95 dark:bg-slate-900/95 border border-gray-200/50 dark:border-slate-800 text-indigo-650'}`}
-                    title={language === 'vi' ? 'Tự động xoay bản đồ' : 'Auto Map Rotation'}
-                  >
-                    <Compass className={`w-5 h-5 ${mapRotationActive ? 'animate-spin-slow text-white' : 'text-indigo-600'}`} style={userHeading !== null ? { transform: `rotate(${userHeading}deg)` } : {}} />
-                  </button>
-
-                  {/* WebSocket database heartbeat sync sync telemetry */}
-                  <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-gray-200/50 dark:border-slate-800 flex flex-col items-center justify-center gap-1 select-none">
-                    <div className="flex items-center gap-1.5">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-[9px] font-black text-gray-500 dark:text-slate-400 tracking-wider">WS SYNC</span>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 font-mono leading-none mt-0.5">#{wsSyncedCount}</span>
-                  </div>
-
-                  {/* Floating Exit Navigation Button (Visible only when in active simulation navigation) */}
-                  {isNavigating && (
-                    <button
-                      onClick={handleStopNavigation}
-                      className="w-11 h-11 rounded-full border-none bg-red-650 hover:bg-red-700 text-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse"
-                      title={language === 'vi' ? 'Thoát dẫn đường' : 'Exit Navigation'}
-                    >
-                      <X className="w-5 h-5 text-white" />
-                    </button>
-                  )}
-                </div>
 
               </div>
 
