@@ -75,7 +75,10 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
     rating:   s.rating || 4.8,
     image:    (s.images && s.images.length > 0) ? s.images[0].imageUrl : 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
     tag:      s.tags ? s.tags.split(',')[0].trim() : s.category,
-    price:    { vi: s.averageCost > 0 ? `${(s.averageCost).toLocaleString()}đ` : 'Miễn phí', en: s.averageCost > 0 ? `${(s.averageCost).toLocaleString()}đ` : 'Free' },
+    price:    { 
+      vi: (s.minCost > 0 || s.maxCost > 0) ? `${(s.minCost).toLocaleString()}đ - ${(s.maxCost).toLocaleString()}đ` : 'Miễn phí', 
+      en: (s.minCost > 0 || s.maxCost > 0) ? `${(s.minCost).toLocaleString()}đ - ${(s.maxCost).toLocaleString()}đ` : 'Free' 
+    },
     desc:     { vi: s.descriptionVi || '', en: s.descriptionEn || '' },
   });
 

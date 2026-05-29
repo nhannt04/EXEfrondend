@@ -107,7 +107,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             <ShieldCheck className="w-6 h-6 animate-pulse" />
           </div>
           <h2 className="font-outfit text-2xl font-extrabold text-gray-900 tracking-tight mt-3">
-            Chào mừng bạn đến với <span className="text-heritage-amber">HISTRA</span>
+            Chào mừng bạn đến với <span className="text-heritage-amber">Travelist</span>
           </h2>
           <p className="text-[11.5px] text-gray-400 font-medium tracking-wide uppercase leading-none mt-1">
             Hoi An Smart Travel Partner

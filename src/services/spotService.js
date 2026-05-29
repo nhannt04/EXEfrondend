@@ -32,8 +32,16 @@ const spotService = {
     return await axiosClient.post('/spots', spotData);
   },
 
+  updateSpot: async (id, spotData) => {
+    return await axiosClient.put(`/spots/${id}`, spotData);
+  },
+
   deleteSpot: async (id) => {
     return await axiosClient.delete(`/spots/${id}`);
+  },
+
+  getPresignedUrl: async (fileName, contentType, uploadType = 'SPOT_IMAGE') => {
+    return await axiosClient.post('/uploads/presigned', { fileName, contentType, uploadType });
   }
 };
 

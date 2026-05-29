@@ -15,7 +15,7 @@ export default function Footer() {
               <Compass className="w-5 h-5" />
             </div>
             <span className="font-outfit text-xl font-bold tracking-tight text-gray-900">
-              HIS<span className="text-heritage-amber">TRA</span>
+              Travel<span className="text-heritage-amber">ist</span>
             </span>
           </div>
           <p className="text-xs leading-relaxed text-gray-400">
@@ -65,7 +65,7 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-heritage-amber flex-shrink-0" />
-              <span>contact@histra-hoian.vn</span>
+              <span>contact@travelist-hoian.vn</span>
             </li>
           </ul>
         </div>
