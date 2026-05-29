@@ -8,6 +8,100 @@ import spotService from '../../../services/spotService';
 import diaryService from '../../../services/diaryService';
 import expertService from '../../../services/expertService';
 
+const LeafletMap = ({ lat, lng, name, language }) => {
+  const mapContainerId = React.useId().replace(/:/g, '');
+  const mapRef = React.useRef(null);
+  const markerRef = React.useRef(null);
+  const [mapLoaded, setMapLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    if (!document.getElementById('leaflet-js')) {
+      const script = document.createElement('script');
+      script.id = 'leaflet-js';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => setMapLoaded(true);
+      document.body.appendChild(script);
+    } else {
+      setMapLoaded(true);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!mapLoaded || !window.L || !lat || !lng) return;
+
+    if (!mapRef.current) {
+      mapRef.current = window.L.map(mapContainerId, {
+        zoomControl: true,
+        scrollWheelZoom: true
+      });
+
+      // Google Satellite Hybrid tiles
+      window.L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps'
+      }).addTo(mapRef.current);
+    }
+
+    const map = mapRef.current;
+
+    if (markerRef.current) {
+      markerRef.current.remove();
+    }
+
+    const pulseHtml = `<div class="relative flex items-center justify-center h-5 w-5"><div class="absolute h-5 w-5 rounded-full bg-red-500 animate-ping opacity-60"></div><div class="h-3.5 w-3.5 rounded-full bg-red-600 border-2 border-white shadow-md"></div></div>`;
+
+    const customIcon = window.L.divIcon({
+      html: pulseHtml,
+      className: 'custom-dot-marker',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    markerRef.current = window.L.marker([lat, lng], { icon: customIcon }).addTo(map);
+
+    markerRef.current.bindTooltip(name || '', {
+      permanent: true,
+      direction: 'top',
+      className: 'leaflet-custom-tooltip font-outfit font-extrabold text-[10.5px] border-none shadow-sm rounded-lg bg-gray-900 text-white px-2 py-1'
+    });
+
+    map.setView([lat, lng], 16);
+
+  }, [mapLoaded, lat, lng, name, language]);
+
+  return (
+    <>
+      <style>{`
+        .leaflet-custom-tooltip {
+          background-color: #111827 !important;
+          color: #ffffff !important;
+          border: none !important;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+          font-family: 'Outfit', sans-serif !important;
+          font-size: 10px !important;
+          font-weight: 800 !important;
+          border-radius: 8px !important;
+          padding: 4px 8px !important;
+        }
+        .leaflet-custom-tooltip::before {
+          border-top-color: #111827 !important;
+        }
+        .leaflet-container {
+          font-family: inherit !important;
+        }
+      `}</style>
+      <div id={mapContainerId} className="w-full h-full relative z-10" />
+    </>
+  );
+};
+
 export default function AdminDashboard() {
   const { language } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState('spots'); // 'spots' | 'diaries' | 'experts' | 'inquiries'
@@ -33,8 +127,8 @@ export default function AdminDashboard() {
   const [newSpotLat, setNewSpotLat] = useState(15.8771);
   const [newSpotLng, setNewSpotLng] = useState(108.3267);
   const [newSpotCrowdLevel, setNewSpotCrowdLevel] = useState('low');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchingLocation, setSearchingLocation] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
@@ -113,125 +207,7 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  // Quick location geocoding via OpenStreetMap Nominatim with Multi-stage Fallback
-  const handleGeocodeSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setSearchingLocation(true);
-    try {
-      const searchQueries = [];
 
-      // 1. Nguyên văn chuỗi người dùng nhập
-      const original = searchQuery.trim();
-      searchQueries.push(original);
-
-      // 2. Thử tách theo dấu phẩy để lọc bỏ Phường/Xã (vì Nominatim thường bị lỗi ranh giới Phường/Xã tại Việt Nam)
-      const commaParts = original.split(',').map(p => p.trim()).filter(Boolean);
-      if (commaParts.length >= 3) {
-        // Bỏ đi phần tử index 1 (thường là Phường/Xã ngay sau Số nhà/Tên đường)
-        const withoutWard = [commaParts[0], ...commaParts.slice(2)].join(', ');
-        searchQueries.push(withoutWard);
-      }
-
-      // 3. Đơn giản hóa chuỗi (lọc bỏ các từ gây nhiễu)
-      const cleanNoise = (str) => {
-        return str
-          .replace(/(Số|đường|Phường|TP\.|Thành phố|Việt Nam|Vietnam)/gi, "")
-          .replace(/\s+/g, " ")
-          .trim();
-      };
-
-      const originalCleaned = cleanNoise(original);
-      if (originalCleaned && originalCleaned !== original) {
-        searchQueries.push(originalCleaned);
-      }
-
-      if (commaParts.length >= 3) {
-        const withoutWardCleaned = cleanNoise([commaParts[0], ...commaParts.slice(2)].join(', '));
-        if (withoutWardCleaned && withoutWardCleaned !== originalCleaned) {
-          searchQueries.push(withoutWardCleaned);
-        }
-      }
-
-      // 4. Nếu không chứa "Hội An"/"Hoi An", tự động thêm vào cuối
-      const addHoiAnIfMissing = (str) => {
-        if (!str.toLowerCase().includes("hội an") && !str.toLowerCase().includes("hoi an")) {
-          return str + ", Hoi An, Vietnam";
-        }
-        return null;
-      };
-
-      const addedHoiAnQueries = [];
-      searchQueries.forEach(q => {
-        const added = addHoiAnIfMissing(q);
-        if (added) {
-          addedHoiAnQueries.push(added);
-        }
-      });
-      searchQueries.push(...addedHoiAnQueries);
-
-      // Thực hiện tìm kiếm tuần tự qua danh sách các phương án cho đến khi có kết quả
-      let data = [];
-      const uniqueQueries = [...new Set(searchQueries)];
-      
-      for (const q of uniqueQueries) {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
-          const json = await res.json();
-          if (json && json.length > 0) {
-            data = json;
-            break;
-          }
-        } catch (e) {
-          console.warn(`Query failed for "${q}":`, e);
-        }
-      }
-
-      // 5. Chiến dịch cuối cùng: Nếu vẫn rỗng, thử xóa số nhà (chỉ giữ tên phố + thành phố) để tìm tâm đường
-      if (data.length === 0) {
-        const fallbackQueries = [];
-        uniqueQueries.forEach(q => {
-          const queryWithoutHouseNumber = q
-            .replace(/^\d+[a-zA-Z]?\s+/g, "") // Xóa số nhà dạng "101 " hoặc "10B "
-            .replace(/(Kiệt|Hẻm|Ngõ|Số)\s*\d+(\/\d+)?\s+/gi, "") // Xóa kiệt hẻm
-            .trim();
-          if (queryWithoutHouseNumber && queryWithoutHouseNumber !== q) {
-            fallbackQueries.push(queryWithoutHouseNumber);
-          }
-        });
-
-        const uniqueFallbacks = [...new Set(fallbackQueries)];
-        for (const q of uniqueFallbacks) {
-          try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
-            const json = await res.json();
-            if (json && json.length > 0) {
-              data = json;
-              break;
-            }
-          } catch (e) {
-            console.warn(`Fallback query failed for "${q}":`, e);
-          }
-        }
-      }
-
-      if (data && data.length > 0) {
-        const first = data[0];
-        setNewSpotLat(Number(parseFloat(first.lat).toFixed(6)));
-        setNewSpotLng(Number(parseFloat(first.lon).toFixed(6)));
-      } else {
-        alert(language === 'vi'
-          ? 'Không tìm thấy địa điểm này! Vui lòng thử nhập ngắn gọn hơn (Ví dụ: "52 Nguyễn Thị Minh Khai Hội An").'
-          : 'Location not found! Please try typing a shorter query (e.g., "52 Nguyen Thi Minh Khai Hoi An").');
-      }
-    } catch (err) {
-      console.error("Geocoding lookup error:", err);
-      alert(language === 'vi'
-        ? 'Không thể kết nối tới dịch vụ bản đồ OpenStreetMap!'
-        : 'Failed to connect to OpenStreetMap mapping services!');
-    } finally {
-      setSearchingLocation(false);
-    }
-  };
 
 
   // Handle direct client-side upload to Cloudflare R2 via presigned PUT url
@@ -302,7 +278,6 @@ export default function AdminDashboard() {
     setNewSpotLat(15.8771);
     setNewSpotLng(108.3267);
     setNewSpotCrowdLevel('low');
-    setSearchQuery('');
 
     // Reset image upload states
     setImagePreview(null);
@@ -324,7 +299,6 @@ export default function AdminDashboard() {
     setNewSpotLat(spot.lat || 15.8771);
     setNewSpotLng(spot.lng || 108.3267);
     setNewSpotCrowdLevel(spot.crowdLevel || 'low');
-    setSearchQuery('');
 
     // Prefill image upload states from current spot image
     setImagePreview(spot.img || null);
@@ -545,11 +519,23 @@ export default function AdminDashboard() {
       : 'Successfully sent consulting reply to traveler!');
   };
 
+  // Filter spots based on search query and selected category
+  const filteredSpots = spots.filter(spot => {
+    const matchesSearch = 
+      (spot.name?.vi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (spot.name?.en || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = selectedCategory === 'all' || 
+      (spot.category || '').toLowerCase() === selectedCategory.toLowerCase();
+
+    return matchesSearch && matchesCategory;
+  });
+
   // Pagination Calculations
   const indexOfLastSpot = currentPage * itemsPerPage;
   const indexOfFirstSpot = indexOfLastSpot - itemsPerPage;
-  const currentSpots = spots.slice(indexOfFirstSpot, indexOfLastSpot);
-  const totalPages = Math.ceil(spots.length / itemsPerPage);
+  const currentSpots = filteredSpots.slice(indexOfFirstSpot, indexOfLastSpot);
+  const totalPages = Math.ceil(filteredSpots.length / itemsPerPage);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in heritage-pattern min-h-screen">
@@ -652,7 +638,50 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="overflow-x-auto border border-gray-150 rounded-2xl">
+              {/* Search & Category Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-gray-50/50 p-4 rounded-2xl border border-gray-150 shadow-inner">
+                <div className="relative w-full sm:max-w-xs">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    placeholder={language === 'vi' ? '🔍 Tìm địa điểm theo tên...' : '🔍 Search spot by name...'}
+                    className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 text-xs font-semibold rounded-xl transition-all"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <label className="text-[11px] font-extrabold uppercase text-gray-400 whitespace-nowrap">
+                    {language === 'vi' ? 'Phân loại:' : 'Filter:'}
+                  </label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+                    className="px-4 py-2 bg-white border border-gray-200 focus:border-heritage-amber text-xs font-bold rounded-xl transition-all cursor-pointer w-full sm:w-auto"
+                  >
+                    <option value="all">{language === 'vi' ? '🌐 Tất cả phân loại' : '🌐 All categories'}</option>
+                    <option value="healing">{language === 'vi' ? '🧘 Chữa lành' : '🧘 Healing'}</option>
+                    <option value="food">{language === 'vi' ? '🍗 Ẩm thực' : '🍗 Food'}</option>
+                    <option value="adventure">{language === 'vi' ? '🏮 Trải nghiệm' : '🏮 Adventure'}</option>
+                    <option value="scenic">{language === 'vi' ? '📸 Phong cảnh' : '📸 Scenic'}</option>
+                    <option value="sightseeing">{language === 'vi' ? '🏛️ Tham quan' : '🏛️ Sightseeing'}</option>
+                    <option value="cafe">{language === 'vi' ? '☕ Cà phê' : '☕ Cafe'}</option>
+                    <option value="stay">{language === 'vi' ? '🏨 Chỗ nghỉ' : '🏨 Stay'}</option>
+                  </select>
+                </div>
+              </div>
+
+              {filteredSpots.length === 0 ? (
+                <div className="text-center py-16 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <span className="text-3xl block mb-2">🔍</span>
+                  <p className="text-gray-500 font-bold text-xs">
+                    {language === 'vi' 
+                      ? 'Không tìm thấy địa điểm nào phù hợp với bộ lọc!' 
+                      : 'No destinations found matching your filters!'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-gray-150 rounded-2xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-150 font-bold text-gray-500">
@@ -712,14 +741,15 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+              )}
 
               {/* Pagination UI Controls */}
               {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 mt-2 text-xs">
                   <span className="text-gray-500 font-semibold">
                     {language === 'vi'
-                      ? `Hiển thị ${indexOfFirstSpot + 1} - ${Math.min(indexOfLastSpot, spots.length)} trên tổng số ${spots.length} địa điểm`
-                      : `Showing ${indexOfFirstSpot + 1} - ${Math.min(indexOfLastSpot, spots.length)} of ${spots.length} destinations`}
+                      ? `Hiển thị ${indexOfFirstSpot + 1} - ${Math.min(indexOfLastSpot, filteredSpots.length)} trên tổng số ${filteredSpots.length} địa điểm`
+                      : `Showing ${indexOfFirstSpot + 1} - ${Math.min(indexOfLastSpot, filteredSpots.length)} of ${filteredSpots.length} destinations`}
                   </span>
 
                   <div className="flex items-center gap-1.5">
@@ -1150,58 +1180,31 @@ export default function AdminDashboard() {
                   {language === 'vi' ? 'Định vị địa lý' : 'Geolocation'}
                 </h4>
 
-                {/* Tiện ích Tìm tọa độ địa chỉ nhanh */}
-                <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl flex flex-col gap-2 shadow-inner">
-                  <div className="flex items-center gap-1.5 text-heritage-amber">
-                    <MapPin className="w-3.5 h-3.5 animate-bounce" />
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest">
-                      {language === 'vi' ? 'Tra Cứu Bản Đồ Tự Động' : 'Automatic Map Lookup'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder={language === 'vi' ? "Nhập địa chỉ (ví dụ: An Bang Beach, Hoi An...)" : "Enter address (e.g. An Bang Beach, Hoi An...)"}
-                      className="flex-grow px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-white"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleGeocodeSearch}
-                      disabled={searchingLocation}
-                      className="px-3.5 py-2 bg-ricefield-green hover:bg-ricefield-light disabled:bg-gray-300 text-white text-xs font-extrabold rounded-xl border-none cursor-pointer transition-all flex items-center gap-1 shadow-sm active:scale-95 whitespace-nowrap"
-                    >
-                      {searchingLocation ? '...' : (language === 'vi' ? 'Tìm Tọa Độ' : 'Find GPS')}
-                    </button>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-400">
-                      {language === 'vi' ? 'Vĩ độ (Latitude) [Khóa]' : 'Latitude [Locked]'}
+                    <label className="text-xs font-bold text-gray-500">
+                      {language === 'vi' ? 'Vĩ độ (Latitude)' : 'Latitude'}
                     </label>
                     <input
                       type="number"
+                      step="any"
                       value={newSpotLat}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-100 text-gray-400 cursor-not-allowed select-none"
-                      disabled
-                      readOnly
+                      onChange={(e) => setNewSpotLat(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-50/50 text-gray-800 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all"
                       required
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-400">
-                      {language === 'vi' ? 'Kinh độ (Longitude) [Khóa]' : 'Longitude [Locked]'}
+                    <label className="text-xs font-bold text-gray-500">
+                      {language === 'vi' ? 'Kinh độ (Longitude)' : 'Longitude'}
                     </label>
                     <input
                       type="number"
+                      step="any"
                       value={newSpotLng}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-100 text-gray-400 cursor-not-allowed select-none"
-                      disabled
-                      readOnly
+                      onChange={(e) => setNewSpotLng(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-50/50 text-gray-800 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all"
                       required
                     />
                   </div>
@@ -1213,12 +1216,14 @@ export default function AdminDashboard() {
                     <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
                       {language === 'vi' ? '📍 Định Vị Thực Tế Bản Đồ' : '📍 Live Map Preview'}
                     </label>
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${newSpotLat},${newSpotLng}&z=16&t=h&output=embed`}
-                      className="w-full h-44 rounded-2xl border border-gray-200 shadow-sm"
-                      allowFullScreen=""
-                      loading="lazy"
-                    />
+                    <div className="w-full h-44 rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-gray-50 relative">
+                      <LeafletMap
+                        lat={Number(newSpotLat)}
+                        lng={Number(newSpotLng)}
+                        name={language === 'vi' ? newSpotNameVi : newSpotNameEn}
+                        language={language}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
