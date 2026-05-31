@@ -14,7 +14,8 @@ const spotService = {
 
   getNearbySpots: async (lat, lng, radius) => {
     return await axiosClient.get('/spots/nearby', {
-      params: { lat, lng, radius }
+      params: { lat, lng, radius },
+      timeout: 30000 // 30s - allow for cold start on Render / Neon DB wakeup
     });
   },
 

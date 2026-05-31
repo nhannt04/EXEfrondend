@@ -3,7 +3,6 @@ import { Compass, Plus, Minus, Volume2, VolumeX, Play, Pause, Sun, Moon, Layers 
 import { useLanguage } from '../../../context/LanguageContext';
 
 export default function ControlButtons({
-  zoom,
   setZoom,
   isMuted,
   setIsMuted,
@@ -11,17 +10,20 @@ export default function ControlButtons({
   setIsDarkMode,
   isSimulating,
   setIsSimulating,
-  onResetRotation,
   currentSegmentIndex,
   mapMode,
-  setMapMode
+  setMapMode,
+  isHeadingUp,
+  setIsHeadingUp
 }) {
   const { language } = useLanguage();
 
   let compassRotation = 0;
-  if (currentSegmentIndex === 1) compassRotation = 90;
-  if (currentSegmentIndex === 2) compassRotation = 0;
-  if (currentSegmentIndex === 3) compassRotation = 90;
+  if (isHeadingUp) {
+    if (currentSegmentIndex === 1) compassRotation = 90;
+    if (currentSegmentIndex === 2) compassRotation = 0;
+    if (currentSegmentIndex === 3) compassRotation = 90;
+  }
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2.2));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.6));
@@ -33,12 +35,12 @@ export default function ControlButtons({
   return (
     <div className="absolute right-4 md:right-6 top-1/4 flex flex-col gap-3 z-10 animate-slide-in-right">
       
-      {/* 1. Compass (La Bàn) */}
+      {/* 1. Compass (Heading-up toggle) */}
       <button
-        onClick={onResetRotation}
+        onClick={() => setIsHeadingUp(prev => !prev)}
         style={{ transform: `rotate(${compassRotation}deg)` }}
-        className={`${buttonStyle} relative group`}
-        title={language === 'vi' ? 'Đặt lại hướng la bàn (Bắc)' : 'Reset Compass (North)'}
+        className={`${buttonStyle} relative group ${isHeadingUp ? 'border-cyan-500/40 text-cyan-400' : ''}`}
+        title={isHeadingUp ? (language === 'vi' ? 'Tắt Heading-up view' : 'Disable Heading-up view') : (language === 'vi' ? 'Bật Heading-up view' : 'Enable Heading-up view')}
       >
         <Compass className="w-6 h-6 text-cyan-500 transition-colors group-hover:text-cyan-400" />
         <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-red-500 rounded-full" />

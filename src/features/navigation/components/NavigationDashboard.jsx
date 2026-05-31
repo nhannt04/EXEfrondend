@@ -4,7 +4,7 @@ import InstructionBanner from './InstructionBanner';
 import InfoBottomBar from './InfoBottomBar';
 import ControlButtons from './ControlButtons';
 import { useLanguage } from '../../../context/LanguageContext';
-import { Navigation, RotateCcw, Home, Smile, Layers } from 'lucide-react';
+import { Navigation, RotateCcw, Home, Smile } from 'lucide-react';
 
 export default function NavigationDashboard({ setActiveTab }) {
   const { language } = useLanguage();
@@ -18,6 +18,7 @@ export default function NavigationDashboard({ setActiveTab }) {
   const [isArrived, setIsArrived] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [mapMode, setMapMode] = useState('google'); // 'google' | '3d' - Default to Google Maps!
+  const [isHeadingUp, setIsHeadingUp] = useState(true);
 
   const speed = 0.0016; // Simulated driving speed
 
@@ -93,10 +94,6 @@ export default function NavigationDashboard({ setActiveTab }) {
 
   const vehiclePos = getVehiclePosition(progress);
 
-  const handleResetRotation = () => {
-    setZoom(1.2);
-  };
-
   const handleExit = () => {
     setActiveTab('planner'); // Go back to the planner studio
   };
@@ -119,6 +116,7 @@ export default function NavigationDashboard({ setActiveTab }) {
         vehiclePos={vehiclePos}
         currentSegmentIndex={vehiclePos.segmentIndex}
         mapMode={mapMode}
+        isHeadingUp={isHeadingUp}
       />
 
       {/* 2. Top Instruction Banner (Floating Dark Glassmorphism) */}
@@ -138,10 +136,11 @@ export default function NavigationDashboard({ setActiveTab }) {
         setIsDarkMode={setIsDarkMode}
         isSimulating={isSimulating}
         setIsSimulating={setIsSimulating}
-        onResetRotation={handleResetRotation}
         currentSegmentIndex={vehiclePos.segmentIndex}
         mapMode={mapMode}
         setMapMode={setMapMode}
+        isHeadingUp={isHeadingUp}
+        setIsHeadingUp={setIsHeadingUp}
       />
 
       {/* 4. Bottom Journey Details Banner (Glassmorphism white/dark, red exit button) */}
