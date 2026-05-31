@@ -80,8 +80,22 @@ const LeafletMap = ({
   const polylineRef = React.useRef(null);
   const altPolylinesRef = React.useRef([]);
   const tileThemeRef = React.useRef('');
+  const isProgrammaticMoveRef = React.useRef(false);
+  const isNavigatingRef = React.useRef(isNavigating);
   const lastRouteParamsRef = React.useRef({ spotsKey: '', showTravelRoute: false });
   const [mapLoaded, setMapLoaded] = React.useState(false);
+  const [autoFollow, setAutoFollow] = React.useState(true);
+
+  React.useEffect(() => {
+    isNavigatingRef.current = isNavigating;
+  }, [isNavigating]);
+
+  React.useEffect(() => {
+    // Start each navigation session in follow mode.
+    if (isNavigating) {
+      setAutoFollow(true);
+    }
+  }, [isNavigating]);
 
   const getFollowTarget = React.useCallback((location, heading, useForwardOffset = false) => {
     if (!location) return null;
@@ -124,17 +138,22 @@ const LeafletMap = ({
   React.useEffect(() => {
     const handleRecenter = () => {
       if (mapRef.current && userLocation) {
+        setAutoFollow(true);
+        isProgrammaticMoveRef.current = true;
         const target = getFollowTarget(userLocation, userHeading, isMobile && isNavigating);
         mapRef.current.setView([target.lat, target.lng], isMobile ? 18.5 : 17.5);
+        window.setTimeout(() => {
+          isProgrammaticMoveRef.current = false;
+        }, 700);
       }
     };
     window.addEventListener('recenter-map', handleRecenter);
     return () => window.removeEventListener('recenter-map', handleRecenter);
   }, [userLocation, userHeading, isMobile, isNavigating, getFollowTarget]);
 
-  // Handle map rotation styles dynamically via CSS Variables.
-  // Mobile-safe mode: keep map flat on phones to avoid white-tile rendering issues.
-  const headingUpActive = !isMobile && mapRotationActive && userHeading !== null;
+  // Course-up stable mode: keep map canvas flat while navigating to avoid white-screen rendering glitches.
+  // Direction feeling is preserved via moving chevron + forward follow target.
+  const headingUpActive = !isNavigating && mapRotationActive && userHeading !== null;
   const mapRotationStyle = headingUpActive
     ? { '--map-rotation': `${-userHeading}deg` }
     : { '--map-rotation': '0deg' };
@@ -147,9 +166,28 @@ const LeafletMap = ({
         zoomControl: true,
         scrollWheelZoom: true
       });
+
+      // If user manually drags/zooms while navigating, pause auto-follow
+      // so they can inspect the map without being snapped back immediately.
+      mapRef.current.on('movestart', () => {
+        if (isProgrammaticMoveRef.current) return;
+        if (isNavigatingRef.current) {
+          setAutoFollow(false);
+        }
+      });
     }
 
     const map = mapRef.current;
+    const setViewSafely = (action) => {
+      isProgrammaticMoveRef.current = true;
+      action();
+      map.once('moveend', () => {
+        isProgrammaticMoveRef.current = false;
+      });
+      window.setTimeout(() => {
+        isProgrammaticMoveRef.current = false;
+      }, 900);
+    };
 
     // Keep tile layer stable during GPS updates; only recreate when theme changes.
     const desiredTheme = isDarkMode ? 'dark' : 'light';
@@ -416,26 +454,26 @@ const LeafletMap = ({
       }
 
       if (isNavigating && userLocation) {
-        // On mobile heading-up: offset view forward so user sees more road ahead
-        // Push the center point ~50m ahead in the heading direction
         const navZoom = isMobile ? 18.5 : 17.5;
-        if (isMobile && userHeading !== null) {
-          // 0.00045 deg ≈ 50m offset forward in heading direction
-          const offsetDist = 0.00045;
-          const headRad = (userHeading * Math.PI) / 180;
-          const offsetLat = userLocation.lat + Math.cos(headRad) * offsetDist;
-          const offsetLng = userLocation.lng + Math.sin(headRad) * offsetDist;
-          map.setView([offsetLat, offsetLng], navZoom, { animate: true, duration: 0.5 });
-        } else {
-          map.setView([userLocation.lat, userLocation.lng], navZoom, { animate: true, duration: 0.5 });
+        if (autoFollow) {
+          if (isMobile && userHeading !== null) {
+            // 0.00045 deg ≈ 50m offset forward in heading direction
+            const offsetDist = 0.00045;
+            const headRad = (userHeading * Math.PI) / 180;
+            const offsetLat = userLocation.lat + Math.cos(headRad) * offsetDist;
+            const offsetLng = userLocation.lng + Math.sin(headRad) * offsetDist;
+            setViewSafely(() => map.setView([offsetLat, offsetLng], navZoom, { animate: true, duration: 0.5 }));
+          } else {
+            setViewSafely(() => map.setView([userLocation.lat, userLocation.lng], navZoom, { animate: true, duration: 0.5 }));
+          }
         }
       } else if (showTravelRoute && spots.length > 1) {
         const bounds = window.L.latLngBounds(spots.map(s => [s.lat, s.lng]));
-        map.fitBounds(bounds, { padding: [40, 40] });
+        setViewSafely(() => map.fitBounds(bounds, { padding: [40, 40] }));
       } else {
         const activeLat = selectedSpot ? selectedSpot.lat : spots[0].lat;
         const activeLng = selectedSpot ? selectedSpot.lng : spots[0].lng;
-        map.setView([activeLat, activeLng], 15);
+        setViewSafely(() => map.setView([activeLat, activeLng], 15));
       }
 
       // Save parameters
@@ -472,17 +510,19 @@ const LeafletMap = ({
       if (selectedSpot) {
         if (isNavigating && userLocation) {
           const navZoom = isMobile ? 18.5 : 17.5;
-          const target = getFollowTarget(userLocation, userHeading, isMobile);
-          map.setView([target.lat, target.lng], navZoom, { animate: true, duration: 0.4 });
+          if (autoFollow) {
+            const target = getFollowTarget(userLocation, userHeading, isMobile);
+            setViewSafely(() => map.setView([target.lat, target.lng], navZoom, { animate: true, duration: 0.4 }));
+          }
         } else if (!showTravelRoute) {
-          map.setView([selectedSpot.lat, selectedSpot.lng], 16);
+          setViewSafely(() => map.setView([selectedSpot.lat, selectedSpot.lng], 16));
         } else {
-          map.panTo([selectedSpot.lat, selectedSpot.lng]);
+          setViewSafely(() => map.panTo([selectedSpot.lat, selectedSpot.lng]));
         }
       }
     }
 
-  }, [mapLoaded, spots, selectedSpot, showTravelRoute, language, isNavigating, isMobile, userLocation, transportMode, userHeading, activeStreetName, isDarkMode, alternativeRoutes, selectedRouteIndex, mapRotationActive]);
+  }, [mapLoaded, spots, selectedSpot, showTravelRoute, language, isNavigating, isMobile, userLocation, transportMode, userHeading, activeStreetName, isDarkMode, alternativeRoutes, selectedRouteIndex, mapRotationActive, autoFollow, getFollowTarget]);
 
   // Keep flat rendering in all modes; 3D perspective causes rendering issues on some mobile browsers.
   const use3DPerspective = false;
@@ -846,10 +886,8 @@ export default function TripPlannerStudio({ prefill }) {
     lastRouteFetchPosRef.current = null;
     lastRouteFetchTimeRef.current = 0;
 
-    // Keep mobile flat to prevent white screen while navigating.
-    if (isMobileDevice) {
-      setMapRotationActive(false);
-    }
+    // Course-up mode uses camera follow + arrow direction, not full map rotation.
+    setMapRotationActive(false);
 
     const osrmProfile = 'driving';
 
