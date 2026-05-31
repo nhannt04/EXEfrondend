@@ -185,23 +185,31 @@ const LeafletMap = ({
 
       // Draw user live blue chevron marker if navigating
       if (isNavigating && userLocation) {
-        const rotationStyle = (userHeading !== null && userHeading !== undefined && !mapRotationActive)
+        const arrowRotationStyle = (userHeading !== null && userHeading !== undefined)
           ? `transform: rotate(${userHeading}deg);`
           : 'transform: rotate(0deg);';
 
         const userPulseHtml = `
           <div class="relative flex flex-col items-center justify-center" style="margin-top: -15px;">
-            <div class="relative flex items-center justify-center h-9 w-9">
-              <div class="absolute h-9 w-9 rounded-full bg-blue-500/30 animate-ping"></div>
-              <div class="h-6.5 w-6.5 rounded-full bg-blue-600 border-2 border-white shadow-xl flex items-center justify-center">
+            <div class="relative flex items-center justify-center h-10 w-10 select-none">
+              
+              <!-- 1. Pulsing wave ring background -->
+              <div class="absolute h-10 w-10 rounded-full bg-blue-500/25 animate-ping"></div>
+
+              <!-- 2. Central glowing blue location dot with white chevron arrow pointing to heading direction -->
+              <div class="absolute h-7.5 w-7.5 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 border-2 border-white shadow-xl flex items-center justify-center relative z-10 transition-transform duration-300" style="${arrowRotationStyle}">
+                <!-- Glowing inner pulse -->
+                <div class="absolute inset-0.5 rounded-full bg-blue-500/10 animate-pulse"></div>
+                
                 <!-- White chevron arrow pointing to heading direction -->
-                <svg class="w-4.5 h-4.5 text-white transition-transform duration-300" style="${rotationStyle}" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4.5 h-4.5 text-white filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
                 </svg>
               </div>
             </div>
+            
             <!-- Google Maps style bottom street tag: White background with blue text -->
-            <div class="mt-1.5 px-3 py-1 bg-white border-2 border-blue-500/35 shadow-lg rounded-full text-[10.5px] font-black text-blue-600 leading-none whitespace-nowrap text-center tracking-wide">
+            <div class="mt-1.5 px-3 py-1 bg-white border-2 border-blue-500/35 shadow-lg rounded-full text-[10.5px] font-black text-blue-600 leading-none whitespace-nowrap text-center tracking-wide relative z-20">
               ${activeStreetName || (language === 'vi' ? 'Đường Tứ Ngân 02' : 'Route')}
             </div>
           </div>
@@ -221,66 +229,30 @@ const LeafletMap = ({
       if (transportMode === 'foot') osrmProfile = 'foot';
       else if (transportMode === 'bike') osrmProfile = 'bicycle';
 
-      // Draw actual street routing path with alternatives and steps
-      if (isNavigating && userLocation && selectedSpot) {
-        // Fetch steps and alternatives to achieve full Google Maps high-fidelity
-        const routingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${userLocation.lng},${userLocation.lat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+      // Draw actual street routing path using primary route from parent state
+      if ((isNavigating || (selectedSpot && !showTravelRoute)) && userLocation && selectedSpot) {
+        if (alternativeRoutes && alternativeRoutes.length > 0) {
+          // Render ONLY the primary optimal route, completely removing all alternative routes
+          const primaryRoute = alternativeRoutes[0];
+          if (primaryRoute && primaryRoute.geometry && primaryRoute.geometry.coordinates) {
+            const routeCoords = primaryRoute.geometry.coordinates.map(coord => [coord[1], coord[0]]);
 
-        fetch(routingUrl)
-          .then(res => res.json())
-          .then(data => {
-            if (data.routes && data.routes.length > 0) {
-              // Send up to parent simulation coordinate lists
-              if (onRoutesFetched) {
-                onRoutesFetched(data.routes);
-              }
-
-              // Render alternative routes if they exist
-              data.routes.forEach((route, idx) => {
-                const routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-
-                if (idx === selectedRouteIndex) {
-                  // Drawing primary selected route
-                  if (polylineRef.current) {
-                    polylineRef.current.remove();
-                  }
-
-                  polylineRef.current = window.L.polyline(routeCoords, {
-                    color: isDarkMode ? '#60A5FA' : '#3B82F6', // Royal Blue
-                    weight: 7,
-                    opacity: 0.95,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    zIndex: 100
-                  }).addTo(map);
-                } else {
-                  // Drawing alternative routes
-                  const altPoly = window.L.polyline(routeCoords, {
-                    color: '#94A3B8', // Slate Gray
-                    weight: 5,
-                    opacity: 0.65,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    dashArray: '4, 8',
-                    zIndex: 50
-                  }).addTo(map);
-
-                  // Let users select this route directly by clicking it
-                  altPoly.on('click', () => {
-                    if (onSelectRoute) onSelectRoute(idx);
-                  });
-
-                  altPolylinesRef.current.push(altPoly);
-                }
-              });
-            } else {
-              drawFallbackNavLine();
+            if (polylineRef.current) {
+              polylineRef.current.remove();
             }
-          })
-          .catch(err => {
-            console.warn("OSRM navigation routing failed, drawing straight line instead:", err);
-            drawFallbackNavLine();
-          });
+
+            polylineRef.current = window.L.polyline(routeCoords, {
+              color: isDarkMode ? '#60A5FA' : '#3B82F6', // Royal Blue
+              weight: 7,
+              opacity: 0.95,
+              lineCap: 'round',
+              lineJoin: 'round',
+              zIndex: 100
+            }).addTo(map);
+          }
+        } else {
+          drawFallbackNavLine();
+        }
       } else if (showTravelRoute && spots.length > 1) {
         // Standard Day sequence routing
         const coordsQuery = spots.map(s => `${s.lng},${s.lat}`).join(';');
@@ -409,21 +381,48 @@ const LeafletMap = ({
         .leaflet-container {
           font-family: inherit !important;
         }
-        .leaflet-tilted {
-          transform: perspective(800px) rotateX(32deg) scale(1.18);
-          transform-origin: bottom center;
+        .leaflet-tilted-wrapper {
+          perspective: 900px;
+          perspective-origin: center center;
+          overflow: hidden;
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+        .leaflet-tilted-content {
+          transform: rotateX(36deg) scale(1.48) translateY(-4%);
+          transform-origin: center center;
           transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+          width: 100%;
+          height: 100%;
         }
         .leaflet-map-rotated {
           transform: rotate(var(--map-rotation, 0deg));
+          transform-origin: center center;
           transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
+        .leaflet-top.leaflet-left {
+          top: 80px !important;
+          left: 10px !important;
+          transition: all 0.3s ease;
+        }
+        .leaflet-tilted-content .leaflet-top.leaflet-left {
+          top: 180px !important;
+        }
       `}</style>
-      <div
-        id={mapContainerId}
-        style={mapRotationStyle}
-        className={`w-full h-full relative z-10 transition-all duration-500 ${isNavigating ? 'leaflet-tilted' : ''} ${mapRotationActive ? 'leaflet-map-rotated' : ''}`}
-      />
+      
+      {/* Tier 1: Outer perspective wrapper */}
+      <div className={isNavigating ? "leaflet-tilted-wrapper" : "w-full h-full relative"}>
+        {/* Tier 2: Middle 3D tilt container */}
+        <div className={`w-full h-full relative ${isNavigating ? 'leaflet-tilted-content' : ''}`}>
+          {/* Tier 3: Map element with rotation and Leaflet mounting */}
+          <div
+            id={mapContainerId}
+            style={mapRotationStyle}
+            className={`w-full h-full relative z-10 ${mapRotationActive ? 'leaflet-map-rotated' : ''}`}
+          />
+        </div>
+      </div>
     </>
   );
 };
@@ -459,12 +458,13 @@ export default function TripPlannerStudio({ prefill }) {
   const watchIdRef = React.useRef(null);
   const prevGpsPosRef = React.useRef(null); // Previous GPS position for heading calc
   const prevGpsTimeRef = React.useRef(null); // Previous GPS timestamp for speed calc
+  const lastRouteFetchPosRef = React.useRef(null); // Last route-fetched GPS position
+  const lastRouteFetchTimeRef = React.useRef(0); // Last route-fetched GPS timestamp
 
   // Advanced Navigation States
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
   const [mapRotationActive, setMapRotationActive] = useState(false);
-  const [speedLimit, setSpeedLimit] = useState(50); // Speed limit in km/h
   const [wsConnected, setWsConnected] = useState(true); // WS realtime status
   const [wsSyncedCount, setWsSyncedCount] = useState(0); // WS sync animation counter
   const [searchQuery, setSearchQuery] = useState('');
@@ -631,16 +631,8 @@ export default function TripPlannerStudio({ prefill }) {
   }, []);
 
   const speakInstruction = (text) => {
-    if (!speechEnabled || !window.speechSynthesis) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === 'vi' ? 'vi-VN' : 'en-US';
-      utterance.rate = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn("Speech synthesis error:", e);
-    }
+    // Voice instructions removed entirely by user request
+    return;
   };
 
   const calculateHeading = (lat1, lon1, lat2, lon2) => {
@@ -669,10 +661,10 @@ export default function TripPlannerStudio({ prefill }) {
     setTurnAlert('');
     prevGpsPosRef.current = null;
     prevGpsTimeRef.current = null;
+    lastRouteFetchPosRef.current = null;
+    lastRouteFetchTimeRef.current = 0;
 
-    let osrmProfile = 'driving';
-    if (transportMode === 'foot') osrmProfile = 'foot';
-    else if (transportMode === 'bike') osrmProfile = 'bicycle';
+    const osrmProfile = 'driving';
 
     // Step 1: Get accurate initial GPS position
     navigator.geolocation.getCurrentPosition(
@@ -696,12 +688,27 @@ export default function TripPlannerStudio({ prefill }) {
               setSimCoords(coords); // For polyline drawing only
               setSimIndex(0);
 
+              // Calculate initial heading from first point to second point of the OSRM route for instant 3rd person perspective alignment
+              if (coords.length > 1) {
+                const initialHeading = calculateHeading(coords[0].lat, coords[0].lng, coords[1].lat, coords[1].lng);
+                setUserHeading(initialHeading);
+              }
+
               const steps = primaryRoute.legs?.[0]?.steps || [];
               setActiveManeuvers(steps);
               setActiveStepIndex(0);
 
               const totalDist = parseFloat((primaryRoute.distance / 1000).toFixed(1));
-              const totalDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+              let totalDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+              if (transportMode === 'motorbike') {
+                totalDur = Math.max(1, Math.round((primaryRoute.duration * 0.8) / 60));
+              } else if (transportMode === 'car') {
+                totalDur = Math.max(1, Math.round((primaryRoute.duration * 1.25) / 60));
+              } else if (transportMode === 'bike') {
+                totalDur = Math.max(1, Math.round((totalDist / 12) * 60));
+              } else if (transportMode === 'foot') {
+                totalDur = Math.max(1, Math.round((totalDist / 4) * 60));
+              }
               setSimDistance(totalDist);
               setSimDuration(totalDur);
 
@@ -735,52 +742,117 @@ export default function TripPlannerStudio({ prefill }) {
 
             setUserLocation(newPos);
 
-            // Real speed from GPS (m/s → km/h)
+            // Real speed from GPS (m/s → km/h) with drift filter
             if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed >= 0) {
               setUserSpeed(Math.round(pos.coords.speed * 3.6));
             } else if (prevGpsPosRef.current && prevGpsTimeRef.current) {
               const dt = (now - prevGpsTimeRef.current) / 1000;
               if (dt > 0.5) {
                 const dKm = getDistanceKm(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng);
-                setUserSpeed(Math.min(Math.round((dKm / dt) * 3600), 200));
+                // Filter out small jitter movements (< 3 meters) to keep speed at 0 when stationary
+                if (dKm > 0.003) {
+                  setUserSpeed(Math.min(Math.round((dKm / dt) * 3600), 200));
+                } else {
+                  setUserSpeed(0);
+                }
+              }
+            } else {
+              setUserSpeed(0);
+            }
+
+            // 2. Real road distance and duration calculation via OSRM with Throttled live-rerouting (every 15m or 8 seconds)
+            const metersMoved = lastRouteFetchPosRef.current 
+              ? getDistanceKm(lastRouteFetchPosRef.current.lat, lastRouteFetchPosRef.current.lng, newLat, newLng) * 1000
+              : 999;
+            const timeElapsedMs = now - lastRouteFetchTimeRef.current;
+
+            if (metersMoved > 15 || timeElapsedMs > 8000) {
+              lastRouteFetchPosRef.current = newPos;
+              lastRouteFetchTimeRef.current = now;
+
+              const osrmProfile = 'driving';
+
+              const liveRoutingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${newLng},${newLat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+
+              fetch(liveRoutingUrl)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.routes && data.routes.length > 0) {
+                    setAlternativeRoutes(data.routes);
+                    const primaryRoute = data.routes[selectedRouteIndex] || data.routes[0];
+                    const coords = primaryRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+                    setSimCoords(coords);
+
+                    // Update real-time road distance and duration based on transport mode
+                    const liveDist = parseFloat((primaryRoute.distance / 1000).toFixed(1));
+                    let liveDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+                    
+                    if (transportMode === 'motorbike') {
+                      liveDur = Math.max(1, Math.round((primaryRoute.duration * 0.8) / 60));
+                    } else if (transportMode === 'car') {
+                      liveDur = Math.max(1, Math.round((primaryRoute.duration * 1.25) / 60));
+                    } else if (transportMode === 'bike') {
+                      liveDur = Math.max(1, Math.round((liveDist / 12) * 60));
+                    } else if (transportMode === 'foot') {
+                      liveDur = Math.max(1, Math.round((liveDist / 4) * 60));
+                    }
+                    
+                    setSimDistance(liveDist);
+                    setSimDuration(liveDur);
+
+                    const steps = primaryRoute.legs?.[0]?.steps || [];
+                    setActiveManeuvers(steps);
+
+                    // Find closest upcoming step index
+                    let nextStepIdx = 0;
+                    let minStepDist = 999999;
+                    steps.forEach((step, idx) => {
+                      if (step.location && step.location.length >= 2) {
+                        const distToStep = getDistanceKm(newLat, newLng, step.location[1], step.location[0]) * 1000;
+                        if (distToStep < minStepDist) {
+                          minStepDist = distToStep;
+                          nextStepIdx = idx;
+                        }
+                      }
+                    });
+                    
+                    if (minStepDist < 40 && nextStepIdx < steps.length - 1) {
+                      nextStepIdx += 1;
+                    }
+                    setActiveStepIndex(nextStepIdx);
+
+                    if (steps[nextStepIdx] && steps[nextStepIdx].name) {
+                      setSimActiveStreet(steps[nextStepIdx].name);
+                    }
+
+                    // Dynamic Chevron Arrow angle pointing precisely towards the next OSRM waypoint coordinate
+                    const nextStep = steps[nextStepIdx];
+                    if (nextStep && nextStep.location && nextStep.location.length >= 2) {
+                      const targetHeading = calculateHeading(newLat, newLng, nextStep.location[1], nextStep.location[0]);
+                      setUserHeading(targetHeading);
+                    }
+                  }
+                })
+                .catch(err => console.warn("Live OSRM rerouting failed:", err));
+            } else {
+              // Static fallbacks for chevron arrow heading if we haven't moved far enough to reroute
+              const nextStep = activeManeuvers?.[activeStepIndex];
+              if (nextStep && nextStep.location && nextStep.location.length >= 2) {
+                const targetHeading = calculateHeading(newLat, newLng, nextStep.location[1], nextStep.location[0]);
+                setUserHeading(targetHeading);
               }
             }
 
-            // Real heading from GPS
-            if (pos.coords.heading !== null && pos.coords.heading !== undefined && !isNaN(pos.coords.heading)) {
-              setUserHeading(pos.coords.heading);
-            } else if (prevGpsPosRef.current) {
-              const dist = getDistanceKm(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng);
-              if (dist > 0.003) {
-                setUserHeading(calculateHeading(prevGpsPosRef.current.lat, prevGpsPosRef.current.lng, newLat, newLng));
-              }
-            }
-
-            // Remaining distance to destination
-            const remainDist = getDistanceKm(newLat, newLng, selectedSpot.lat, selectedSpot.lng);
-            setSimDistance(parseFloat(remainDist.toFixed(1)));
-
-            // Remaining duration estimate
-            let baseSpeed = 40;
-            if (transportMode === 'foot') baseSpeed = 5;
-            else if (transportMode === 'bike') baseSpeed = 15;
-            else if (transportMode === 'car') baseSpeed = 50;
-            setSimDuration(Math.max(1, Math.round((remainDist / baseSpeed) * 60)));
-
-            // Speed limit
-            const limit = transportMode === 'foot' ? 10 : transportMode === 'bike' ? 25 : transportMode === 'car' ? 60 : 50;
-            setSpeedLimit(limit);
-
-            // WS sync counter
+            // 3. WS sync counter
             if (wsConnected) {
               setWsSyncedCount(prev => prev + 1);
             }
 
-            // Arrival check (within 30m)
-            if (remainDist < 0.03) {
+            // 4. Arrival check (within 30m)
+            const finalDirectDist = getDistanceKm(newLat, newLng, selectedSpot.lat, selectedSpot.lng);
+            if (finalDirectDist < 0.03) {
               handleStopNavigation();
               setTimeout(() => {
-                speakInstruction(language === 'vi' ? "Bạn đã đến nơi an toàn!" : "You have arrived!");
                 alert(language === 'vi' ? "🎉 Bạn đã đến địa điểm an toàn!" : "🎉 You have arrived at your destination!");
               }, 100);
             }
@@ -812,6 +884,7 @@ export default function TripPlannerStudio({ prefill }) {
     setActiveStepIndex(0);
     setAlternativeRoutes([]);
     setSelectedRouteIndex(0);
+    setMapRotationActive(false); // Automatically disable map rotation when stopping navigation
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -917,6 +990,135 @@ export default function TripPlannerStudio({ prefill }) {
     }
 
   }, [isNavigating, userLocation, activeManeuvers, activeStepIndex, transportMode, language, userSpeed]);
+
+  // Handle transport mode changes during active navigation
+  useEffect(() => {
+    if (!isNavigating || !selectedSpot || !userLocation) return;
+    
+    const osrmProfile = 'driving';
+
+    const routingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${userLocation.lng},${userLocation.lat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+
+    fetch(routingUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (data.routes && data.routes.length > 0) {
+          setAlternativeRoutes(data.routes);
+          setSelectedRouteIndex(0);
+
+          const primaryRoute = data.routes[0];
+          const coords = primaryRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+          setSimCoords(coords);
+
+          const liveDist = parseFloat((primaryRoute.distance / 1000).toFixed(1));
+          let totalDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+          if (transportMode === 'motorbike') {
+            totalDur = Math.max(1, Math.round((primaryRoute.duration * 0.8) / 60));
+          } else if (transportMode === 'car') {
+            totalDur = Math.max(1, Math.round((primaryRoute.duration * 1.25) / 60));
+          } else if (transportMode === 'bike') {
+            totalDur = Math.max(1, Math.round((liveDist / 12) * 60));
+          } else if (transportMode === 'foot') {
+            totalDur = Math.max(1, Math.round((liveDist / 4) * 60));
+          }
+          
+          setSimDistance(liveDist);
+          setSimDuration(totalDur);
+
+          const steps = primaryRoute.legs?.[0]?.steps || [];
+          setActiveManeuvers(steps);
+          setActiveStepIndex(0);
+          
+          if (steps.length > 0 && steps[0].name) {
+            setSimActiveStreet(steps[0].name);
+          }
+        }
+      })
+      .catch(err => console.warn("Failed to update route on transport mode change:", err));
+  }, [transportMode, isNavigating, selectedSpot]);
+
+  // Handle alternative route selection changes
+  useEffect(() => {
+    if (alternativeRoutes && alternativeRoutes[selectedRouteIndex]) {
+      const activeRoute = alternativeRoutes[selectedRouteIndex];
+      const liveDist = parseFloat((activeRoute.distance / 1000).toFixed(1));
+      let liveDur = Math.max(1, Math.round(activeRoute.duration / 60));
+      if (transportMode === 'motorbike') {
+        liveDur = Math.max(1, Math.round((activeRoute.duration * 0.8) / 60));
+      } else if (transportMode === 'car') {
+        liveDur = Math.max(1, Math.round((activeRoute.duration * 1.25) / 60));
+      } else if (transportMode === 'bike') {
+        liveDur = Math.max(1, Math.round((liveDist / 12) * 60));
+      } else if (transportMode === 'foot') {
+        liveDur = Math.max(1, Math.round((liveDist / 4) * 60));
+      }
+      setSimDistance(liveDist);
+      setSimDuration(liveDur);
+
+      const coords = activeRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+      setSimCoords(coords);
+
+      const steps = activeRoute.legs?.[0]?.steps || [];
+      setActiveManeuvers(steps);
+      setActiveStepIndex(0);
+      if (steps.length > 0 && steps[0].name) {
+        setSimActiveStreet(steps[0].name);
+      }
+    }
+  }, [selectedRouteIndex, alternativeRoutes, transportMode]);
+
+  // Background fetch of OSRM route when a spot is selected (even when not navigating)
+  // to ensure distance/duration are always actual road metrics and never jump or differ!
+  useEffect(() => {
+    if (!selectedSpot || !itinerary) return;
+
+    const originLat = userLocation.lat;
+    const originLng = userLocation.lng;
+
+    const osrmProfile = 'driving';
+
+    const routingUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${originLng},${originLat};${selectedSpot.lng},${selectedSpot.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+
+    fetch(routingUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (data.routes && data.routes.length > 0) {
+          setAlternativeRoutes(data.routes);
+          setSelectedRouteIndex(0);
+
+          const primaryRoute = data.routes[0];
+          const coords = primaryRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+          setSimCoords(coords);
+
+          const liveDist = parseFloat((primaryRoute.distance / 1000).toFixed(1));
+          let totalDur = Math.max(1, Math.round(primaryRoute.duration / 60));
+          if (transportMode === 'motorbike') {
+            totalDur = Math.max(1, Math.round((primaryRoute.duration * 0.8) / 60));
+          } else if (transportMode === 'car') {
+            totalDur = Math.max(1, Math.round((primaryRoute.duration * 1.25) / 60));
+          } else if (transportMode === 'bike') {
+            totalDur = Math.max(1, Math.round((liveDist / 12) * 60));
+          } else if (transportMode === 'foot') {
+            totalDur = Math.max(1, Math.round((liveDist / 4) * 60));
+          }
+          
+          setSimDistance(liveDist);
+          setSimDuration(totalDur);
+
+          const steps = primaryRoute.legs?.[0]?.steps || [];
+          setActiveManeuvers(steps);
+          setActiveStepIndex(0);
+
+          if (steps.length > 0 && steps[0].name) {
+            setSimActiveStreet(steps[0].name);
+          }
+        }
+      })
+      .catch(err => {
+        console.warn("Background OSRM route fetch failed:", err);
+        setAlternativeRoutes([]);
+      });
+  }, [selectedSpot, userLocation, isFarAway, transportMode, itinerary, activeDay]);
 
   // Geolocation watch cleanup on unmount
   useEffect(() => {
@@ -1245,16 +1447,16 @@ export default function TripPlannerStudio({ prefill }) {
   const getRouteMetrics = () => {
     if (!itinerary || !selectedSpot) return { distance: 0, duration: 0 };
 
-    const activeAcc = itinerary[activeDay - 1].accommodation;
-    const originLat = isFarAway ? activeAcc.lat : userLocation.lat;
-    const originLng = isFarAway ? activeAcc.lng : userLocation.lng;
+    const originLat = userLocation.lat;
+    const originLng = userLocation.lng;
 
     const distance = getDistanceKm(originLat, originLng, selectedSpot.lat, selectedSpot.lng);
 
-    let speed = 40;
+    let speed = 35; // Default for motorbike in urban areas
     if (transportMode === 'foot') speed = 5;
-    if (transportMode === 'bike') speed = 15;
-    if (transportMode === 'car') speed = 45;
+    else if (transportMode === 'bike') speed = 12;
+    else if (transportMode === 'motorbike') speed = 35;
+    else if (transportMode === 'car') speed = 45;
 
     const rawHours = distance / speed;
     const rawMinutes = Math.round(rawHours * 60);
@@ -1268,17 +1470,27 @@ export default function TripPlannerStudio({ prefill }) {
   const routeMetrics = getRouteMetrics();
 
   // Dynamic stats synced with simulation or multi-route alternatives
-  const activeDistance = isNavigating
-    ? simDistance
-    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex]
-      ? parseFloat((alternativeRoutes[selectedRouteIndex].distance / 1000).toFixed(1))
-      : routeMetrics.distance);
+  const activeDistance = (alternativeRoutes && alternativeRoutes[selectedRouteIndex])
+    ? parseFloat((alternativeRoutes[selectedRouteIndex].distance / 1000).toFixed(1))
+    : (isNavigating ? simDistance : routeMetrics.distance);
 
-  const activeDuration = isNavigating
-    ? simDuration
-    : (alternativeRoutes && alternativeRoutes[selectedRouteIndex]
-      ? Math.max(1, Math.round(alternativeRoutes[selectedRouteIndex].duration / 60))
-      : routeMetrics.duration);
+  const activeDuration = (alternativeRoutes && alternativeRoutes[selectedRouteIndex])
+    ? (() => {
+        const activeRoute = alternativeRoutes[selectedRouteIndex];
+        const distKm = parseFloat((activeRoute.distance / 1000).toFixed(1));
+        let dur = Math.max(1, Math.round(activeRoute.duration / 60));
+        if (transportMode === 'motorbike') {
+          dur = Math.max(1, Math.round((activeRoute.duration * 0.8) / 60));
+        } else if (transportMode === 'car') {
+          dur = Math.max(1, Math.round((activeRoute.duration * 1.25) / 60));
+        } else if (transportMode === 'bike') {
+          dur = Math.max(1, Math.round((distKm / 12) * 60));
+        } else if (transportMode === 'foot') {
+          dur = Math.max(1, Math.round((distKm / 4) * 60));
+        }
+        return dur;
+      })()
+    : (isNavigating ? simDuration : routeMetrics.duration);
 
   const renderItineraryContent = () => {
     if (!itinerary) return null;
@@ -2272,7 +2484,7 @@ export default function TripPlannerStudio({ prefill }) {
                   </div>
                 )}
 
-                {/* --- FLOATING NAVIGATION HUD OVERLAYS (Visible only in simulation mode) --- */}
+                {/* --- FLOATING NAVIGATION HUD OVERLAYS (Visible during active navigation) --- */}
                 {isNavigating && (
                   <>
                     {/* Top Green Turn Steps HUD Banner */}
@@ -2372,27 +2584,25 @@ export default function TripPlannerStudio({ prefill }) {
                       </div>
                     )}
 
-                    {/* Floating Digital Speedometer and Traffic Sign Overlay */}
-                    <div className="absolute left-4 bottom-4 z-[40] flex items-end gap-3 select-none">
-                      {/* Speedometer card */}
-                      <div className="bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex flex-col items-center text-center">
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Tốc Độ</span>
+                    {/* Floating Digital Speedometer - Click to recenter map to current location */}
+                    <div className="absolute left-4 bottom-4 z-[40] select-none">
+                      {/* Speedometer card button */}
+                      <button
+                        onClick={() => {
+                          const centerEvent = new CustomEvent('recenter-map');
+                          window.dispatchEvent(centerEvent);
+                        }}
+                        className="bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex flex-col items-center text-center cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-300 hover:border-cyan-500/30 text-white"
+                        title={language === 'vi' ? 'Định vị lại vị trí hiện tại' : 'Recenter Map'}
+                      >
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
+                          {language === 'vi' ? 'TỐC ĐỘ' : 'SPEED'}
+                        </span>
                         <div className="flex items-baseline gap-0.5">
                           <span className="text-3xl font-black font-outfit text-white tracking-tighter leading-none animate-pulse">{userSpeed}</span>
                           <span className="text-[9px] font-bold text-slate-400 font-outfit leading-none">km/h</span>
                         </div>
-                        {userSpeed > speedLimit && (
-                          <span className="mt-1 text-[8px] bg-red-650 text-white font-extrabold px-1.5 py-0.5 rounded uppercase animate-pulse leading-none">Quá Tốc Độ!</span>
-                        )}
-                      </div>
-
-                      {/* Red-border limit traffic sign */}
-                      <div className="w-12 h-12 rounded-full border-[4px] border-red-650 bg-white shadow-lg flex items-center justify-center flex-shrink-0 animate-pulse-gold">
-                        <div className="flex flex-col items-center justify-center">
-                          <span className="text-[15px] font-black text-slate-900 font-outfit leading-none">{speedLimit}</span>
-                          <span className="text-[6px] font-bold text-slate-500 uppercase leading-none mt-0.5">LIMIT</span>
-                        </div>
-                      </div>
+                      </button>
                     </div>
 
                     {/* Bottom Charcoal Navigation Pull-Up HUD Sheet */}
@@ -2441,47 +2651,7 @@ export default function TripPlannerStudio({ prefill }) {
                   </>
                 )}
 
-                {/* Floating Alternative Routes Picker (Visible only if alternatives fetched & not navigating) */}
-                {alternativeRoutes.length > 1 && !isNavigating && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[40] w-[calc(100%-2rem)] max-w-md animate-slide-in-up">
-                    <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-3xl shadow-xl border border-gray-200/50 dark:border-slate-800 flex flex-col gap-2.5">
-                      <span className="text-[9px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-widest text-center">
-                        {language === 'vi' ? 'Tuyến đường thay thế (Nhấp chọn trực tiếp)' : 'Alternative Routes (Click to select)'}
-                      </span>
-                      <div className="flex gap-2">
-                        {alternativeRoutes.map((route, rIdx) => {
-                          const rDist = parseFloat((route.distance / 1000).toFixed(1));
-                          const rDur = Math.max(1, Math.round(route.duration / 60));
-                          const isSelected = rIdx === selectedRouteIndex;
-                          return (
-                            <button
-                              key={`route-opt-${rIdx}`}
-                              onClick={() => setSelectedRouteIndex(rIdx)}
-                              className={`flex-1 text-left p-2.5 rounded-2xl border transition-all duration-300 flex flex-col justify-center border-none cursor-pointer ${isSelected
-                                ? 'bg-heritage-amber/10 dark:bg-heritage-gold/10 border border-heritage-amber dark:border-heritage-gold ring-1 ring-heritage-amber/20 scale-[1.01]'
-                                : 'bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-750'}`}
-                            >
-                              <div className="flex justify-between items-center w-full">
-                                <span className="text-[10px] font-black text-gray-850 dark:text-slate-350">
-                                  {rIdx === 0 ? (language === 'vi' ? 'Tuyến tối ưu' : 'Optimal Path') : `${language === 'vi' ? 'Tuyến' : 'Route'} ${rIdx + 1}`}
-                                </span>
-                                {isSelected && (
-                                  <span className="w-2 h-2 rounded-full bg-heritage-amber dark:bg-heritage-gold animate-pulse" />
-                                )}
-                              </div>
-                              <div className="flex items-baseline gap-1 mt-1">
-                                <span className="text-sm font-black text-gray-900 dark:text-slate-100">{rDur}</span>
-                                <span className="text-[9px] font-extrabold text-gray-500 dark:text-slate-400 uppercase">{language === 'vi' ? 'phút' : 'min'}</span>
-                                <span className="text-gray-300 dark:text-slate-650 mx-1 text-xs">|</span>
-                                <span className="text-xs font-bold text-gray-600 dark:text-slate-400">{rDist} km</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Alternative Routes Picker removed by user request */}
 
 
 
@@ -2548,7 +2718,7 @@ export default function TripPlannerStudio({ prefill }) {
                       className="w-full py-3.5 bg-gradient-to-tr from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs tracking-wider rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
                     >
                       <Navigation className="w-4 h-4 animate-pulse" />
-                      {language === 'vi' ? 'BẮT ĐẦU BẢN ĐỒ' : 'START SIM NAVIGATION'}
+                      {language === 'vi' ? 'BẮT ĐẦU DẪN ĐƯỜNG' : 'START NAVIGATION'}
                     </button>
                   </div>
 
