@@ -1390,6 +1390,14 @@ export default function TripPlannerStudio({ prefill }) {
 
   const mapBackendSpotToFrontend = (backendSpot) => {
     if (!backendSpot) return null;
+    // Extract first image from images array or use fallback
+    let imageUrl = "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=500&q=80";
+    if (backendSpot.images && Array.isArray(backendSpot.images) && backendSpot.images.length > 0) {
+      imageUrl = backendSpot.images[0].imageUrl || imageUrl;
+    } else if (backendSpot.imageUrl) {
+      imageUrl = backendSpot.imageUrl;
+    }
+
     return {
       id: backendSpot.id,
       cost: backendSpot.averageCost || 0,
@@ -1403,7 +1411,8 @@ export default function TripPlannerStudio({ prefill }) {
         vi: backendSpot.descriptionVi || "Một địa điểm tuyệt vời được gợi ý.",
         en: backendSpot.descriptionEn || "A wonderful recommended spot."
       },
-      img: backendSpot.imageUrl || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=500&q=80",
+      img: imageUrl,
+      images: backendSpot.images || [], // Keep original images array for potential future use
       lat: backendSpot.latitude,
       lng: backendSpot.longitude,
       category: backendSpot.category
@@ -1960,7 +1969,22 @@ export default function TripPlannerStudio({ prefill }) {
                         <span>{label}</span>
                         <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
                       </div>
-                      <div className="flex justify-between items-start gap-2 mt-1">
+
+                      {/* Spot Image */}
+                      {item.img && (
+                        <div className="relative mt-2 mb-2 rounded-lg overflow-hidden border border-gray-150">
+                          <img
+                            src={item.img}
+                            alt={item.name?.[language] || 'Spot'}
+                            className="w-full h-24 object-cover hover:scale-105 transition-transform duration-300"
+                          />
+                          {item.images && item.images.length > 0 && (
+                            <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {item.images.length}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-start gap-2">
                         <h4 className={`font-outfit text-sm font-bold transition-colors ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
                           }`}>
                           {item.name?.[language] || 'Địa điểm tham quan'}
@@ -2093,67 +2117,81 @@ export default function TripPlannerStudio({ prefill }) {
                 />
               </div>
 
-              {/* Active Target Info bar */}
-              {selectedSpot && (
-                <div className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-2 relative z-10">
-                  <span className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">{t('mapRouteTo')}:</span>
-                  <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
-                    <Navigation className="w-3.5 h-3.5 text-ricefield-green animate-pulse" />
-                    {selectedSpot.name[language]}
-                  </span>
+               {/* Active Target Info bar */}
+               {selectedSpot && (
+                 <div className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-2 relative z-10">
+                   {/* Spot Image */}
+                   {selectedSpot.img && (
+                     <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                       <img
+                         src={selectedSpot.img}
+                         alt={selectedSpot.name[language]}
+                         className="w-full h-32 object-cover"
+                       />
+                       {selectedSpot.images && selectedSpot.images.length > 0 && (
+                         <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {selectedSpot.images.length}</span>
+                       )}
+                     </div>
+                   )}
 
-                  {/* Dynamic travel distances & durations */}
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDistance')}</span>
-                      <span className="text-sm font-extrabold text-heritage-amber">{activeDistance} km</span>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDuration')}</span>
-                      <span className="text-sm font-extrabold text-ricefield-green">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
-                    </div>
-                  </div>
+                   <span className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">{t('mapRouteTo')}:</span>
+                   <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                     <Navigation className="w-3.5 h-3.5 text-ricefield-green animate-pulse" />
+                     {selectedSpot.name[language]}
+                   </span>
 
-                  {/* Transport mode selectors */}
-                  <div className="flex gap-1.5 justify-between items-center mt-2 border-t border-gray-150 pt-2.5">
-                    <span className="text-[9px] text-gray-400 uppercase font-bold">{language === 'vi' ? 'Phương tiện' : 'Transport'}:</span>
-                    <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-                      {[
-                        { mode: 'foot', icon: Footprints, label: t('mapFoot') },
-                        { mode: 'bike', icon: Bike, label: t('mapBike') },
-                        { mode: 'motorbike', icon: Compass, label: t('mapMotorbike') },
-                        { mode: 'car', icon: Car, label: t('mapCar') }
-                      ].map((item) => {
-                        const ActiveIcon = item.icon;
-                        return (
-                          <button
-                            key={item.mode}
-                            onClick={() => setTransportMode(item.mode)}
-                            title={item.label}
-                            className={`p-1.5 rounded-md cursor-pointer transition-colors border-none ${transportMode === item.mode
-                              ? 'bg-white text-heritage-amber shadow-sm font-bold scale-102'
-                              : 'text-gray-400 hover:text-gray-600 bg-transparent'
-                              }`}
-                          >
-                            <ActiveIcon className="w-3.5 h-3.5" />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                   {/* Dynamic travel distances & durations */}
+                   <div className="grid grid-cols-2 gap-2 mt-1">
+                     <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
+                       <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDistance')}</span>
+                       <span className="text-sm font-extrabold text-heritage-amber">{activeDistance} km</span>
+                     </div>
+                     <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
+                       <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDuration')}</span>
+                       <span className="text-sm font-extrabold text-ricefield-green">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
+                     </div>
+                   </div>
 
-                  {/* Live Navigation Button */}
-                  <button
-                    onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
-                    className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
-                      }`}
-                  >
-                    <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
-                    {isNavigating ? t('mapStopNav') : t('mapStartNav')}
-                  </button>
+                   {/* Transport mode selectors */}
+                   <div className="flex gap-1.5 justify-between items-center mt-2 border-t border-gray-150 pt-2.5">
+                     <span className="text-[9px] text-gray-400 uppercase font-bold">{language === 'vi' ? 'Phương tiện' : 'Transport'}:</span>
+                     <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+                       {[
+                         { mode: 'foot', icon: Footprints, label: t('mapFoot') },
+                         { mode: 'bike', icon: Bike, label: t('mapBike') },
+                         { mode: 'motorbike', icon: Compass, label: t('mapMotorbike') },
+                         { mode: 'car', icon: Car, label: t('mapCar') }
+                       ].map((item) => {
+                         const ActiveIcon = item.icon;
+                         return (
+                           <button
+                             key={item.mode}
+                             onClick={() => setTransportMode(item.mode)}
+                             title={item.label}
+                             className={`p-1.5 rounded-md cursor-pointer transition-colors border-none ${transportMode === item.mode
+                               ? 'bg-white text-heritage-amber shadow-sm font-bold scale-102'
+                               : 'text-gray-400 hover:text-gray-600 bg-transparent'
+                               }`}
+                           >
+                             <ActiveIcon className="w-3.5 h-3.5" />
+                           </button>
+                         );
+                       })}
+                     </div>
+                   </div>
 
-                </div>
-              )}
+                   {/* Live Navigation Button */}
+                   <button
+                     onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
+                     className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
+                       }`}
+                   >
+                     <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
+                     {isNavigating ? t('mapStopNav') : t('mapStartNav')}
+                   </button>
+
+                 </div>
+               )}
             </div>
 
             {/* Financial analysis - Apple Shimmer */}
