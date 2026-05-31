@@ -133,8 +133,8 @@ const LeafletMap = ({
   }, [userLocation, userHeading, isMobile, isNavigating, getFollowTarget]);
 
   // Handle map rotation styles dynamically via CSS Variables.
-  // Keep heading-up active on mobile navigation too, but stay in flat 2D mode (no 3D tilt).
-  const headingUpActive = (isNavigating && isMobile && userHeading !== null) || (mapRotationActive && userHeading !== null);
+  // Mobile-safe mode: keep map flat on phones to avoid white-tile rendering issues.
+  const headingUpActive = !isMobile && mapRotationActive && userHeading !== null;
   const mapRotationStyle = headingUpActive
     ? { '--map-rotation': `${-userHeading}deg` }
     : { '--map-rotation': '0deg' };
@@ -846,9 +846,9 @@ export default function TripPlannerStudio({ prefill }) {
     lastRouteFetchPosRef.current = null;
     lastRouteFetchTimeRef.current = 0;
 
-    // Enable heading-up on mobile navigation while keeping 2D rendering.
+    // Keep mobile flat to prevent white screen while navigating.
     if (isMobileDevice) {
-      setMapRotationActive(true);
+      setMapRotationActive(false);
     }
 
     const osrmProfile = 'driving';
