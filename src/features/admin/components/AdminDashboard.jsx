@@ -4,14 +4,14 @@ import {
   Trash2, Plus, CheckCircle, Flame, UserCheck, X, Activity, Edit3, Send, AlertTriangle
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
-import spotService from '../../../services/spotService';
-import diaryService from '../../../services/diaryService';
-import expertService from '../../../services/expertService';
-import dishService from '../../../services/dishService';
-import cafeService from '../../../services/cafeService';
-import stayService from '../../../services/stayService';
-import entertainmentService from '../../../services/entertainmentService';
-import rentalService from '../../../services/rentalService';
+import spotService from '../../../services/spotService.js';
+import diaryService from '../../../services/diaryService.js';
+import expertService from '../../../services/expertService.js';
+import dishService from '../../../services/dishService.js';
+import cafeService from '../../../services/cafeService.js';
+import stayService from '../../../services/stayService.js';
+import entertainmentService from '../../../services/entertainmentService.js';
+import rentalService from '../../../services/rentalService.js';
 
 
 
