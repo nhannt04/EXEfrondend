@@ -36,6 +36,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const [radarRadius, setRadarRadius] = useState(5);
   const [scanning, setScanning] = useState(false);
   const [radarResults, setRadarResults] = useState([]);
+  const [radarError, setRadarError] = useState(null); // null | 'timeout' | 'error'
   const [geolocating, setGeolocating] = useState(false);
 
   // User Real Location from Geolocation API (fallback to Hoi An if not available)
@@ -139,14 +140,17 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const performRadarScan = async (lat, lng) => {
     setScanning(true);
     setRadarResults([]);
+    setRadarError(null);
     try {
       const response = await spotService.getNearbySpots(lat, lng, radarRadius);
       if (response && response.success) {
         setRadarResults(response.data);
       }
     } catch (err) {
-      console.error("Radar scan error:", err);
-      alert(language === 'vi' ? "Lỗi khi kết nối với Radar GPS!" : "Error connecting to GPS Radar!");
+      console.warn("Radar scan error:", err);
+      // Detect timeout vs other errors — show inline friendly messages instead of blocking alert()
+      const isTimeout = err?.code === 'ECONNABORTED' || (err?.message || '').toLowerCase().includes('timeout');
+      setRadarError(isTimeout ? 'timeout' : 'error');
     } finally {
       setScanning(false);
     }
@@ -375,6 +379,28 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               <div className="w-full h-48 border border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-3 bg-gray-50/50 animate-pulse">
                 <div className="w-10 h-10 border-4 border-heritage-amber border-t-transparent rounded-full animate-spin" />
                 <span className="text-xs text-gray-500 font-bold">{language === 'vi' ? 'Đang gửi sóng định vị GPS...' : 'Emitting GPS radar signal...'}</span>
+              </div>
+            ) : radarError ? (
+              <div className="w-full h-48 border border-dashed border-amber-200 bg-amber-50/40 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6 animate-fade-in">
+                <div className="p-2.5 bg-amber-100 border border-amber-200 rounded-full">
+                  <Compass className="w-6 h-6 text-amber-500" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold text-amber-700">
+                    {radarError === 'timeout'
+                      ? (language === 'vi' ? '⏱ Server đang khởi động, vui lòng thử lại sau ít giây!' : '⏱ Server is warming up, please retry in a moment!')
+                      : (language === 'vi' ? '⚠️ Không thể kết nối tới máy chủ GPS Radar.' : '⚠️ Could not connect to GPS Radar server.')}
+                  </span>
+                  <span className="text-[10.5px] text-amber-600/80 max-w-xs leading-normal">
+                    {language === 'vi' ? 'Máy chủ backend có thể đang khởi động (cold start). Chờ 10–30 giây rồi thử lại.' : 'The backend server may be starting up (cold start). Wait 10–30 seconds and try again.'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleRadarScan}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-extrabold rounded-xl border-none cursor-pointer transition-colors shadow-sm"
+                >
+                  {language === 'vi' ? '↻ Thử lại' : '↻ Retry'}
+                </button>
               </div>
             ) : radarResults.length === 0 ? (
               <div className="w-full h-48 border border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-center p-6 bg-gray-50/50">

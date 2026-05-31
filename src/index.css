@@ -10,6 +10,8 @@ body {
   background-color: #FAF9F5;
   color: #374151; /* Dark slate text */
   overflow-x: hidden;
+  /* Smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -34,16 +36,30 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glassmorphism custom classes - LIGHT premium style */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(12px); /* iOS Safari */
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(217, 119, 6, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.06);
+  /* Force GPU compositing layer to prevent bleed-through on mobile */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .glass-panel-light {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Hide scrollbar but keep scroll functionality - for horizontal swipe sliders */
+.scrollbar-hide {
+  -ms-overflow-style: none;   /* IE and Edge */
+  scrollbar-width: none;       /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
 }
 
 /* Custom micro-animations */

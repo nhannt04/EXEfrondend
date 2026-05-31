@@ -47,10 +47,12 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-dark-border px-6 py-3.5 flex items-center justify-between transition-all duration-300 ${scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-md shadow-black/5'
-          : 'glass-panel'
-        }`}
+      className={`sticky top-0 z-50 w-full border-b border-dark-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/98 backdrop-blur-md shadow-md shadow-black/5'
+          : 'bg-white/90 backdrop-blur-sm border-b border-gray-100/80'
+      }`}
+      style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}
     >
       {/* Logo */}
       <div
@@ -180,7 +182,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
       {/* Mobile Navigation Dropdown */}
       {mobileOpen && (
-        <div className="absolute top-full left-0 right-0 md:hidden bg-white/98 backdrop-blur-xl border-b border-gray-200 shadow-xl animate-fade-in-up p-4 flex flex-col gap-2 z-50">
+        <div className="absolute top-full left-0 right-0 md:hidden bg-white border-b border-gray-200 shadow-xl animate-fade-in-up p-4 flex flex-col gap-2 z-50">
           {navItems.map(({ id, label, icon: Icon }) => (
             <button
               key={id}

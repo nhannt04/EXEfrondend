@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Star, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, Maximize2 } from 'lucide-react';
+import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Star, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import tripService from '../../../services/tripService';
@@ -61,6 +61,7 @@ const LeafletMap = ({
   showTravelRoute,
   language,
   isNavigating,
+  isMobile,
   userLocation,
   transportMode,
   userHeading,
@@ -78,8 +79,27 @@ const LeafletMap = ({
   const markersRef = React.useRef([]);
   const polylineRef = React.useRef(null);
   const altPolylinesRef = React.useRef([]);
+  const tileThemeRef = React.useRef('');
   const lastRouteParamsRef = React.useRef({ spotsKey: '', showTravelRoute: false });
   const [mapLoaded, setMapLoaded] = React.useState(false);
+
+  const getFollowTarget = React.useCallback((location, heading, useForwardOffset = false) => {
+    if (!location) return null;
+
+    // When following on mobile, keep the user slightly ahead in the viewport
+    // instead of rotating the whole map. This mimics Google Maps' feel while
+    // avoiding mobile tile rendering glitches.
+    if (useForwardOffset && heading !== null && heading !== undefined) {
+      const offsetDist = 0.00045;
+      const headRad = (heading * Math.PI) / 180;
+      return {
+        lat: location.lat + Math.cos(headRad) * offsetDist,
+        lng: location.lng + Math.sin(headRad) * offsetDist
+      };
+    }
+
+    return location;
+  }, []);
 
   React.useEffect(() => {
     if (!document.getElementById('leaflet-css')) {
@@ -104,15 +124,18 @@ const LeafletMap = ({
   React.useEffect(() => {
     const handleRecenter = () => {
       if (mapRef.current && userLocation) {
-        mapRef.current.setView([userLocation.lat, userLocation.lng], 17.5);
+        const target = getFollowTarget(userLocation, userHeading, isMobile && isNavigating);
+        mapRef.current.setView([target.lat, target.lng], isMobile ? 18.5 : 17.5);
       }
     };
     window.addEventListener('recenter-map', handleRecenter);
     return () => window.removeEventListener('recenter-map', handleRecenter);
-  }, [userLocation]);
+  }, [userLocation, userHeading, isMobile, isNavigating, getFollowTarget]);
 
-  // Handle map rotation styles dynamically via CSS Variables
-  const mapRotationStyle = (mapRotationActive && userHeading !== null)
+  // Handle map rotation styles dynamically via CSS Variables.
+  // Keep heading-up on desktop only; mobile stays flat to avoid white-tile rendering issues.
+  const headingUpActive = !isMobile && mapRotationActive && userHeading !== null;
+  const mapRotationStyle = headingUpActive
     ? { '--map-rotation': `${-userHeading}deg` }
     : { '--map-rotation': '0deg' };
 
@@ -128,15 +151,102 @@ const LeafletMap = ({
 
     const map = mapRef.current;
 
-    // Manage map skins (Dark mode vs Satellite view) dynamically
-    if (tileLayerRef.current) {
-      tileLayerRef.current.remove();
+    // Keep tile layer stable during GPS updates; only recreate when theme changes.
+    const desiredTheme = isDarkMode ? 'dark' : 'light';
+    if (!tileLayerRef.current || tileThemeRef.current !== desiredTheme) {
+      if (tileLayerRef.current) {
+        tileLayerRef.current.remove();
+        tileLayerRef.current = null;
+      }
+
+      const tileProviders = isDarkMode
+        ? [
+            {
+              url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+              attribution: '&copy; CartoDB',
+              maxNativeZoom: 20
+            },
+            {
+              url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              attribution: '&copy; OpenStreetMap contributors',
+              maxNativeZoom: 19
+            }
+          ]
+        : [
+            {
+              // Satellite first (Esri World Imagery)
+              url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+              attribution: 'Tiles &copy; Esri',
+              maxNativeZoom: 19
+            },
+            {
+              url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              attribution: '&copy; OpenStreetMap contributors',
+              maxNativeZoom: 19
+            },
+            {
+              url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+              attribution: '&copy; CartoDB',
+              maxNativeZoom: 20
+            }
+          ];
+
+      let providerIndex = 0;
+      let tileErrorCount = 0;
+      let tileLoadCount = 0;
+      let fallbackTimer = null;
+
+      const mountTileLayer = (index) => {
+        const provider = tileProviders[index];
+        if (!provider) return;
+
+        if (tileLayerRef.current) {
+          tileLayerRef.current.remove();
+        }
+
+        const layer = window.L.tileLayer(provider.url, {
+          attribution: provider.attribution,
+          maxNativeZoom: provider.maxNativeZoom || 19,
+          maxZoom: 22,
+          keepBuffer: 4
+        });
+
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+        }
+        tileLoadCount = 0;
+
+        layer.on('tileerror', () => {
+          tileErrorCount += 1;
+          if (tileErrorCount >= 8 && providerIndex < tileProviders.length - 1) {
+            providerIndex += 1;
+            tileErrorCount = 0;
+            mountTileLayer(providerIndex);
+          }
+        });
+
+        layer.on('tileload', () => {
+          tileLoadCount += 1;
+        });
+
+        fallbackTimer = setTimeout(() => {
+          if (tileLoadCount === 0 && providerIndex < tileProviders.length - 1) {
+            providerIndex += 1;
+            tileErrorCount = 0;
+            mountTileLayer(providerIndex);
+          }
+        }, 3500);
+
+        tileLayerRef.current = layer;
+        layer.addTo(map);
+      };
+
+      mountTileLayer(providerIndex);
+      tileThemeRef.current = desiredTheme;
     }
-    const tileUrl = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
-    const attribution = isDarkMode ? '&copy; CartoDB' : '&copy; Google Maps';
-    tileLayerRef.current = window.L.tileLayer(tileUrl, { attribution }).addTo(map);
+
+    // Ensure Leaflet recalculates tiles after layout/overlay transitions.
+    map.invalidateSize();
 
     const spotsKey = spots.map(s => `${s.id || ''}-${s.lat},${s.lng}`).join('|');
     const keyPrefix = `${transportMode || 'motorbike'}-` + (isNavigating && userLocation && selectedSpot
@@ -210,7 +320,7 @@ const LeafletMap = ({
             
             <!-- Google Maps style bottom street tag: White background with blue text -->
             <div class="mt-1.5 px-3 py-1 bg-white border-2 border-blue-500/35 shadow-lg rounded-full text-[10.5px] font-black text-blue-600 leading-none whitespace-nowrap text-center tracking-wide relative z-20">
-              ${activeStreetName || (language === 'vi' ? 'Đường Tứ Ngân 02' : 'Route')}
+              ${activeStreetName || (language === 'vi' ? 'Đang xác định...' : 'Determining...')}
             </div>
           </div>
         `;
@@ -306,8 +416,19 @@ const LeafletMap = ({
       }
 
       if (isNavigating && userLocation) {
-        // Track coordinate tightly in central viewport
-        map.setView([userLocation.lat, userLocation.lng], 17.5);
+        // On mobile heading-up: offset view forward so user sees more road ahead
+        // Push the center point ~50m ahead in the heading direction
+        const navZoom = isMobile ? 18.5 : 17.5;
+        if (isMobile && userHeading !== null) {
+          // 0.00045 deg ≈ 50m offset forward in heading direction
+          const offsetDist = 0.00045;
+          const headRad = (userHeading * Math.PI) / 180;
+          const offsetLat = userLocation.lat + Math.cos(headRad) * offsetDist;
+          const offsetLng = userLocation.lng + Math.sin(headRad) * offsetDist;
+          map.setView([offsetLat, offsetLng], navZoom, { animate: true, duration: 0.5 });
+        } else {
+          map.setView([userLocation.lat, userLocation.lng], navZoom, { animate: true, duration: 0.5 });
+        }
       } else if (showTravelRoute && spots.length > 1) {
         const bounds = window.L.latLngBounds(spots.map(s => [s.lat, s.lng]));
         map.fitBounds(bounds, { padding: [40, 40] });
@@ -350,7 +471,9 @@ const LeafletMap = ({
       // Handle center panning smoothly on spot selection
       if (selectedSpot) {
         if (isNavigating && userLocation) {
-          map.setView([userLocation.lat, userLocation.lng], 17.5);
+          const navZoom = isMobile ? 18.5 : 17.5;
+          const target = getFollowTarget(userLocation, userHeading, isMobile);
+          map.setView([target.lat, target.lng], navZoom, { animate: true, duration: 0.4 });
         } else if (!showTravelRoute) {
           map.setView([selectedSpot.lat, selectedSpot.lng], 16);
         } else {
@@ -359,7 +482,10 @@ const LeafletMap = ({
       }
     }
 
-  }, [mapLoaded, spots, selectedSpot, showTravelRoute, language, isNavigating, userLocation, transportMode, userHeading, activeStreetName, isDarkMode, alternativeRoutes, selectedRouteIndex, mapRotationActive]);
+  }, [mapLoaded, spots, selectedSpot, showTravelRoute, language, isNavigating, isMobile, userLocation, transportMode, userHeading, activeStreetName, isDarkMode, alternativeRoutes, selectedRouteIndex, mapRotationActive]);
+
+  // Keep flat rendering in all modes; 3D perspective causes rendering issues on some mobile browsers.
+  const use3DPerspective = false;
 
   return (
     <>
@@ -382,24 +508,40 @@ const LeafletMap = ({
           font-family: inherit !important;
         }
         .leaflet-tilted-wrapper {
-          perspective: 900px;
-          perspective-origin: center center;
+          perspective: 800px;
+          perspective-origin: 50% 60%;
           overflow: hidden;
           width: 100%;
           height: 100%;
           position: relative;
+          -webkit-transform-style: preserve-3d;
+          transform-style: preserve-3d;
         }
         .leaflet-tilted-content {
-          transform: rotateX(36deg) scale(1.48) translateY(-4%);
-          transform-origin: center center;
-          transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+          transform: rotateX(40deg) scale(1.55) translateY(-6%);
+          transform-origin: 50% 60%;
+          transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
           width: 100%;
           height: 100%;
+          -webkit-transform-style: preserve-3d; /* ensure 3D children (tile images) render correctly */
+          transform-style: preserve-3d;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
         }
         .leaflet-map-rotated {
           transform: rotate(var(--map-rotation, 0deg));
           transform-origin: center center;
           transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+          -webkit-transform-style: preserve-3d;
+          transform-style: preserve-3d;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+        /* Force tile images onto their own GPU layer to avoid disappearing when parents are 3D-transformed */
+        .leaflet-container .leaflet-tile-pane img {
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+          will-change: transform, opacity;
         }
         .leaflet-top.leaflet-left {
           top: 80px !important;
@@ -409,17 +551,47 @@ const LeafletMap = ({
         .leaflet-tilted-content .leaflet-top.leaflet-left {
           top: 180px !important;
         }
+        /* Heading-up mode: counter-rotate markers and controls so they stay upright */
+        .leaflet-map-rotated .custom-dot-marker,
+        .leaflet-map-rotated .user-live-marker {
+          transform: rotate(calc(-1 * var(--map-rotation, 0deg))) !important;
+          transition: transform 0.4s ease !important;
+        }
+        /* Counter-rotate tooltips */
+        .leaflet-map-rotated .leaflet-tooltip {
+          transform: rotate(calc(-1 * var(--map-rotation, 0deg))) !important;
+        }
+        /* Hide zoom controls on mobile navigation for clean heading-up view */
+        .leaflet-tilted-content .leaflet-control-zoom {
+          display: none !important;
+        }
+        .leaflet-tilted-content .leaflet-control-attribution {
+          display: none !important;
+        }
+        /* Smooth map rotation */
+        .leaflet-map-rotated {
+          transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+        }
+        @media (max-width: 767px) {
+          .leaflet-map-rotated,
+          .leaflet-map-rotated .custom-dot-marker,
+          .leaflet-map-rotated .user-live-marker,
+          .leaflet-map-rotated .leaflet-tooltip {
+            transform: none !important;
+          }
+        }
+
       `}</style>
       
-      {/* Tier 1: Outer perspective wrapper */}
-      <div className={isNavigating ? "leaflet-tilted-wrapper" : "w-full h-full relative"}>
-        {/* Tier 2: Middle 3D tilt container */}
-        <div className={`w-full h-full relative ${isNavigating ? 'leaflet-tilted-content' : ''}`}>
+      {/* Tier 1: Outer perspective wrapper — only on mobile during navigation */}
+      <div className={use3DPerspective ? "leaflet-tilted-wrapper" : "w-full h-full relative"}>
+        {/* Tier 2: Middle 3D tilt container — only on mobile during navigation */}
+        <div className={`w-full h-full relative ${use3DPerspective ? 'leaflet-tilted-content' : ''}`}>
           {/* Tier 3: Map element with rotation and Leaflet mounting */}
           <div
             id={mapContainerId}
             style={mapRotationStyle}
-            className={`w-full h-full relative z-10 ${mapRotationActive ? 'leaflet-map-rotated' : ''}`}
+            className={`w-full h-full relative z-10 ${headingUpActive ? 'leaflet-map-rotated' : ''}`}
           />
         </div>
       </div>
@@ -455,11 +627,20 @@ export default function TripPlannerStudio({ prefill }) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [userSpeed, setUserSpeed] = useState(0); // Speed in km/h
   const [userHeading, setUserHeading] = useState(null); // Compass heading degrees
+  // Detect mobile screen (< 768px) for 3rd-person perspective mode
+  const [isMobileDevice, setIsMobileDevice] = useState(() => window.innerWidth < 768);
   const watchIdRef = React.useRef(null);
   const prevGpsPosRef = React.useRef(null); // Previous GPS position for heading calc
   const prevGpsTimeRef = React.useRef(null); // Previous GPS timestamp for speed calc
   const lastRouteFetchPosRef = React.useRef(null); // Last route-fetched GPS position
   const lastRouteFetchTimeRef = React.useRef(0); // Last route-fetched GPS timestamp
+
+  // Resize listener to keep isMobileDevice in sync
+  useEffect(() => {
+    const handleResize = () => setIsMobileDevice(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Advanced Navigation States
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -480,7 +661,7 @@ export default function TripPlannerStudio({ prefill }) {
   // OSRM Simulation States
   const [simCoords, setSimCoords] = useState([]);
   const [simIndex, setSimIndex] = useState(0);
-  const [simActiveStreet, setSimActiveStreet] = useState('Đường Tứ Ngân 02');
+  const [simActiveStreet, setSimActiveStreet] = useState('');
   const [simDistance, setSimDistance] = useState(14);
   const [simDuration, setSimDuration] = useState(19);
 
@@ -657,12 +838,19 @@ export default function TripPlannerStudio({ prefill }) {
     }
 
     setIsNavigating(true);
+    setIsMapMaximized(true);
     setActiveModalView('map');
     setTurnAlert('');
     prevGpsPosRef.current = null;
     prevGpsTimeRef.current = null;
     lastRouteFetchPosRef.current = null;
     lastRouteFetchTimeRef.current = 0;
+
+    // Keep mobile flat to prevent white screen while navigating,
+    // but still follow the user's movement by panning the map forward.
+    if (isMobileDevice) {
+      setMapRotationActive(false);
+    }
 
     const osrmProfile = 'driving';
 
@@ -885,6 +1073,12 @@ export default function TripPlannerStudio({ prefill }) {
     setAlternativeRoutes([]);
     setSelectedRouteIndex(0);
     setMapRotationActive(false); // Automatically disable map rotation when stopping navigation
+    setIsMapMaximized(false); // Leave the enlarged map overlay when exiting navigation
+    // Clear the currently selected spot when stopping navigation so the map
+    // doesn't fallback to drawing a straight-line route between the user
+    // and the previously selected destination.
+    setSelectedSpot(null);
+    setActiveModalView('map');
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -1778,14 +1972,6 @@ export default function TripPlannerStudio({ prefill }) {
                   {t('mapTitle')}
                 </h3>
                 <div className="flex items-center gap-1.5">
-                  {/* FULLSCREEN MAP TRIGGER BUTTON */}
-                  <button
-                    onClick={() => setIsMapMaximized(true)}
-                    className="p-1.5 hover:bg-gray-100 text-gray-500 hover:text-heritage-amber rounded-lg transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center"
-                    title={t('mapMaximize')}
-                  >
-                    <Maximize2 className="w-4 h-4 hover:scale-110 transition-transform duration-300" />
-                  </button>
                   {isLocating && (
                     <span className="text-[9px] bg-amber-50 text-heritage-amber border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                       <Compass className="w-3 h-3 animate-spin-slow" />
@@ -1854,6 +2040,7 @@ export default function TripPlannerStudio({ prefill }) {
                   showTravelRoute={showTravelRoute}
                   language={language}
                   isNavigating={isNavigating}
+                  isMobile={isMobileDevice}
                   userLocation={userLocation}
                   transportMode={transportMode}
                   userHeading={userHeading}
@@ -1928,14 +2115,6 @@ export default function TripPlannerStudio({ prefill }) {
                     {isNavigating ? t('mapStopNav') : t('mapStartNav')}
                   </button>
 
-                  {/* Direct maximize trigger instead of external redirect */}
-                  <button
-                    onClick={() => setIsMapMaximized(true)}
-                    className="w-full mt-2 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-[10.5px] rounded-xl flex items-center justify-center gap-1 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    {t('mapMaximize')}
-                  </button>
                 </div>
               )}
             </div>
@@ -2357,8 +2536,8 @@ export default function TripPlannerStudio({ prefill }) {
 
       {/* FULLSCREEN IN-APP MAP MODAL VIEWER OVERLAY */}
       {isMapMaximized && itinerary && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 sm:p-6 animate-fade-in">
-          <div className={`border w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-up transition-colors duration-500 ${isDarkMode ? 'bg-slate-950 border-slate-900 shadow-slate-950/80' : 'bg-white border-gray-200'}`}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-4 sm:p-6 animate-fade-in">
+          <div className={`border w-full h-full md:w-full md:max-w-5xl md:h-[85vh] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-up transition-colors duration-500 ${isDarkMode ? 'bg-slate-950 border-slate-900 shadow-slate-950/80' : 'bg-white border-gray-200'}`}>
 
             {/* Modal Header - Hidden if navigating to maximize immersive dashboard view */}
             {!isNavigating && (
@@ -2422,6 +2601,7 @@ export default function TripPlannerStudio({ prefill }) {
                   showTravelRoute={showTravelRoute}
                   language={language}
                   isNavigating={isNavigating}
+                  isMobile={isMobileDevice}
                   userLocation={userLocation}
                   transportMode={transportMode}
                   userHeading={userHeading}
@@ -2546,7 +2726,7 @@ export default function TripPlannerStudio({ prefill }) {
                           {/* Current Street Tag */}
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-[9px] bg-white/20 text-white font-extrabold uppercase px-1.5 py-0.5 rounded leading-none">Street</span>
-                            <span className="text-[11px] font-bold text-emerald-100">{simActiveStreet}</span>
+                            <span className="text-[11px] font-bold text-emerald-100">{simActiveStreet || (language === 'vi' ? 'Đang xác định...' : 'Determining...')}</span>
                           </div>
                         </div>
 
@@ -2585,7 +2765,7 @@ export default function TripPlannerStudio({ prefill }) {
                     )}
 
                     {/* Floating Digital Speedometer - Click to recenter map to current location */}
-                    <div className="absolute left-4 bottom-4 z-[40] select-none">
+                    <div className="absolute left-4 bottom-28 md:bottom-4 z-[40] select-none">
                       {/* Speedometer card button */}
                       <button
                         onClick={() => {
@@ -2607,21 +2787,21 @@ export default function TripPlannerStudio({ prefill }) {
 
                     {/* Bottom Charcoal Navigation Pull-Up HUD Sheet */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[40] w-[calc(100%-2rem)] max-w-xl animate-slide-in-up">
-                      <div className="bg-slate-950/95 backdrop-blur-md text-white border border-slate-800 p-5 rounded-3xl shadow-2xl flex items-center justify-between gap-6 shadow-slate-950/60">
-                        <div className="flex items-center gap-5">
+                      <div className="bg-slate-950/95 backdrop-blur-md text-white border border-slate-800 p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-2xl flex items-center justify-between gap-3 sm:gap-6 shadow-slate-950/60">
+                        <div className="flex items-center gap-3 sm:gap-5">
                           <div className="flex flex-col">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-3xl font-black font-outfit text-emerald-500 leading-none">{simDuration}</span>
-                              <span className="text-xs font-bold text-emerald-400 uppercase leading-none">{language === 'vi' ? 'phút' : 'min'}</span>
+                            <div className="flex items-baseline gap-0.5 sm:gap-1">
+                              <span className="text-2xl sm:text-3xl font-black font-outfit text-emerald-500 leading-none">{simDuration}</span>
+                              <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase leading-none">{language === 'vi' ? 'phút' : 'min'}</span>
                             </div>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5">
+                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
                               {language === 'vi'
-                                ? `Đến lúc: ${(() => {
+                                ? `Đến: ${(() => {
                                   const date = new Date();
                                   date.setMinutes(date.getMinutes() + simDuration);
                                   return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
                                 })()}`
-                                : `Arrival: ${(() => {
+                                : `Arr: ${(() => {
                                   const date = new Date();
                                   date.setMinutes(date.getMinutes() + simDuration);
                                   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2629,22 +2809,22 @@ export default function TripPlannerStudio({ prefill }) {
                             </span>
                           </div>
 
-                          <div className="w-[1px] h-10 bg-slate-800" />
+                          <div className="w-[1px] h-8 sm:h-10 bg-slate-800" />
 
                           <div className="flex flex-col">
-                            <span className="text-lg font-extrabold text-slate-200 font-outfit leading-none">{simDistance} km</span>
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5">
-                              {language === 'vi' ? 'Khoảng cách' : 'Distance'}
+                            <span className="text-sm sm:text-lg font-extrabold text-slate-200 font-outfit leading-none">{simDistance} km</span>
+                            <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
+                              {language === 'vi' ? 'THỐT' : 'STOP'}
                             </span>
                           </div>
                         </div>
 
                         <button
                           onClick={handleStopNavigation}
-                          className="px-5 py-3 bg-red-650 hover:bg-red-700 text-white font-extrabold text-xs tracking-wider rounded-2xl shadow-lg shadow-red-650/20 border-none cursor-pointer hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center gap-1.5 animate-pulse"
+                          className="px-3.5 py-2.5 sm:px-5 sm:py-3 bg-red-650 hover:bg-red-700 text-white font-extrabold text-[10px] sm:text-xs tracking-wider rounded-xl sm:rounded-2xl shadow-lg shadow-red-650/20 border-none cursor-pointer hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center gap-1 sm:gap-1.5 animate-pulse"
                         >
-                          <X className="w-4 h-4" />
-                          {language === 'vi' ? 'THOÁT DẪN ĐƯỜNG' : 'STOP NAV'}
+                          <X className="w-3.5 h-3.5" />
+                          {language === 'vi' ? 'THOÁT' : 'STOP'}
                         </button>
                       </div>
                     </div>

@@ -1,28 +1,72 @@
-import React from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 export default function SimulatedMap({
-  progress,
   zoom,
   isDarkMode,
   vehiclePos,
   currentSegmentIndex,
-  mapMode = 'google' // 'google' | '3d' - Default to 'google' as requested!
+  mapMode = 'google', // 'google' | '3d' - Default to 'google' as requested!
+  isHeadingUp = true
 }) {
   const { x, y } = vehiclePos;
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, panX: 0, panY: 0, pointerId: null });
 
   // Compute map rotation to align the travel direction UP
   let rotation = 0;
-  if (currentSegmentIndex === 1) rotation = -90;
-  if (currentSegmentIndex === 2) rotation = 0;
-  if (currentSegmentIndex === 3) rotation = -90;
+  if (isHeadingUp) {
+    if (currentSegmentIndex === 0) rotation = 0;
+    if (currentSegmentIndex === 1) rotation = -90;
+    if (currentSegmentIndex === 2) rotation = 0;
+    if (currentSegmentIndex === 3) rotation = -90;
+  }
 
   // Smooth transitioning of the 3D map container
   const mapStyle = {
     transform: `perspective(1000px) rotateX(48deg) rotateZ(${rotation}deg) scale(${zoom})`,
     transformOrigin: `${x}px ${y}px`,
     transition: 'transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1)',
-    width: '1000px',
-    height: '1000px',
+    width: '100%',
+    height: '100%',
+    willChange: 'transform'
+  };
+
+  const panStyle = useMemo(() => ({
+    transform: `translate3d(${pan.x}px, ${pan.y}px, 0)`,
+    transition: dragRef.current.active ? 'none' : 'transform 180ms ease-out',
+    willChange: 'transform'
+  }), [pan.x, pan.y]);
+
+  const handlePointerDown = (event) => {
+    if (mapMode !== '3d') return;
+    dragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      panX: pan.x,
+      panY: pan.y,
+      pointerId: event.pointerId
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!dragRef.current.active) return;
+    const dx = event.clientX - dragRef.current.startX;
+    const dy = event.clientY - dragRef.current.startY;
+    setPan({
+      x: dragRef.current.panX + dx,
+      y: dragRef.current.panY + dy
+    });
+  };
+
+  const handlePointerUp = (event) => {
+    if (!dragRef.current.active) return;
+    dragRef.current.active = false;
+    if (dragRef.current.pointerId != null) {
+      event.currentTarget.releasePointerCapture?.(dragRef.current.pointerId);
+    }
+    dragRef.current.pointerId = null;
   };
 
   // Theme-based colors
@@ -62,14 +106,20 @@ export default function SimulatedMap({
 
   // 2. Render CarPlay 3D Perspective Vector Map Mode
   return (
-    <div className={`w-full h-full relative overflow-hidden flex items-center justify-center ${bgColor} transition-colors duration-500`}>
+    <div className={`w-full h-full relative overflow-hidden ${bgColor} transition-colors duration-500`}>
       {/* 3D Map Viewport */}
-      <div 
-        style={mapStyle}
-        className="relative shadow-inner"
+      <div
+        style={mapMode === '3d' ? panStyle : undefined}
+        className={`relative w-full h-full shadow-inner ${mapMode === '3d' ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
-        <svg 
-          viewBox="0 0 1000 1000" 
+        <div style={mapStyle}>
+        <svg
+          viewBox="0 0 1400 1400"
+          preserveAspectRatio="xMidYMid slice"
           className="w-full h-full select-none"
         >
           {/* Grid Background Pattern */}
@@ -89,70 +139,70 @@ export default function SimulatedMap({
           </defs>
 
           {/* Grid Pattern */}
-          <rect width="1000" height="1000" fill="url(#grid)" />
+          <rect width="1400" height="1400" fill="url(#grid)" />
 
           {/* Sông Cu Đê / River */}
           <path 
-            d="M -50,800 C 200,750 300,900 600,850 C 800,810 900,950 1050,900 L 1050,1050 L -50,1050 Z" 
-            className={`${riverColor} transition-colors duration-500`} 
+            d="M -100,1100 C 200,1050 300,1200 700,1140 C 1000,1090 1150,1240 1500,1180 L 1500,1500 L -100,1500 Z"
+            className={`${riverColor} transition-colors duration-500`}
           />
           
           <path 
-            d="M -50,200 C 150,180 200,80 450,100 C 650,120 700,50 1050,80 L 1050,-50 L -50,-50 Z" 
-            className={`${riverColor} transition-colors duration-500`} 
+            d="M -100,320 C 150,290 220,140 520,170 C 760,195 820,90 1500,120 L 1500,-100 L -100,-100 Z"
+            className={`${riverColor} transition-colors duration-500`}
           />
 
           {/* Green Parks */}
-          <rect x="150" y="400" width="120" height="80" rx="16" className={`${parkColor} transition-colors duration-500`} />
-          <circle cx="750" cy="300" r="90" className={`${parkColor} transition-colors duration-500`} />
-          <path d="M 400,600 C 450,550 550,580 600,620 C 650,660 550,750 480,720 C 410,690 350,650 400,600 Z" className={`${parkColor} transition-colors duration-500`} />
+          <rect x="150" y="480" width="140" height="90" rx="16" className={`${parkColor} transition-colors duration-500`} />
+          <circle cx="900" cy="360" r="100" className={`${parkColor} transition-colors duration-500`} />
+          <path d="M 500,760 C 560,700 670,730 730,780 C 790,835 680,940 580,905 C 470,870 420,820 500,760 Z" className={`${parkColor} transition-colors duration-500`} />
 
           {/* BACKGROUND ROAD NETWORK */}
-          <line x1="0" y1="950" x2="1000" y2="950" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
-          <line x1="0" y1="950" x2="1000" y2="950" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="0" y1="1180" x2="1400" y2="1180" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="0" y1="1180" x2="1400" y2="1180" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
 
-          <line x1="-50" y1="500" x2="1000" y2="500" strokeWidth="18" className={`${roadBorderColor} transition-colors duration-500`} />
-          <line x1="-50" y1="500" x2="1000" y2="500" strokeWidth="14" className={`${roadBgColor} transition-colors duration-500`} />
-          
-          <line x1="300" y1="0" x2="300" y2="1000" strokeWidth="18" className={`${roadBorderColor} transition-colors duration-500`} />
-          <line x1="300" y1="0" x2="300" y2="1000" strokeWidth="14" className={`${roadBgColor} transition-colors duration-500`} />
+          <line x1="-100" y1="650" x2="1400" y2="650" strokeWidth="18" className={`${roadBorderColor} transition-colors duration-500`} />
+          <line x1="-100" y1="650" x2="1400" y2="650" strokeWidth="14" className={`${roadBgColor} transition-colors duration-500`} />
 
-          <line x1="-50" y1="700" x2="1000" y2="700" strokeWidth="16" className={`${roadBorderColor} transition-colors duration-500`} />
-          <line x1="-50" y1="700" x2="1000" y2="700" strokeWidth="12" className={`${roadBgColor} transition-colors duration-500`} />
+          <line x1="360" y1="0" x2="360" y2="1400" strokeWidth="18" className={`${roadBorderColor} transition-colors duration-500`} />
+          <line x1="360" y1="0" x2="360" y2="1400" strokeWidth="14" className={`${roadBgColor} transition-colors duration-500`} />
+
+          <line x1="-100" y1="860" x2="1400" y2="860" strokeWidth="16" className={`${roadBorderColor} transition-colors duration-500`} />
+          <line x1="-100" y1="860" x2="1400" y2="860" strokeWidth="12" className={`${roadBgColor} transition-colors duration-500`} />
 
           {/* 3D Isometric Buildings */}
-          <g transform="translate(180, 520)" className="opacity-75 transition-opacity hover:opacity-100 duration-300">
+          <g transform="translate(220, 650)" className="opacity-75 transition-opacity hover:opacity-100 duration-300">
             <rect x="0" y="0" width="40" height="50" rx="4" fill={isDarkMode ? '#1e293b' : '#cbd5e1'} />
             <polygon points="0,0 20,-15 40,0" fill={isDarkMode ? '#334155' : '#e2e8f0'} />
             <polygon points="40,0 20,-15 40,-15 40,0" fill={isDarkMode ? '#0f172a' : '#94a3b8'} className="opacity-50" />
           </g>
 
-          <g transform="translate(380, 240)">
+          <g transform="translate(520, 300)">
             <rect x="0" y="0" width="80" height="60" rx="6" fill={isDarkMode ? '#0f172a' : '#cbd5e1'} stroke={isDarkMode ? '#334155' : '#94a3b8'} strokeWidth="2" />
             <rect x="10" y="10" width="60" height="40" rx="3" fill={isDarkMode ? '#1e293b' : '#f1f5f9'} />
             <text x="40" y="35" fontSize="10" fontWeight="bold" textAnchor="middle" fill={isDarkMode ? '#64748b' : '#475569'}>DUT</text>
           </g>
 
           {/* MAIN NAVIGATION STREET LAYOUT */}
-          {/* Segment 0: Tôn Đức Thắng (100, 500) -> (100, 350) */}
-          <line x1="100" y1="550" x2="100" y2="350" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
-          <line x1="100" y1="550" x2="100" y2="350" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
+          {/* Segment 0: Tôn Đức Thắng (120, 780) -> (120, 600) */}
+          <line x1="120" y1="820" x2="120" y2="600" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="120" y1="820" x2="120" y2="600" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
 
-          {/* Segment 1: Ngô Sĩ Liên (100, 350) -> (300, 350) */}
-          <line x1="90" y1="350" x2="310" y2="350" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
-          <line x1="90" y1="350" x2="310" y2="350" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
+          {/* Segment 1: Ngô Sĩ Liên (120, 600) -> (360, 600) */}
+          <line x1="100" y1="600" x2="380" y2="600" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="100" y1="600" x2="380" y2="600" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
 
-          {/* Segment 2: Nguyễn Lương Bằng (300, 350) -> (300, 200) */}
-          <line x1="300" y1="360" x2="300" y2="190" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
-          <line x1="300" y1="360" x2="300" y2="190" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
+          {/* Segment 2: Nguyễn Lương Bằng (360, 600) -> (360, 420) */}
+          <line x1="360" y1="620" x2="360" y2="420" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="360" y1="620" x2="360" y2="420" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
 
-          {/* Segment 3: Phạm Như Xương (300, 200) -> (550, 200) */}
-          <line x1="290" y1="200" x2="550" y2="200" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
-          <line x1="290" y1="200" x2="550" y2="200" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
+          {/* Segment 3: Phạm Như Xương (360, 420) -> (620, 420) */}
+          <line x1="340" y1="420" x2="650" y2="420" strokeWidth="24" className={`${roadBorderColor} transition-colors duration-500`} strokeLinecap="round" />
+          <line x1="340" y1="420" x2="650" y2="420" strokeWidth="20" className={`${roadBgColor} transition-colors duration-500`} strokeLinecap="round" />
 
           {/* ROUTE GUIDANCE NEON LINE */}
           <path
-            d="M 100,500 L 100,350 L 300,350 L 300,200 L 500,200"
+            d="M 120,820 L 120,600 L 360,600 L 360,420 L 620,420"
             fill="none"
             stroke={isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(34, 197, 94, 0.15)'}
             strokeWidth="14"
@@ -161,7 +211,7 @@ export default function SimulatedMap({
           />
 
           <path
-            d="M 100,500 L 100,350 L 300,350 L 300,200 L 500,200"
+            d="M 120,820 L 120,600 L 360,600 L 360,420 L 620,420"
             fill="none"
             stroke={isDarkMode ? '#06b6d4' : '#0284c7'}
             strokeWidth="8"
@@ -171,7 +221,7 @@ export default function SimulatedMap({
           />
           
           <path
-            d="M 100,500 L 100,350 L 300,350 L 300,200 L 500,200"
+            d="M 120,820 L 120,600 L 360,600 L 360,420 L 620,420"
             fill="none"
             stroke="#e0f2fe"
             strokeWidth="3.5"
@@ -181,30 +231,30 @@ export default function SimulatedMap({
 
           {/* Lane dividers */}
           <g stroke={isDarkMode ? '#475569' : '#cbd5e1'} strokeWidth="1.5" strokeDasharray="8 12" fill="none">
-            <line x1="100" y1="550" x2="100" y2="350" />
-            <line x1="90" y1="350" x2="310" y2="350" />
-            <line x1="300" y1="360" x2="300" y2="190" />
-            <line x1="290" y1="200" x2="550" y2="200" />
+            <line x1="120" y1="820" x2="120" y2="600" />
+            <line x1="100" y1="600" x2="380" y2="600" />
+            <line x1="360" y1="620" x2="360" y2="420" />
+            <line x1="340" y1="420" x2="650" y2="420" />
           </g>
 
           {/* Local Landmarks */}
-          <g transform="translate(100, 560)">
+          <g transform="translate(120, 840)">
             <rect x="-35" y="-12" width="70" height="24" rx="12" fill={landmarkBgColor} stroke={landmarkStrokeColor} strokeWidth="1.5" />
             <text x="0" y="4" fontSize="8" fontWeight="bold" textAnchor="middle" fill={isDarkMode ? '#f8fafc' : '#1e293b'}>Cầu vượt Ngã 3 Huế</text>
           </g>
 
-          <g transform="translate(90, 290)">
+          <g transform="translate(130, 540)">
             <rect x="-32" y="-10" width="64" height="20" rx="10" fill={landmarkBgColor} stroke={landmarkStrokeColor} strokeWidth="1.5" />
             <text x="0" y="3" fontSize="8" fontWeight="medium" textAnchor="middle" className={landmarkTextColor}>Chợ Hòa Khánh</text>
           </g>
 
-          <g transform="translate(420, 310)">
+          <g transform="translate(500, 390)">
             <rect x="-42" y="-12" width="84" height="24" rx="12" fill={landmarkBgColor} stroke={landmarkStrokeColor} strokeWidth="1.5" />
             <text x="0" y="3" fontSize="8" fontWeight="bold" textAnchor="middle" fill="#d97706">ĐH Bách Khoa ĐN</text>
           </g>
 
           {/* Destination Pin */}
-          <g transform="translate(500, 200)">
+          <g transform="translate(620, 420)">
             <circle cx="0" cy="0" r="22" fill="none" stroke="#ef4444" strokeWidth="1.5" className="animate-ping" style={{ transformOrigin: 'center', animationDuration: '2s' }} />
             <circle cx="0" cy="0" r="12" fill="none" stroke="#ef4444" strokeWidth="2" className="animate-pulse" style={{ transformOrigin: 'center' }} />
             <path 
@@ -237,9 +287,11 @@ export default function SimulatedMap({
           {/* VEHICLE CHEVRON CURSOR */}
           {(() => {
             let vehicleAngle = -90;
-            if (currentSegmentIndex === 1) vehicleAngle = 0;
-            if (currentSegmentIndex === 2) vehicleAngle = -90;
-            if (currentSegmentIndex === 3) vehicleAngle = 0;
+            if (isHeadingUp) {
+              if (currentSegmentIndex === 1) vehicleAngle = 0;
+              if (currentSegmentIndex === 2) vehicleAngle = -90;
+              if (currentSegmentIndex === 3) vehicleAngle = 0;
+            }
 
             return (
               <g 
@@ -260,6 +312,7 @@ export default function SimulatedMap({
             );
           })()}
         </svg>
+        </div>
       </div>
     </div>
   );
