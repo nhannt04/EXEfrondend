@@ -11,6 +11,20 @@ const rentalService = {
     return await axiosClient.get(`/rentals/${id}`);
   },
 
+  // Get only rentals that are currently operating
+  getOperatingRentals: async () => {
+    return await axiosClient.get('/rentals/operating/now');
+  },
+
+  // Get all unique addresses for dropdown
+  getAddresses: async () => {
+    const response = await axiosClient.get('/rentals');
+    if (response?.data) {
+      return [...new Set(response.data.map(r => r.address).filter(Boolean))];
+    }
+    return [];
+  },
+
   createRental: async (data) => {
     return await axiosClient.post('/rentals', data);
   },

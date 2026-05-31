@@ -643,10 +643,10 @@ export default function TripPlannerStudio({ prefill }) {
   const { language, t } = useLanguage();
   const [days, setDays] = useState(3);
   const [budget, setBudget] = useState(5000000); // 5 Million default
-  const [style, setStyle] = useState('Healing');
+  const [style, setStyle] = useState('Chill & Thư giãn');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(1);
-  const [interests, setInterests] = useState(['Cafe', 'Homestay', 'Biển']);
+  const [interests, setInterests] = useState('Ăn cao lầu, uống cà phê sữa đá, đi dạo phố cổ Hội An');
 
   const [loading, setLoading] = useState(false);
   const [loadingFactIndex, setLoadingFactIndex] = useState(0);
@@ -712,6 +712,12 @@ export default function TripPlannerStudio({ prefill }) {
   const [tripTitle, setTripTitle] = useState('');
   const [activePlannerTab, setActivePlannerTab] = useState('studio');
   const [allDbSpots, setAllDbSpots] = useState([]);
+  const [rentalPage, setRentalPage] = useState(1);
+  const [isSavedItinerary, setIsSavedItinerary] = useState(false);
+  const [swapDropdown, setSwapDropdown] = useState(null);
+  const [activeItineraryId, setActiveItineraryId] = useState(null);
+  const [activeItineraryStatus, setActiveItineraryStatus] = useState('NOT_STARTED');
+  const [savedFilter, setSavedFilter] = useState('ALL');
 
   // Load saved itineraries
   const fetchSavedItineraries = async () => {
@@ -766,6 +772,7 @@ export default function TripPlannerStudio({ prefill }) {
       if (response && response.success) {
         alert(language === 'vi' ? "Lưu lịch trình thành công!" : "Itinerary saved successfully!");
         setShowSaveModal(false);
+        setIsSavedItinerary(true);
         fetchSavedItineraries();
       } else {
         alert(language === 'vi' ? "Lỗi khi lưu lịch trình!" : "Failed to save itinerary!");
@@ -798,7 +805,7 @@ export default function TripPlannerStudio({ prefill }) {
     }
   };
 
-  const handleLoadSaved = (savedTrip) => {
+  const handleLoadSaved = async (savedTrip) => {
     try {
       const parsedData = JSON.parse(savedTrip.tripData);
       setItinerary(parsedData);
@@ -809,10 +816,41 @@ export default function TripPlannerStudio({ prefill }) {
       if (parsedData.length > 0) {
         setSelectedSpot(parsedData[0].accommodation);
       }
+      setIsSavedItinerary(true);
+      setActiveItineraryId(savedTrip.id);
+      
+      let currentStatus = savedTrip.status || 'NOT_STARTED';
+      if (currentStatus === 'NOT_STARTED') {
+        try {
+          const res = await tripService.updateItineraryStatus(savedTrip.id, 'IN_PROGRESS');
+          if (res && res.success) {
+            currentStatus = 'IN_PROGRESS';
+            fetchSavedItineraries(); // Refresh list in background
+          }
+        } catch (e) {
+          console.error("Failed to update status to IN_PROGRESS on load:", e);
+        }
+      }
+      setActiveItineraryStatus(currentStatus);
       setActivePlannerTab('viewer');
     } catch (err) {
       console.error("Failed to load saved itinerary:", err);
       alert("Lỗi dữ liệu lịch trình không hợp lệ!");
+    }
+  };
+
+  const handleCompleteItinerary = async () => {
+    if (!activeItineraryId) return;
+    try {
+      const res = await tripService.updateItineraryStatus(activeItineraryId, 'COMPLETED');
+      if (res && res.success) {
+        setActiveItineraryStatus('COMPLETED');
+        alert(language === 'vi' ? "🎉 Chúc mừng bạn đã hoàn thành lộ trình xuất sắc!" : "🎉 Congratulations on completing your journey successfully!");
+        fetchSavedItineraries();
+      }
+    } catch (e) {
+      console.error("Failed to complete itinerary:", e);
+      alert(language === 'vi' ? "Cập nhật thất bại!" : "Update failed!");
     }
   };
 
@@ -1438,6 +1476,7 @@ export default function TripPlannerStudio({ prefill }) {
   const handleGenerate = async () => {
     setLoading(true);
     setHasOptimized(false);
+    setIsSavedItinerary(false);
 
     try {
       const response = await tripService.generateTrip({
@@ -1446,7 +1485,7 @@ export default function TripPlannerStudio({ prefill }) {
         style: style,
         people: adults + children,
         groupType: 'couple',
-        interests: interests,
+        interests: [interests],
         currentLat: userLocation.lat || 15.8771,
         currentLng: userLocation.lng || 108.3267
       });
@@ -1502,51 +1541,85 @@ export default function TripPlannerStudio({ prefill }) {
     let isDynamic = false;
     let slotName = slotKey;
 
-    if (nextItinerary[dayIndex].slots) {
-      const dynamicSlot = nextItinerary[dayIndex].slots.find(s => s.slot.toLowerCase() === slotKey.toLowerCase());
-      if (dynamicSlot) {
-        targetSpot = dynamicSlot.spot;
-        isDynamic = true;
-        slotName = dynamicSlot.slot;
+    if (slotKey.toUpperCase() === 'STAY') {
+      targetSpot = nextItinerary[dayIndex].accommodation;
+    } else {
+      if (nextItinerary[dayIndex].slots) {
+        const dynamicSlot = nextItinerary[dayIndex].slots.find(s => s.slot.toLowerCase() === slotKey.toLowerCase());
+        if (dynamicSlot) {
+          targetSpot = dynamicSlot.spot;
+          isDynamic = true;
+          slotName = dynamicSlot.slot;
+        }
       }
-    }
-
-    if (!targetSpot) {
-      targetSpot = nextItinerary[dayIndex][slotKey];
+      if (!targetSpot) {
+        targetSpot = nextItinerary[dayIndex][slotKey];
+      }
     }
 
     if (!targetSpot) return;
 
-    let newSpot = null;
+    let categoryToFind = 'cafe';
+    const upperSlot = slotName.toUpperCase();
+    if (upperSlot === 'STAY') {
+      categoryToFind = 'stay';
+    } else if (upperSlot.includes('LUNCH') || upperSlot.includes('FOOD') || upperSlot.includes('EVENING') || upperSlot.includes('DINNER')) {
+      categoryToFind = 'food';
+    } else if (upperSlot.includes('MORNING') || upperSlot.includes('AFTERNOON') || upperSlot.includes('SIGHTSEEING')) {
+      categoryToFind = 'sightseeing';
+    }
 
+    let candidates = [];
     if (allDbSpots && allDbSpots.length > 0) {
-      let categoryToFind = 'cafe';
-      const upperSlot = slotName.toUpperCase();
-      if (upperSlot.includes('LUNCH') || upperSlot.includes('FOOD') || upperSlot.includes('EVENING')) {
-        categoryToFind = 'food';
-      } else if (upperSlot.includes('MORNING') || upperSlot.includes('AFTERNOON') || upperSlot.includes('SIGHTSEEING')) {
-        categoryToFind = 'sightseeing';
-      }
-
-      let dbItems = allDbSpots.filter(s =>
-        s.category?.toLowerCase() === categoryToFind &&
+      candidates = allDbSpots.filter(s =>
+        (s.category?.toLowerCase() === categoryToFind || 
+         (categoryToFind === 'stay' && (s.category?.toLowerCase() === 'stay' || s.category?.toLowerCase() === 'hotel' || s.category?.toLowerCase() === 'homestay'))) &&
         s.name[language] !== targetSpot.name[language]
       );
 
-      if (dbItems.length === 0) {
-        dbItems = allDbSpots.filter(s =>
-          s.category?.toLowerCase() !== 'stay' &&
-          s.name[language] !== targetSpot.name[language]
-        );
-      }
-
-      if (dbItems.length > 0) {
-        newSpot = dbItems[Math.floor(Math.random() * dbItems.length)];
+      if (candidates.length === 0) {
+        if (categoryToFind === 'stay') {
+          candidates = allDbSpots.filter(s => 
+            (s.category?.toLowerCase() === 'stay' || s.category?.toLowerCase() === 'hotel' || s.category?.toLowerCase() === 'homestay')
+          );
+        } else {
+          candidates = allDbSpots.filter(s =>
+            s.category?.toLowerCase() !== 'stay' &&
+            s.category?.toLowerCase() !== 'hotel' &&
+            s.category?.toLowerCase() !== 'homestay' &&
+            s.name[language] !== targetSpot.name[language]
+          );
+        }
       }
     }
 
-    if (newSpot) {
-      const swaped = { ...newSpot };
+    setSwapDropdown({
+      dayIndex,
+      slotKey,
+      isDynamic,
+      currentSpot: targetSpot,
+      candidates: candidates.slice(0, 10)
+    });
+  };
+
+  const executeSwapSpot = (newSpot) => {
+    if (!swapDropdown || !itinerary) return;
+    const { dayIndex, slotKey, isDynamic, currentSpot } = swapDropdown;
+
+    const nextItinerary = [...itinerary];
+    const swaped = { ...newSpot };
+
+    if (slotKey.toUpperCase() === 'STAY') {
+      nextItinerary[dayIndex].accommodation = swaped;
+      if (nextItinerary[dayIndex].slots) {
+        nextItinerary[dayIndex].slots = nextItinerary[dayIndex].slots.map(s => {
+          if (s.slot === 'STAY') {
+            return { ...s, spot: swaped };
+          }
+          return s;
+        });
+      }
+    } else {
       if (isDynamic) {
         nextItinerary[dayIndex].slots = nextItinerary[dayIndex].slots.map(s => {
           if (s.slot.toLowerCase() === slotKey.toLowerCase()) {
@@ -1560,15 +1633,15 @@ export default function TripPlannerStudio({ prefill }) {
       } else {
         nextItinerary[dayIndex][slotKey] = swaped;
       }
-
-      setItinerary(nextItinerary);
-
-      if (selectedSpot && selectedSpot.lat === targetSpot.lat && selectedSpot.lng === targetSpot.lng) {
-        setSelectedSpot(swaped);
-      }
-    } else {
-      console.warn("No suitable spots found in database for swapping.");
     }
+
+    setItinerary(nextItinerary);
+
+    if (selectedSpot && selectedSpot.lat === currentSpot.lat && selectedSpot.lng === currentSpot.lng) {
+      setSelectedSpot(swaped);
+    }
+
+    setSwapDropdown(null);
   };
 
   const getItineraryCosts = () => {
@@ -1737,7 +1810,7 @@ export default function TripPlannerStudio({ prefill }) {
     return (
       <div className="w-full flex flex-col gap-6 animate-fade-in">
         {/* Financial Dashboard Banner - Apple Shimmer */}
-        <div className="w-full bg-white rounded-2xl p-6 border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-6 items-center shadow-sm shimmer-trigger">
+        <div className="w-full bg-white rounded-2xl p-6 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6 items-center shadow-sm shimmer-trigger">
           <div className="flex flex-col relative z-10">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('yourBudget')}</span>
             <div className="flex items-center gap-1.5 text-gray-800 font-extrabold font-outfit text-lg">
@@ -1760,54 +1833,33 @@ export default function TripPlannerStudio({ prefill }) {
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
               {language === 'vi' ? 'Trạng thái ngân sách' : 'Budget Status'}
             </span>
-            <div className={`flex items-center gap-1 font-extrabold font-outfit text-xs md:text-sm ${costs.totalMax > budget ? 'text-red-600' : 'text-ricefield-green'}`}>
-              {costs.totalMax > budget ? (
+            <div className={`flex items-center gap-1 font-extrabold font-outfit text-xs md:text-sm ${
+              budget < costs.totalMin 
+                ? 'text-red-600' 
+                : (budget >= costs.totalMin && budget <= costs.totalMax) 
+                  ? 'text-amber-600' 
+                  : 'text-ricefield-green'
+            }`}>
+              {budget < costs.totalMin ? (
+                <>
+                  <span className="text-sm">❌</span>
+                  {language === 'vi' ? 'Không đủ ngân sách' : 'Insufficient Budget'}
+                </>
+              ) : (budget >= costs.totalMin && budget <= costs.totalMax) ? (
                 <>
                   <span className="text-sm">⚠️</span>
-                  {language === 'vi' ? 'Có nguy cơ vượt ngân sách!' : 'Risk of Over Budget!'}
+                  {language === 'vi' ? 'Có thể vượt quá ngân sách' : 'May Exceed Budget'}
                 </>
               ) : (
                 <>
                   <span className="text-sm">✅</span>
-                  {language === 'vi' ? 'Ngân sách an toàn' : 'Budget Safe'}
+                  {language === 'vi' ? 'Trong tầm kiểm soát' : 'Trong tầm kiểm soát'}
                 </>
               )}
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end relative z-10">
-            <button
-              onClick={() => {
-                if (!currentUser) {
-                  alert(language === 'vi' ? "Vui lòng đăng nhập để lưu lịch trình!" : "Please login to save your itinerary!");
-                  window.dispatchEvent(new Event('auth-required'));
-                  return;
-                }
-                setTripTitle(language === 'vi' ? `Chuyến đi Hội An ${days} Ngày` : `Hoi An ${days}-Day Journey`);
-                setShowSaveModal(true);
-              }}
-              className="px-3.5 py-2 bg-ricefield-green hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 hover:scale-[1.03] active:scale-95 transition-all duration-300 shadow-md cursor-pointer border-none"
-            >
-              <Check className="w-3.5 h-3.5" />
-              {language === 'vi' ? 'Lưu Lịch Trình' : 'Save Itinerary'}
-            </button>
 
-            {isOverBudget ? (
-              <button
-                onClick={handleOptimizeBudget}
-                disabled={optimizing}
-                className="px-4 py-2.5 bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 animate-pulse-gold hover:scale-[1.03] active:scale-95 transition-transform duration-300 shadow-md cursor-pointer border-none"
-              >
-                <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-                {optimizing ? t('optimizing') : t('optimizeButton')}
-              </button>
-            ) : (
-              <div className="flex items-center gap-1 bg-ricefield-green/10 border border-ricefield-green/20 text-ricefield-green px-3 py-1.5 rounded-xl text-xs font-semibold">
-                <Check className="w-4 h-4 text-ricefield-green" />
-                {t('inControl')}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Optimizing State indicator */}
@@ -1845,18 +1897,37 @@ export default function TripPlannerStudio({ prefill }) {
             ))}
           </div>
 
-          {/* Premium Travel Route button - placed outside */}
-          <button
-            type="button"
-            onClick={() => setShowTravelRoute(!showTravelRoute)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-1.5 border shadow-sm ${showTravelRoute
-              ? 'bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white border-transparent shadow-md scale-[1.02]'
-              : 'bg-white border-gray-200 text-gray-600 hover:text-heritage-amber hover:border-gray-300'
-              }`}
-          >
-            <Navigation className={`w-3.5 h-3.5 ${showTravelRoute ? 'animate-pulse' : ''}`} />
-            {language === 'vi' ? 'Xem Lộ Trình Cả Ngày' : 'Show Daily Route'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTravelRoute(!showTravelRoute)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-1.5 border shadow-sm ${showTravelRoute
+                ? 'bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white border-transparent shadow-md scale-[1.02]'
+                : 'bg-white border-gray-200 text-gray-600 hover:text-heritage-amber hover:border-gray-300'
+                }`}
+            >
+              <Navigation className={`w-3.5 h-3.5 ${showTravelRoute ? 'animate-pulse' : ''}`} />
+              {language === 'vi' ? 'Xem Lộ Trình Cả Ngày' : 'Show Daily Route'}
+            </button>
+
+            {isSavedItinerary && activeItineraryId && (
+              <button
+                type="button"
+                disabled={activeItineraryStatus === 'COMPLETED'}
+                onClick={handleCompleteItinerary}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 flex items-center gap-1.5 border shadow-sm ${
+                  activeItineraryStatus === 'COMPLETED'
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-tr from-ricefield-green to-emerald-600 text-white border-transparent hover:scale-[1.02] shadow-md cursor-pointer'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+                {activeItineraryStatus === 'COMPLETED'
+                  ? (language === 'vi' ? 'ĐÃ HOÀN THÀNH LỘ TRÌNH' : 'COMPLETED')
+                  : (language === 'vi' ? 'HOÀN THÀNH LỘ TRÌNH' : 'COMPLETE ROUTE')}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Layout for Timeline vs Cost Breakdown & Dynamic GPS Maps */}
@@ -1867,36 +1938,55 @@ export default function TripPlannerStudio({ prefill }) {
             {itinerary[activeDay - 1].accommodation ? (
               <div
                 onClick={() => setSelectedSpot(itinerary[activeDay - 1].accommodation)}
-                className={`w-full bg-white border p-4 rounded-xl flex gap-4 items-center shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md shimmer-trigger animate-fade-in-up [animation-delay:100ms] ${selectedSpot && selectedSpot.lat === itinerary[activeDay - 1].accommodation.lat
+                className={`w-full bg-white border p-4 rounded-2xl flex flex-col gap-3 shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md shimmer-trigger animate-fade-in-up [animation-delay:100ms] ${selectedSpot && selectedSpot.lat === itinerary[activeDay - 1].accommodation.lat
                   ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
                   : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={itinerary[activeDay - 1].accommodation.img || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80'}
-                    alt="Homestay"
-                    className="w-16 h-16 rounded-lg object-cover relative z-10"
-                  />
-                  {showTravelRoute && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3 z-25">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                <div className="flex gap-4 items-center">
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={itinerary[activeDay - 1].accommodation.img || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80'}
+                      alt="Homestay"
+                      className="w-16 h-16 rounded-lg object-cover relative z-10"
+                    />
+                    {showTravelRoute && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3 z-25">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-grow relative z-10">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
+                    </div>
+                    <h4 className="font-outfit text-sm font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
+                    <p className="text-[10.5px] text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 relative z-10">
+                    <span className="text-[10px] text-gray-400 block">{t('estimatedNight')}</span>
+                    <span className="text-xs font-extrabold text-heritage-amber">
+                      {(itinerary[activeDay - 1].accommodation.minCost > 0 || itinerary[activeDay - 1].accommodation.maxCost > 0)
+                        ? `${itinerary[activeDay - 1].accommodation.minCost.toLocaleString()}đ - ${itinerary[activeDay - 1].accommodation.maxCost.toLocaleString()}đ`
+                        : (language === 'vi' ? 'Miễn phí' : 'Free')}
                     </span>
-                  )}
+                  </div>
                 </div>
-                <div className="flex-grow relative z-10">
-                  <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
-                  <h4 className="font-outfit text-sm font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
-                  <p className="text-[10.5px] text-gray-500 leading-normal">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
-                </div>
-                <div className="text-right flex-shrink-0 relative z-10">
-                  <span className="text-[10px] text-gray-400 block">{t('estimatedNight')}</span>
-                  <span className="text-xs font-extrabold text-heritage-amber">
-                    {(itinerary[activeDay - 1].accommodation.minCost > 0 || itinerary[activeDay - 1].accommodation.maxCost > 0)
-                      ? `${itinerary[activeDay - 1].accommodation.minCost.toLocaleString()}đ - ${itinerary[activeDay - 1].accommodation.maxCost.toLocaleString()}đ`
-                      : (language === 'vi' ? 'Miễn phí' : 'Free')}
-                  </span>
+
+                {/* Standard bottom quick action bar */}
+                <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-100 relative z-10">
+                  <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSwapSpot(activeDay - 1, 'STAY');
+                    }}
+                    className="text-[10px] hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                    {language === 'vi' ? 'Đổi địa điểm' : 'Swap Place'}
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -1914,20 +2004,26 @@ export default function TripPlannerStudio({ prefill }) {
 
               const getSlotInfo = (slotKey) => {
                 const key = slotKey?.toUpperCase() || '';
-                if (key.includes('MORNING') && !key.includes('CAFE')) {
-                  return { label: language === 'vi' ? '☀️ Tham quan Sáng' : '☀️ Morning Sightseeing', icon: Sunrise, color: 'text-amber-500 bg-amber-50 border-amber-200' };
+                if (key.includes('BREAKFAST')) {
+                  return { label: language === 'vi' ? '🥞 Ăn sáng' : '🥞 Breakfast', icon: Sunrise, color: 'text-amber-600 bg-amber-50 border-amber-200' };
                 }
-                if (key.includes('CAFE')) {
-                  return { label: language === 'vi' ? '☕ Cà phê & Thư giãn' : '☕ Coffee & Chill', icon: Compass, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+                if (key.includes('MORNING')) {
+                  return { label: language === 'vi' ? '☀️ Tham quan Sáng' : '☀️ Morning Sightseeing', icon: Compass, color: 'text-blue-500 bg-blue-50 border-blue-200' };
                 }
-                if (key.includes('LUNCH') || key.includes('FOOD')) {
-                  return { label: language === 'vi' ? '🍴 Bữa trưa / Ẩm thực' : '🍴 Lunch / Local Taste', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                if (key.includes('LUNCH')) {
+                  return { label: language === 'vi' ? '🍲 Ăn trưa' : '🍲 Lunch', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                }
+                if (key.includes('AFTERNOON_TEA') || key.includes('CAFE')) {
+                  return { label: language === 'vi' ? '☕ Ăn chiều & Cà phê' : '☕ Afternoon Tea & Cafe', icon: Compass, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
                 }
                 if (key.includes('AFTERNOON')) {
                   return { label: language === 'vi' ? '🌇 Tham quan Chiều' : '🌇 Afternoon Sightseeing', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
                 }
+                if (key.includes('DINNER')) {
+                  return { label: language === 'vi' ? '🏮 Ăn tối' : '🏮 Dinner', icon: Moon, color: 'text-rose-600 bg-rose-50 border-rose-200' };
+                }
                 if (key.includes('EVENING')) {
-                  return { label: language === 'vi' ? '🏮 Hoạt động Tối' : '🏮 Evening Experience', icon: Moon, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' };
+                  return { label: language === 'vi' ? '🌃 Vui chơi Tối' : '🌃 Evening Experience', icon: Moon, color: 'text-indigo-650 bg-indigo-50 border-indigo-200' };
                 }
                 return { label: language === 'vi' ? '📌 Trải nghiệm' : '📌 Activity', icon: Compass, color: 'text-gray-500 bg-gray-50 border-gray-200' };
               };
@@ -2179,17 +2275,35 @@ export default function TripPlannerStudio({ prefill }) {
                        })}
                      </div>
                    </div>
-
-                   {/* Live Navigation Button */}
-                   <button
-                     onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
-                     className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
-                       }`}
-                   >
-                     <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
-                     {isNavigating ? t('mapStopNav') : t('mapStartNav')}
-                   </button>
-
+                    {/* Conditional Button based on Itinerary Save Status */}
+                    {isSavedItinerary ? (
+                      /* Live Navigation Button */
+                      <button
+                        onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
+                        className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
+                          }`}
+                      >
+                        <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
+                        {isNavigating ? t('mapStopNav') : t('mapStartNav')}
+                      </button>
+                    ) : (
+                      /* Save Itinerary Button for newly generated unsaved trips */
+                      <button
+                        onClick={() => {
+                          if (!currentUser) {
+                            alert(language === 'vi' ? "Vui lòng đăng nhập để lưu lịch trình!" : "Please login to save your itinerary!");
+                            window.dispatchEvent(new Event('auth-required'));
+                            return;
+                          }
+                          setTripTitle(language === 'vi' ? `Chuyến đi Hội An ${days} Ngày` : `Hoi An ${days}-Day Journey`);
+                          setShowSaveModal(true);
+                        }}
+                        className="w-full mt-1.5 py-3 bg-ricefield-green hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                        {language === 'vi' ? 'LƯU LỊCH TRÌNH' : 'SAVE ITINERARY'}
+                      </button>
+                    )}
                  </div>
                )}
             </div>
@@ -2237,6 +2351,157 @@ export default function TripPlannerStudio({ prefill }) {
                     : t('advisorUnder')
                   }
                 </p>
+              </div>
+            </div>
+
+            {/* Premium Local Service Suggestions Frame */}
+            <div className="bg-gradient-to-tr from-white to-orange-50/20 border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm animate-fade-in-up [animation-delay:350ms]">
+              <h3 className="font-outfit text-sm font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <Sparkles className="w-4 h-4 text-heritage-amber animate-spin-slow" />
+                {language === 'vi' ? 'Gợi Ý Dịch Vụ Bản Địa' : 'Local Service Suggestions'}
+              </h3>
+              
+              <div className="flex flex-col gap-3">
+                {(() => {
+                  const dbRentals = allDbSpots.filter(s => 
+                    s.category === 'rental' || 
+                    (s.tags && s.tags.toLowerCase().includes('rental')) || 
+                    (s.tags && s.tags.toLowerCase().includes('thuê'))
+                  );
+                  
+                  const pageSize = 3;
+                  const totalPages = Math.ceil(dbRentals.length / pageSize);
+                  const activePage = rentalPage > totalPages ? 1 : rentalPage;
+                  const startIndex = (activePage - 1) * pageSize;
+                  const paginatedRentals = dbRentals.slice(startIndex, startIndex + pageSize);
+                  
+                  if (dbRentals.length > 0) {
+                    return (
+                      <>
+                        {paginatedRentals.map((rental, idx) => (
+                          <div key={rental.id || idx} className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                            <span className="text-xl">
+                              {rental.name?.[language]?.toLowerCase().includes('đạp') || rental.name?.[language]?.toLowerCase().includes('bike') ? '🚲' :
+                               rental.name?.[language]?.toLowerCase().includes('máy') || rental.name?.[language]?.toLowerCase().includes('motor') ? '🛵' :
+                               rental.name?.[language]?.toLowerCase().includes('áo') || rental.name?.[language]?.toLowerCase().includes('dài') || rental.name?.[language]?.toLowerCase().includes('phục') ? '👘' :
+                               rental.name?.[language]?.toLowerCase().includes('ảnh') || rental.name?.[language]?.toLowerCase().includes('camera') ? '📸' : '📦'}
+                            </span>
+                            <div className="flex flex-col flex-grow">
+                              <strong className="text-xs text-gray-800">{rental.name?.[language] || rental.name?.vi}</strong>
+                              <span className="text-[10px] text-gray-400">
+                                {rental.cost ? `Từ ${rental.cost.toLocaleString('vi-VN')}đ` : 'Giá ưu đãi'} • {rental.reason?.[language] || rental.reason?.vi || (language === 'vi' ? 'Tiệm thuê uy tín gần bạn' : 'Highly-rated shop near you')}
+                              </span>
+                            </div>
+                            <button 
+                              onClick={() => setSelectedSpot(rental)}
+                              className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer hover:bg-heritage-amber/20 transition-all whitespace-nowrap"
+                            >
+                              {language === 'vi' ? 'Xem bản đồ' : 'View on map'}
+                            </button>
+                          </div>
+                        ))}
+                        
+                        {totalPages > 1 && (
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100 w-full">
+                            <span className="text-[10px] text-gray-400 font-bold tracking-wider">
+                              {language === 'vi' ? `Trang ${activePage} / ${totalPages}` : `Page ${activePage} of ${totalPages}`}
+                            </span>
+                            <div className="flex gap-1.5">
+                              <button
+                                disabled={activePage === 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRentalPage(prev => Math.max(1, prev - 1));
+                                }}
+                                className={`px-2 py-1 rounded text-[9.5px] font-extrabold tracking-wider transition-all border border-none cursor-pointer ${
+                                  activePage === 1 
+                                    ? 'bg-gray-100 text-gray-400 opacity-55 cursor-not-allowed' 
+                                    : 'bg-heritage-amber/10 text-heritage-amber hover:bg-heritage-amber/20 hover:scale-105'
+                                }`}
+                              >
+                                {language === 'vi' ? 'TRƯỚC' : 'PREV'}
+                              </button>
+                              <button
+                                disabled={activePage === totalPages}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRentalPage(prev => Math.min(totalPages, prev + 1));
+                                }}
+                                className={`px-2 py-1 rounded text-[9.5px] font-extrabold tracking-wider transition-all border border-none cursor-pointer ${
+                                  activePage === totalPages 
+                                    ? 'bg-gray-100 text-gray-400 opacity-55 cursor-not-allowed' 
+                                    : 'bg-heritage-amber/10 text-heritage-amber hover:bg-heritage-amber/20 hover:scale-105'
+                                }`}
+                              >
+                                {language === 'vi' ? 'SAU' : 'NEXT'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
+                  
+                  // Fallbacks if no rentals loaded from DB
+                  return style === 'Chill & Thư giãn' ? (
+                    <>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">🏡</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Homestay Làng Rau Trà Quế</strong>
+                          <span className="text-[10px] text-gray-400">Từ 350.000đ/đêm • 4.8★</span>
+                        </div>
+                        <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Đặt phòng</button>
+                      </div>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">🚲</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Cho thuê xe đạp sinh thái</strong>
+                          <span className="text-[10px] text-gray-400">Từ 50.000đ/ngày • Thân thiện môi trường</span>
+                        </div>
+                        <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                      </div>
+                    </>
+                  ) : style === 'Sống ảo' ? (
+                    <>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">👘</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Cho thuê Áo Dài cổ trang Hội An</strong>
+                          <span className="text-[10px] text-gray-400">Từ 120.000đ/bộ • Nhiều mẫu cực đẹp</span>
+                        </div>
+                        <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                      </div>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">📸</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Thuê máy ảnh film & Thợ chụp</strong>
+                          <span className="text-[10px] text-gray-400">Từ 400.000đ/buổi • Lưu giữ khoảnh khắc</span>
+                        </div>
+                        <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Liên hệ</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">🛵</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Cho thuê xe máy Hội An Tây</strong>
+                          <span className="text-[10px] text-gray-400">Từ 100.000đ/ngày • Giao xe tận nơi</span>
+                        </div>
+                        <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                      </div>
+                      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
+                        <span className="text-xl">🏺</span>
+                        <div className="flex flex-col flex-grow">
+                          <strong className="text-xs text-gray-800">Vé học làm Gốm Thanh Hà</strong>
+                          <span className="text-[10px] text-gray-400">Chỉ 35.000đ/vé • Tự làm sản phẩm</span>
+                        </div>
+                        <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Mua vé</button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -2346,10 +2611,9 @@ export default function TripPlannerStudio({ prefill }) {
                   onChange={(e) => setStyle(e.target.value)}
                   className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <option value="Healing">{language === 'vi' ? 'Healing / Tĩnh' : 'Healing / Retreat'}</option>
-                  <option value="Ẩm thực">{language === 'vi' ? 'Ẩm thực local' : 'Foodie / Taste'}</option>
-                  <option value="Khám phá">{language === 'vi' ? 'Khám phá di sản' : 'Explorer / Heritage'}</option>
-                  <option value="Nghỉ dưỡng">{language === 'vi' ? 'Nghỉ dưỡng luxury' : 'Luxury / Relax'}</option>
+                  <option value="Chill & Thư giãn">{language === 'vi' ? 'Chill & Thư giãn' : 'Chill & Relax'}</option>
+                  <option value="Sống ảo">{language === 'vi' ? 'Sống ảo' : 'Instagrammable / Aesthetic'}</option>
+                  <option value="Trải nghiệm">{language === 'vi' ? 'Trải nghiệm local' : 'Experience'}</option>
                 </select>
               </div>
             </div>
@@ -2397,23 +2661,18 @@ export default function TripPlannerStudio({ prefill }) {
               </div>
             </div>
 
-            {/* Interests tags */}
-            <div className="flex flex-col gap-2 relative z-10">
+            {/* Interests Custom Text Input */}
+            <div className="flex flex-col gap-2 relative z-10 border-t border-gray-150 pt-4">
               <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('interests')}</label>
-              <div className="flex flex-wrap gap-2">
-                {['Cafe', 'Homestay', 'Biển', 'Đi bộ', 'Gốm / Đèn Lồng', 'Di sản cổ'].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleInterest(tag)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all duration-300 cursor-pointer ${interests.includes(tag)
-                      ? 'bg-ricefield-green/10 text-ricefield-green border-ricefield-green/40 font-bold'
-                      : 'border-gray-200 hover:border-gray-400 text-gray-500 bg-white'
-                      }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+              <textarea
+                rows={4}
+                value={interests}
+                onChange={(e) => setInterests(e.target.value)}
+                placeholder={language === 'vi' 
+                  ? 'Hãy viết sở thích cá nhân của bạn (Ví dụ: Muốn ăn cao lầu Bà Bé, uống cà phê sữa đá ven sông, đi dạo ngắm đèn lồng Phố Cổ và ngắm hoàng hôn biển An Bàng...)' 
+                  : 'Write your personalized travel preferences...'}
+                className="w-full bg-white border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-heritage-amber resize-none font-semibold leading-relaxed hover:border-gray-300 focus:ring-2 focus:ring-heritage-amber/10 transition-all duration-300"
+              />
             </div>
 
             {/* CTA Generate button */}
@@ -2505,53 +2764,119 @@ export default function TripPlannerStudio({ prefill }) {
           )}
 
           {currentUser && savedItineraries.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {savedItineraries.map((saved) => (
-                <div
-                  key={saved.id}
-                  onClick={() => handleLoadSaved(saved)}
-                  className="group border border-gray-200 hover:border-heritage-amber hover:shadow-md bg-white p-5 rounded-2xl flex flex-col gap-4 transition-all duration-300 cursor-pointer relative"
+            <div className="flex bg-gray-50 border border-gray-250/50 p-1 rounded-xl w-fit self-start gap-1 select-none mb-2">
+              {[
+                { filter: 'ALL', label: language === 'vi' ? 'Tất cả' : 'All' },
+                { filter: 'NOT_STARTED', label: language === 'vi' ? 'Chưa bắt đầu' : 'Not Started' },
+                { filter: 'IN_PROGRESS', label: language === 'vi' ? 'Đang thực hiện' : 'In Progress' },
+                { filter: 'COMPLETED', label: language === 'vi' ? 'Đã hoàn thành' : 'Completed' }
+              ].map((btn) => (
+                <button
+                  key={btn.filter}
+                  onClick={() => setSavedFilter(btn.filter)}
+                  className={`px-3 py-1.5 rounded-lg text-[10.5px] font-black transition-all border-none cursor-pointer ${
+                    savedFilter === btn.filter
+                      ? 'bg-white text-heritage-amber shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900 bg-transparent'
+                  }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-outfit font-extrabold text-base text-gray-900 group-hover:text-heritage-gold transition-colors">
-                        {saved.title}
-                      </h4>
-                      <span className="text-[10px] text-gray-400 font-bold block mt-0.5">
-                        📅 {language === 'vi' ? 'Ngày lưu:' : 'Saved at:'} {new Date(saved.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => handleDeleteSaved(saved.id, e)}
-                      className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
-                      title={language === 'vi' ? 'Xóa lịch trình' : 'Delete Itinerary'}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
-                      <span className="text-xs font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
-                    </div>
-                    <div className="flex flex-col border-x border-gray-200">
-                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
-                      <span className="text-xs font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
-                      <span className="text-xs font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 justify-end text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
-                    <span>{language === 'vi' ? 'Mở lịch trình này' : 'Open this itinerary'}</span>
-                    <span>➔</span>
-                  </div>
-                </div>
+                  {btn.label}
+                </button>
               ))}
             </div>
+          )}
+
+          {currentUser && savedItineraries.length > 0 && (
+            (() => {
+              const filtered = savedItineraries.filter(saved => 
+                savedFilter === 'ALL' || (saved.status || 'NOT_STARTED') === savedFilter
+              );
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-12 flex flex-col items-center gap-3 border-2 border-dashed border-gray-205 rounded-2xl w-full">
+                    <Calendar className="w-8 h-8 text-gray-300 animate-float" />
+                    <p className="text-xs font-bold text-gray-550 leading-relaxed">
+                      {language === 'vi' ? 'Không tìm thấy lịch trình nào ở trạng thái này!' : 'No itineraries found in this status!'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                  {filtered.map((saved) => (
+                    <div
+                      key={saved.id}
+                      onClick={() => handleLoadSaved(saved)}
+                      className="group border border-gray-200 hover:border-heritage-amber hover:shadow-md bg-white p-5 rounded-2xl flex flex-col gap-4 transition-all duration-300 cursor-pointer relative animate-scale-up"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-outfit font-extrabold text-base text-gray-900 group-hover:text-heritage-gold transition-colors">
+                              {saved.title}
+                            </h4>
+                            {(() => {
+                              const status = saved.status || 'NOT_STARTED';
+                              if (status === 'COMPLETED') {
+                                return (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 uppercase tracking-wide leading-none whitespace-nowrap">
+                                    {language === 'vi' ? 'Hoàn thành' : 'Completed'}
+                                  </span>
+                                );
+                              }
+                              if (status === 'IN_PROGRESS') {
+                                return (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-50 text-blue-600 border border-blue-200 animate-pulse uppercase tracking-wide leading-none whitespace-nowrap">
+                                    {language === 'vi' ? 'Đang thực hiện' : 'In Progress'}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-gray-50 text-gray-500 border border-gray-200 uppercase tracking-wide leading-none whitespace-nowrap">
+                                  {language === 'vi' ? 'Chưa bắt đầu' : 'Not Started'}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          <span className="text-[10px] text-gray-400 font-bold block mt-1">
+                            📅 {language === 'vi' ? 'Ngày lưu:' : 'Saved at:'} {new Date(saved.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteSaved(saved.id, e)}
+                          className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                          title={language === 'vi' ? 'Xóa lịch trình' : 'Delete Itinerary'}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
+                          <span className="text-xs font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
+                        </div>
+                        <div className="flex flex-col border-x border-gray-200">
+                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
+                          <span className="text-xs font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
+                          <span className="text-xs font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 justify-end text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                        <span>{language === 'vi' ? 'Mở lịch trình này' : 'Open this itinerary'}</span>
+                        <span>➔</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
           )}
         </div>
       )}
@@ -3142,6 +3467,59 @@ export default function TripPlannerStudio({ prefill }) {
         </div>
       )}
 
+      {/* Premium Dynamic Spot Swapper Dropdown Dialog */}
+      {swapDropdown && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[999] flex items-center justify-center animate-fade-in" onClick={() => setSwapDropdown(null)}>
+          <div 
+            className="bg-white/95 border border-gray-200 p-5 rounded-2xl w-[90%] max-w-[380px] shadow-2xl flex flex-col gap-4 animate-scale-up backdrop-blur-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
+              <div className="flex flex-col">
+                <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Thay thế địa điểm</span>
+                <strong className="text-xs text-gray-800">
+                  {swapDropdown.currentSpot.name?.[language] || swapDropdown.currentSpot.name?.vi}
+                </strong>
+              </div>
+              <button 
+                onClick={() => setSwapDropdown(null)}
+                className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-sm font-extrabold"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+              {swapDropdown.candidates.length > 0 ? (
+                swapDropdown.candidates.map((candidate, idx) => (
+                  <div 
+                    key={candidate.id || idx}
+                    onClick={() => executeSwapSpot(candidate)}
+                    className="flex gap-3 items-center bg-white hover:bg-heritage-amber/5 hover:border-heritage-amber/30 p-2.5 rounded-xl border border-gray-150 transition-all cursor-pointer group"
+                  >
+                    <img 
+                      src={candidate.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=150&q=80'}
+                      alt="Candidate"
+                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                    />
+                    <div className="flex flex-col flex-grow min-w-0">
+                      <strong className="text-xs text-gray-800 truncate group-hover:text-heritage-amber transition-colors">
+                        {candidate.name?.[language] || candidate.name?.vi}
+                      </strong>
+                      <span className="text-[9px] text-gray-400 truncate">
+                        {candidate.cost ? `${candidate.cost.toLocaleString()}đ` : 'Giá tham khảo'} • {candidate.reason?.[language] || candidate.reason?.vi || 'Điểm thay thế hấp dẫn'}
+                      </span>
+                    </div>
+                    <span className="text-xs text-heritage-amber opacity-0 group-hover:opacity-100 transition-opacity font-bold"> Chọn </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500 text-center py-4">Không tìm thấy địa điểm thay thế tương tự.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

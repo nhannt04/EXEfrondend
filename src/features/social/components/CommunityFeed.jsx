@@ -4,6 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import diaryService from '../../../services/diaryService';
 import expertService from '../../../services/expertService';
+import spotService from '../../../services/spotService';
 import authService from '../../../services/authService';
 
 export default function CommunityFeed() {
@@ -25,7 +26,9 @@ export default function CommunityFeed() {
 
   // Custom interactive post settings
   const [postCategory, setPostCategory] = useState('healing');
-  const [postLinkedSpot, setPostLinkedSpot] = useState('Chùa Cầu Nhật Bản');
+  // store selected spot id (nullable)
+  const [postLinkedSpot, setPostLinkedSpot] = useState(null);
+  const [availableSpots, setAvailableSpots] = useState([]);
   const [activeTag, setActiveTag] = useState('all');
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -139,6 +142,19 @@ export default function CommunityFeed() {
       } catch (e) {
         console.warn("Could not load experts from backend, using default mock data:", e);
       }
+
+      // Load spots for "Liên kết Địa điểm" dropdown
+      try {
+        const spotsRes = await spotService.getFeaturedSpots(12);
+        if (spotsRes && spotsRes.success) {
+          setAvailableSpots(spotsRes.data || []);
+          if (spotsRes.data && spotsRes.data.length > 0 && postLinkedSpot == null) {
+            setPostLinkedSpot(spotsRes.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load spots for diary dropdown:", e);
+      }
     };
 
     fetchDiariesAndExperts();
@@ -199,6 +215,9 @@ export default function CommunityFeed() {
       formData.append('category', postCategory);
       formData.append('contentVi', newPostText);
       formData.append('contentEn', newPostText);
+      if (postLinkedSpot) {
+        formData.append('spotId', postLinkedSpot.toString());
+      }
       if (selectedImage) {
         formData.append('image', selectedImage);
       }
@@ -372,8 +391,8 @@ export default function CommunityFeed() {
                 key={tag.id}
                 onClick={() => setActiveTag(tag.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                  ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
                   }`}
               >
                 <TagIcon className="w-4 h-4 relative z-10" />
@@ -431,15 +450,16 @@ export default function CommunityFeed() {
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Liên kết Địa điểm' : 'Link Destination'}</label>
                 <select
-                  value={postLinkedSpot}
-                  onChange={(e) => setPostLinkedSpot(e.target.value)}
+                  value={postLinkedSpot || ''}
+                  onChange={(e) => setPostLinkedSpot(e.target.value ? Number(e.target.value) : null)}
                   className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
                 >
-                  <option value="FeFe Coffee">☕ FeFe Coffee</option>
-                  <option value="Cơm Gà Bà Buội">🍚 Cơm Gà Bà Buội</option>
-                  <option value="Workshop Đèn Lồng">🏮 Workshop Đèn Lồng</option>
-                  <option value="Rừng dừa Bảy Mẫu">🛶 Rừng dừa Bảy Mẫu</option>
-                  <option value="Cham Island Snorkeling">🐠 Cham Island Snorkeling</option>
+                  <option value="">{language === 'vi' ? 'Không liên kết' : 'No link'}</option>
+                  {availableSpots.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nameVi ? `${language === 'vi' ? s.nameVi : s.nameEn}` : s.nameEn}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -521,12 +541,12 @@ export default function CommunityFeed() {
                     {/* Visual Category Badge pill */}
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${post.category === 'food'
-                          ? 'bg-amber-50 text-amber-600 border-amber-200'
-                          : post.category === 'adventure'
-                            ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                            : post.category === 'scenic'
-                              ? 'bg-orange-50 text-orange-600 border-orange-200'
-                              : 'bg-green-50 text-ricefield-green border-ricefield-green/20'
+                        ? 'bg-amber-50 text-amber-600 border-amber-200'
+                        : post.category === 'adventure'
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                          : post.category === 'scenic'
+                            ? 'bg-orange-50 text-orange-600 border-orange-200'
+                            : 'bg-green-50 text-ricefield-green border-ricefield-green/20'
                         }`}>
                         {post.category === 'food'
                           ? t('tagFood')
@@ -928,5 +948,158 @@ export default function CommunityFeed() {
       )}
 
     </div>
+  );
+}
+<div className="flex items-center gap-1 text-[10px] text-heritage-gold font-bold mt-1">
+  <Star className="w-3 h-3 fill-heritage-gold text-heritage-gold" />
+  <span>{expert.rating}</span>
+</div>
+                  </div >
+  <button
+    onClick={() => handleOpenExpertChat(expert)}
+    className="p-2 bg-white hover:bg-heritage-amber/10 border border-gray-200 hover:border-heritage-amber text-gray-500 hover:text-heritage-amber rounded-lg transition-colors cursor-pointer"
+    title={t('askExpert')}
+  >
+    <MessageSquare className="w-3.5 h-3.5" />
+  </button>
+                </div >
+              ))}
+            </div >
+          </div >
+
+  {/* Hot Trending Hashtags */ }
+  < div className = "bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]" >
+            <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
+              <Flame className="w-4 h-4 text-orange-500" />
+              {t('trendingHashtags')}
+            </h3>
+
+            <div className="flex flex-col gap-3 relative z-10">
+              {[
+                { tag: '#FeFeRicefield', views: '12.4k views', status: 'hot' },
+                { tag: '#BanhMiPhuongTrueLocal', views: '8.5k views', status: 'rising' },
+                { tag: '#LanternCraftGuild', views: '6.2k views', status: 'new' },
+                { tag: '#ChamIslandCorals', views: '4.8k views', status: 'rising' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:translate-x-0.5 transition-transform duration-200">
+                  <div className="flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
+                    <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 font-semibold">{item.views}</span>
+                    {item.status === 'hot' && (
+                      <span className="text-[9px] bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
+                    )}
+                    {item.status === 'rising' && (
+                      <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div >
+
+        </div >
+</div >
+      </div >
+
+
+  {/* CULTURAL QUEST ACCEPTED MODAL */ }
+{
+  showQuestSuccess && (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+      <div className="bg-white border border-gray-200 p-6 rounded-3xl max-w-sm w-full flex flex-col items-center text-center gap-4 shadow-2xl animate-scale-up">
+        <div className="p-3 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber rounded-full animate-float">
+          <Trophy className="w-8 h-8" />
+        </div>
+        <div>
+          <h3 className="font-outfit text-base font-extrabold text-gray-900">{language === 'vi' ? 'Quest Đã Nhận!' : 'Quest Accepted!'}</h3>
+          <p className="text-xs text-gray-500 leading-relaxed mt-1.5 font-semibold">
+            {language === 'vi'
+              ? 'Hãy ghé thăm Chùa Cầu vào sáng sớm mai, chụp một bức ảnh đẹp và tải lên bài viết (chọn tag Góc chụp ảnh đẹp) để nhận Voucher Đèn Lồng 50k nhé!'
+              : 'Visit the Covered Bridge tomorrow morning, take a beautiful photo, and publish a post (select Scenic tag) to claim your 50k Voucher!'}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowQuestSuccess(false)}
+          className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
+        >
+          {language === 'vi' ? 'Tôi đã hiểu!' : 'Got it!'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+{/* QUICK EXPERT CHAT DIALOG */ }
+{
+  showChatModal && activeExpert && (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+      <div className="bg-white border border-gray-200 p-5 rounded-3xl max-w-md w-full flex flex-col gap-4 shadow-2xl animate-scale-up">
+        <div className="flex justify-between items-center border-b border-gray-150 pb-3">
+          <div className="flex gap-2.5 items-center">
+            <img
+              src={activeExpert.avatar}
+              alt={activeExpert.name}
+              className="w-8 h-8 rounded-full object-cover border border-gray-200"
+            />
+            <div>
+              <h4 className="text-xs font-extrabold text-gray-800 leading-tight">{activeExpert.name}</h4>
+              <span className="text-[9px] text-green-500 font-bold tracking-wide uppercase flex items-center gap-0.5">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse" />
+                Online
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowChatModal(false)}
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {messageSuccess ? (
+          <div className="flex flex-col items-center text-center p-6 gap-3 animate-fade-in">
+            <CheckCircle className="w-10 h-10 text-ricefield-green" />
+            <div>
+              <h4 className="text-xs font-extrabold text-gray-800">{language === 'vi' ? 'Đã gửi câu hỏi!' : 'Question Sent!'}</h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-normal">
+                {language === 'vi'
+                  ? 'Chuyên gia bản địa sẽ phản hồi tin nhắn của bạn trong vòng ít phút thông qua hộp thư đến.'
+                  : 'The local guide will respond to your query shortly via your inbox.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-[11px] text-gray-500 leading-relaxed italic bg-gray-50 p-3 rounded-xl border border-gray-150">
+              {language === 'vi'
+                ? `Chào bạn! Mình có thể tư vấn tất cả kinh nghiệm local về các dịch vụ di chuyển, ẩm thực hay nghề thủ công truyền thống ở Hội An. Hãy để lại câu hỏi bên dưới nhé!`
+                : `Hello! I can advise on all local guides regarding dining, transport, or traditional craft workshops in Hoi An. Leave your question below!`
+              }
+            </p>
+            <textarea
+              value={expertMessageText}
+              onChange={(e) => setExpertMessageText(e.target.value)}
+              placeholder={language === 'vi' ? 'Nhập câu hỏi của bạn tại đây...' : 'Type your question here...'}
+              className="bg-white border border-gray-200 text-xs text-gray-800 rounded-xl p-3 h-24 resize-none focus:outline-none focus:border-heritage-amber placeholder-gray-450 shadow-inner"
+            />
+            <button
+              onClick={handleSendExpertMessage}
+              className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
+            >
+              {language === 'vi' ? 'Gửi Câu Hỏi' : 'Submit Question'}
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+    </div >
   );
 }

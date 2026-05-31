@@ -11,7 +11,9 @@ import dishService from '../../../services/dishService.js';
 import cafeService from '../../../services/cafeService.js';
 import stayService from '../../../services/stayService.js';
 import entertainmentService from '../../../services/entertainmentService.js';
+import EntertainmentForm from '../../entertainment/components/EntertainmentForm';
 import rentalService from '../../../services/rentalService.js';
+import AddressDropdown from '../../../components/AddressDropdown';
 
 
 
@@ -124,6 +126,11 @@ export default function AdminDashboard() {
   const [entertainments, setEntertainments] = useState([]);
   const [rentals, setRentals] = useState([]);
 
+  // Address lists for dropdowns
+  const [cafeAddresses, setCafeAddresses] = useState([]);
+  const [entertainmentAddresses, setEntertainmentAddresses] = useState([]);
+  const [rentalAddresses, setRentalAddresses] = useState([]);
+
 
 
   // Loading states
@@ -209,6 +216,8 @@ export default function AdminDashboard() {
   const [newEntertainmentMinPrice, setNewEntertainmentMinPrice] = useState(0);
   const [newEntertainmentMaxPrice, setNewEntertainmentMaxPrice] = useState(0);
   const [newEntertainmentImageUrl, setNewEntertainmentImageUrl] = useState('');
+  const [newEntertainmentOpeningTime, setNewEntertainmentOpeningTime] = useState('08:00');
+  const [newEntertainmentClosingTime, setNewEntertainmentClosingTime] = useState('21:00');
   const [entertainmentSearchTerm, setEntertainmentSearchTerm] = useState('');
 
   // Rentals CRUD States
@@ -292,6 +301,15 @@ export default function AdminDashboard() {
       setStays(staysRes?.data || []);
       setEntertainments(entertainmentsRes?.data || []);
       setRentals(rentalsRes?.data || []);
+
+      // Extract unique addresses for dropdowns
+      const uniqueCafeAddresses = [...new Set(cafesRes?.data?.map(c => c.address).filter(Boolean) || [])];
+      const uniqueEntertainmentAddresses = [...new Set(entertainmentsRes?.data?.map(e => e.address).filter(Boolean) || [])];
+      const uniqueRentalAddresses = [...new Set(rentalsRes?.data?.map(r => r.address).filter(Boolean) || [])];
+
+      setCafeAddresses(uniqueCafeAddresses);
+      setEntertainmentAddresses(uniqueEntertainmentAddresses);
+      setRentalAddresses(uniqueRentalAddresses);
 
 
 
@@ -898,6 +916,8 @@ export default function AdminDashboard() {
     setNewEntertainmentMinPrice(0);
     setNewEntertainmentMaxPrice(0);
     setNewEntertainmentImageUrl('');
+    setNewEntertainmentOpeningTime('08:00');
+    setNewEntertainmentClosingTime('21:00');
     setShowAddEntertainmentModal(true);
   };
 
@@ -913,8 +933,17 @@ export default function AdminDashboard() {
     setNewEntertainmentMinPrice(ent.minPrice || 0);
     setNewEntertainmentMaxPrice(ent.maxPrice || 0);
     setNewEntertainmentImageUrl(ent.imageUrl || '');
+    setNewEntertainmentOpeningTime(ent.openingTime ? String(ent.openingTime).substring(0, 5) : '08:00');
+    setNewEntertainmentClosingTime(ent.closingTime ? String(ent.closingTime).substring(0, 5) : '21:00');
     setShowAddEntertainmentModal(true);
   };
+
+  const formatTime = (value) => {
+    if (!value) return '—';
+    const v = String(value);
+    return v.length >= 5 ? v.substring(0, 5) : v;
+  };
+
 
   const handleEntertainmentFormSubmit = async (e) => {
     e.preventDefault();
@@ -1391,7 +1420,7 @@ export default function AdminDashboard() {
                         {currentDishes.map((dish) => (
                           <tr key={dish.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={dish.imageUrl} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img src={dish.imageUrl} alt={dish.dishName} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                               <span className="font-bold text-gray-900 text-sm">{dish.dishName}</span>
                             </td>
                             <td className="p-4 font-bold text-gray-700">{dish.restaurantName}</td>
@@ -1531,7 +1560,7 @@ export default function AdminDashboard() {
                         {currentCafes.map((cafe) => (
                           <tr key={cafe.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={cafe.imageUrl} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img src={cafe.imageUrl} alt={cafe.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                               <span className="font-bold text-gray-900 text-sm">{cafe.name}</span>
                             </td>
                             <td className="p-4">
@@ -1677,7 +1706,7 @@ export default function AdminDashboard() {
                         {currentStays.map((stay) => (
                           <tr key={stay.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={stay.imageUrl} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img src={stay.imageUrl} alt={stay.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
                               <span className="font-bold text-gray-900 text-sm">{stay.name}</span>
                             </td>
                             <td className="p-4">
@@ -1819,6 +1848,7 @@ export default function AdminDashboard() {
                         <th className="p-4">{language === 'vi' ? 'Tên khu vui chơi' : 'Name'}</th>
                         <th className="p-4">{language === 'vi' ? 'Phân loại' : 'Type'}</th>
                         <th className="p-4">{language === 'vi' ? 'Sở thích' : 'Interests'}</th>
+                        <th className="p-4">{language === 'vi' ? 'Giờ hoạt động' : 'Hours'}</th>
                         <th className="p-4">{language === 'vi' ? 'Giá vé' : 'Price Range'}</th>
                         <th className="p-4">{language === 'vi' ? 'Địa chỉ' : 'Address'}</th>
                         <th className="p-4 text-center">{language === 'vi' ? 'Hành động' : 'Action'}</th>
@@ -1828,7 +1858,7 @@ export default function AdminDashboard() {
                       {currentEntertainments.map((ent) => (
                         <tr key={ent.id} className="hover:bg-gray-50/55 transition-colors">
                           <td className="p-4 flex items-center gap-3">
-                            <img src={ent.imageUrl} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                            <img src={ent.imageUrl} alt={ent.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
                             <span className="font-bold text-gray-900 text-sm">{ent.name}</span>
                           </td>
                           <td className="p-4">
@@ -1848,6 +1878,9 @@ export default function AdminDashboard() {
                                 </span>
                               ))}
                             </div>
+                          </td>
+                          <td className="p-4 text-gray-500 whitespace-nowrap font-semibold">
+                            🕒 {formatTime(ent.openingTime)} - {formatTime(ent.closingTime)}
                           </td>
                           <td className="p-4 font-bold text-heritage-amber text-[11px] whitespace-nowrap">
                             {ent.minPrice > 0 || ent.maxPrice > 0 ? (
@@ -1986,7 +2019,7 @@ export default function AdminDashboard() {
                       {currentRentals.map((rental) => (
                         <tr key={rental.id} className="hover:bg-gray-50/55 transition-colors">
                           <td className="p-4 flex items-center gap-3">
-                            <img src={rental.imageUrl} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                            <img src={rental.imageUrl} alt={rental.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
                             <span className="font-bold text-gray-900 text-sm">{rental.name}</span>
                           </td>
                           <td className="p-4">
@@ -2103,7 +2136,7 @@ export default function AdminDashboard() {
                     {diaries.map((post) => (
                       <tr key={post.id} className="hover:bg-gray-50/55 transition-colors">
                         <td className="p-4 flex items-center gap-3">
-                          <img src={post.user?.avatar} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                          <img src={post.user?.avatar} alt={post.user?.name || 'user avatar'} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
                           <span className="font-bold text-gray-900">{post.user?.name}</span>
                         </td>
                         <td className="p-4 uppercase tracking-widest text-[9px] font-extrabold text-ricefield-green">
@@ -2153,7 +2186,7 @@ export default function AdminDashboard() {
                     {experts.map((exp) => (
                       <tr key={exp.id} className="hover:bg-gray-50/55 transition-colors">
                         <td className="p-4 flex items-center gap-3">
-                          <img src={exp.avatar} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                          <img src={exp.avatar} alt={exp.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
                           <span className="font-bold text-gray-900">{exp.name}</span>
                         </td>
                         <td className="p-4 text-gray-600 font-semibold">
@@ -2453,7 +2486,7 @@ export default function AdminDashboard() {
                       <div className="relative border border-dashed border-gray-200 hover:border-heritage-amber/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all bg-gray-50/30 hover:bg-amber-50/5 min-h-[90px] overflow-hidden group">
                         {imagePreview ? (
                           <>
-                            <img src={imagePreview} className="absolute inset-0 w-full h-full object-cover group-hover:opacity-40 transition-opacity" />
+                            <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover group-hover:opacity-40 transition-opacity" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
                               <span className="text-[9px] text-white font-extrabold uppercase tracking-wider">
                                 {language === 'vi' ? 'Tải ảnh khác' : 'Upload other'}
@@ -3051,19 +3084,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">
-                    {language === 'vi' ? 'Địa chỉ' : 'Address'}
-                  </label>
-                  <input
-                    type="text"
-                    value={newCafeAddress}
-                    onChange={(e) => setNewCafeAddress(e.target.value)}
-                    placeholder={language === 'vi' ? "Đường Bầu Ốc Thượng, Hội An" : "Bau Oc Thuong Road, Hoi An"}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                    required
-                  />
-                </div>
+                <AddressDropdown
+                  value={newCafeAddress}
+                  onChange={setNewCafeAddress}
+                  addresses={cafeAddresses}
+                  filterByOperating={false}
+                  placeholder={language === 'vi' ? "Chọn hoặc nhập địa chỉ..." : "Select or enter address..."}
+                  label={language === 'vi' ? 'Địa chỉ' : 'Address'}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -3438,10 +3466,7 @@ export default function AdminDashboard() {
       {/* Entertainments CRUD Modal */}
       {showAddEntertainmentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in">
-          <form
-            onSubmit={handleEntertainmentFormSubmit}
-            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto shrink-0 bg-white/95 border border-gray-150 shadow-2xl rounded-3xl p-6 md:p-8 animate-scale-up"
-          >
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto shrink-0 bg-white/95 border border-gray-150 shadow-2xl rounded-3xl p-6 md:p-8 animate-scale-up">
             <button
               type="button"
               onClick={() => setShowAddEntertainmentModal(false)}
@@ -3456,189 +3481,26 @@ export default function AdminDashboard() {
                 : (language === 'vi' ? '✨ Đăng ký Khu vui chơi mới' : '✨ Register New Entertainment Spot')}
             </h3>
 
-            {/* Two Column Layout Container */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-
-              {/* LEFT COLUMN: Basic Information */}
-              <div className="flex flex-col gap-4">
-                <h4 className="font-outfit text-xs font-extrabold text-heritage-amber uppercase tracking-wider mb-1">
-                  {language === 'vi' ? 'Thông tin cơ bản' : 'Basic Info'}
-                </h4>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Phân loại' : 'Type'}
-                    </label>
-                    <select
-                      value={newEntertainmentType}
-                      onChange={(e) => setNewEntertainmentType(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold focus:border-heritage-amber transition-all bg-gray-50/50 cursor-pointer"
-                    >
-                      <option value="Biển">{language === 'vi' ? 'Biển' : 'Beach'}</option>
-                      <option value="Vui chơi">{language === 'vi' ? 'Vui chơi' : 'Attraction'}</option>
-                      <option value="Workshop">Workshop</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Tên địa điểm' : 'Spot Name'}
-                    </label>
-                    <input
-                      type="text"
-                      value={newEntertainmentName}
-                      onChange={(e) => setNewEntertainmentName(e.target.value)}
-                      placeholder={language === 'vi' ? "Biển An Bàng" : "An Bang Beach"}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">
-                    {language === 'vi' ? 'Sở thích / Nhãn' : 'Interests / Tags'}
-                  </label>
-                  <input
-                    type="text"
-                    value={newEntertainmentInterests}
-                    onChange={(e) => setNewEntertainmentInterests(e.target.value)}
-                    placeholder={language === 'vi' ? "Chill & Thư giãn, Sống ảo, Trải nghiệm" : "Chill, Photo, Adventure"}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">
-                    {language === 'vi' ? 'Địa chỉ' : 'Address'}
-                  </label>
-                  <input
-                    type="text"
-                    value={newEntertainmentAddress}
-                    onChange={(e) => setNewEntertainmentAddress(e.target.value)}
-                    placeholder={language === 'vi' ? "Hai Bà Trưng, Hội An Tây" : "Hai Ba Trung, Hoi An"}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Giá vé từ (VNĐ)' : 'Price From (VND)'}
-                    </label>
-                    <input
-                      type="number"
-                      value={newEntertainmentMinPrice}
-                      onChange={(e) => setNewEntertainmentMinPrice(e.target.value)}
-                      placeholder="0"
-                      min="0"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Giá vé đến (VNĐ)' : 'Price To (VND)'}
-                    </label>
-                    <input
-                      type="number"
-                      value={newEntertainmentMaxPrice}
-                      onChange={(e) => setNewEntertainmentMaxPrice(e.target.value)}
-                      placeholder="0"
-                      min="0"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: Image & Location */}
-              <div className="flex flex-col gap-4">
-                <h4 className="font-outfit text-xs font-extrabold text-ricefield-green uppercase tracking-wider mb-1">
-                  {language === 'vi' ? 'Hình ảnh & Bản đồ định vị' : 'Image & Location'}
-                </h4>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">
-                    {language === 'vi' ? 'Đường dẫn ảnh trực tiếp' : 'Direct Image URL'}
-                  </label>
-                  <input
-                    type="url"
-                    value={newEntertainmentImageUrl}
-                    onChange={(e) => setNewEntertainmentImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Vĩ độ (Latitude)' : 'Latitude'}
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={newEntertainmentLat}
-                      onChange={(e) => setNewEntertainmentLat(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-50/50 text-gray-800 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-500">
-                      {language === 'vi' ? 'Kinh độ (Longitude)' : 'Longitude'}
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={newEntertainmentLng}
-                      onChange={(e) => setNewEntertainmentLng(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold bg-gray-50/50 text-gray-800 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {newEntertainmentLat && newEntertainmentLng && (
-                  <div className="w-full h-44 rounded-2xl border border-gray-200 overflow-hidden bg-gray-50 relative">
-                    <LeafletMap
-                      lat={Number(newEntertainmentLat)}
-                      lng={Number(newEntertainmentLng)}
-                      name={newEntertainmentName}
-                      language={language}
-                    />
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Action Buttons Section */}
-            <div className="flex gap-3 justify-end mt-8 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setShowAddEntertainmentModal(false)}
-                className="px-5 py-2.5 bg-gray-150 hover:bg-gray-200 text-gray-600 font-extrabold text-xs rounded-xl border-none cursor-pointer transition-all duration-200"
-              >
-                {language === 'vi' ? 'Hủy' : 'Cancel'}
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl border-none cursor-pointer transition-all duration-300 shadow-md shadow-heritage-amber/10 flex items-center gap-1.5"
-              >
-                {isEntertainmentEditMode
-                  ? (language === 'vi' ? 'Lưu thay đổi' : 'Save Changes')
-                  : (language === 'vi' ? 'Lưu khu vui chơi' : 'Save Spot')}
-              </button>
-            </div>
-
-          </form>
+            <EntertainmentForm
+              initialData={isEntertainmentEditMode ? {
+                id: editingEntertainmentId,
+                type: newEntertainmentType,
+                interests: newEntertainmentInterests,
+                name: newEntertainmentName,
+                address: newEntertainmentAddress,
+                latitude: newEntertainmentLat,
+                longitude: newEntertainmentLng,
+                minPrice: newEntertainmentMinPrice,
+                maxPrice: newEntertainmentMaxPrice,
+                imageUrl: newEntertainmentImageUrl,
+                openingTime: newEntertainmentOpeningTime,
+                closingTime: newEntertainmentClosingTime,
+                overnight: false
+              } : null}
+              onCancel={() => setShowAddEntertainmentModal(false)}
+              onSuccess={async () => { setShowAddEntertainmentModal(false); await fetchData(); }}
+            />
+          </div>
         </div>
       )}
 
@@ -3704,19 +3566,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-gray-500">
-                    {language === 'vi' ? 'Địa chỉ' : 'Address'}
-                  </label>
-                  <input
-                    type="text"
-                    value={newRentalAddress}
-                    onChange={(e) => setNewRentalAddress(e.target.value)}
-                    placeholder={language === 'vi' ? "57 Thích Quảng Đức, Hội An" : "57 Thich Quang Duc, Hoi An"}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 transition-all bg-gray-50/50"
-                    required
-                  />
-                </div>
+                <AddressDropdown
+                  value={newRentalAddress}
+                  onChange={setNewRentalAddress}
+                  addresses={rentalAddresses}
+                  filterByOperating={false}
+                  placeholder={language === 'vi' ? "Chọn hoặc nhập địa chỉ..." : "Select or enter address..."}
+                  label={language === 'vi' ? 'Địa chỉ' : 'Address'}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
