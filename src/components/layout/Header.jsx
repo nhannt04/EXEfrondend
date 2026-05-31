@@ -47,11 +47,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-dark-border px-6 py-3.5 flex items-center justify-between transition-all duration-300 ${
-        scrolled
+      className={`sticky top-0 z-50 w-full border-b border-dark-border px-6 py-3.5 flex items-center justify-between transition-all duration-300 ${scrolled
           ? 'bg-white/95 backdrop-blur-xl shadow-md shadow-black/5'
           : 'glass-panel'
-      }`}
+        }`}
     >
       {/* Logo */}
       <div
@@ -77,11 +76,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`relative px-5 py-2 rounded-full font-medium text-sm flex items-center gap-1.5 transition-all duration-300 cursor-pointer border-none ${
-              activeTab === id
+            className={`relative px-5 py-2 rounded-full font-medium text-sm flex items-center gap-1.5 transition-all duration-300 cursor-pointer border-none ${activeTab === id
                 ? 'bg-heritage-amber text-white shadow-md shadow-heritage-amber/20 font-semibold scale-[1.02]'
                 : 'text-gray-500 hover:text-gray-900 hover:bg-white/60 bg-transparent'
-            }`}
+              }`}
           >
             {Icon && <Icon className={`w-3.5 h-3.5 transition-transform duration-300 ${activeTab === id ? 'animate-spin-slow' : ''}`} />}
             {label}
@@ -115,7 +113,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             </div>
 
             {/* Avatar with dropdown trigger */}
-            <div 
+            <div
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="relative w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-heritage-amber via-heritage-gold to-ricefield-green animate-pulse-gold cursor-pointer group"
             >
@@ -127,7 +125,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
               {/* Dropdown Menu */}
               {dropdownOpen && (
-                <div 
+                <div
                   onClick={(e) => e.stopPropagation()}
                   className="absolute right-0 top-11 w-48 bg-white border border-gray-150 rounded-2xl shadow-xl py-2 z-50 animate-scale-up"
                 >
@@ -139,11 +137,11 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
                   <label className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer font-bold transition-all border-none bg-transparent m-0 select-none">
                     <UserIcon className="w-4 h-4 text-heritage-amber" />
                     <span>{language === 'vi' ? 'Đổi ảnh đại diện' : 'Change Avatar'}</span>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleAvatarChange} 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
                     />
                   </label>
 
@@ -187,11 +185,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             <button
               key={id}
               onClick={() => { setActiveTab(id); setMobileOpen(false); }}
-              className={`w-full px-4 py-3 rounded-xl font-medium text-sm flex items-center gap-2 transition-all duration-200 cursor-pointer border-none text-left ${
-                activeTab === id
+              className={`w-full px-4 py-3 rounded-xl font-medium text-sm flex items-center gap-2 transition-all duration-200 cursor-pointer border-none text-left ${activeTab === id
                   ? 'bg-heritage-amber/10 text-heritage-amber font-bold border border-heritage-amber/20'
                   : 'text-gray-600 hover:bg-gray-50 bg-transparent'
-              }`}
+                }`}
             >
               {Icon && <Icon className="w-4 h-4" />}
               {label}

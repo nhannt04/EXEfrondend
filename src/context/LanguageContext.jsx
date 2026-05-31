@@ -10,7 +10,8 @@ const translations = {
     community: 'Cộng đồng',
     visitor: 'Khách du lịch',
     localMember: 'Hội viên Local',
-    
+    navigation: 'Dẫn đường',
+
     // Landing Page
     heroBadge: 'Hành trình cá nhân hóa bằng AI',
     heroTitle: 'Khám phá Hội An theo cách',
@@ -43,7 +44,7 @@ const translations = {
     generateButton: 'SINH LỊCH TRÌNH AI',
     generating: 'AI đang phân tích...',
     loadingFact: 'Có thể bạn chưa biết:',
-    
+
     // Budget Dashboard
     yourBudget: 'Ngân sách của bạn',
     remainingBalance: 'Còn dư thực tế',
@@ -60,7 +61,7 @@ const translations = {
     advisorTitle: 'Trợ lý AI Đánh giá:',
     advisorOver: 'Lịch trình hiện đang vượt quá ngân sách mong muốn của bạn. Hãy click nút "TỐI ƯU CHI PHÍ" để tự động áp dụng các giải pháp giảm giá trị phòng nghỉ mà vẫn giữ nguyên trải nghiệm.',
     advisorUnder: 'Lịch trình cực kỳ tối ưu! Chi phí phân bổ hợp lý, bạn còn dư ngân sách để chi tiêu mua sắm quà lưu niệm hoặc ăn vặt Phố Cổ Hội An lúc nửa đêm.',
-    
+
     // Timeline
     restPlace: 'Nơi nghỉ ngơi',
     estimatedNight: 'Ước tính/đêm',
@@ -115,13 +116,13 @@ const translations = {
     suggestMeal: 'Trưa nay ăn gì ngon gần Little Pie Homestay?',
     suggestHistory: 'Lịch sử Chùa Cầu có nguồn gốc thế nào?',
     suggestSunset: 'Gu Healing nên đi đâu chill ngắm hoàng hôn?',
-    
+
     // Bot responses (pre-translated or generated)
     botMealReply: 'Dựa vào lịch trình của bạn đang ở Little Pie Homestay, tôi gợi ý quán ăn trưa cực ngon cách bạn chỉ 250m: Quán Cao Lầu Thanh hoặc Cơm gà Bà Buội. Nếu bạn thích uống cafe chill đồng lúa ngắm cảnh, hãy ghé FeFe Coffee nhé. Đường đi rất bằng phẳng, đi bộ tầm 5 phút là tới nha!',
     botHistoryReply: '🏮 [AI Thuyết Minh Lịch Sử]: Chùa Cầu (Lai Viễn Kiều) được các thương nhân Nhật Bản xây dựng vào đầu thế kỷ 17. Ngôi cầu mang kiến trúc độc bản hình chữ Công, trên có mái che, dưới vòm cầu là bức tượng thần khỉ Sarutahiko và thần chó Thiên Cẩu yểm giữ để trấn trị thủy quái Namazu gây ra động đất. Chùa Cầu chính là biểu tượng giao thoa văn hoá Nhật - Hoa - Việt tại phố hội.',
     botSunsetReply: 'Với gu Healing của bạn, địa điểm ngắm hoàng hôn Hội An tuyệt vời nhất là bãi biển An Bàng (khu vực bãi tắm ẩn sau rặng thông) hoặc ghé Roving Chill House nằm ngay giữa cánh đồng lúa Cẩm Châu. Trải nghiệm ngắm ráng chiều vàng buông xuống trên sóng biển hoặc đồng lúa sẽ giúp bạn nạp năng lượng cực tốt!',
     botDefaultReply: 'Tôi đã nhận được câu hỏi của bạn. Hội An có rất nhiều điều thú vị đang chờ đón! Bạn có muốn tôi tối ưu hóa tuyến đường di chuyển từ địa điểm hiện tại của bạn đến Phố Cổ không?',
-    
+
     // Map Routing
     mapTitle: 'Bản đồ Định vị & Lộ trình AI',
     mapCurrentLocation: 'Điểm xuất phát (Của bạn)',
@@ -168,7 +169,8 @@ const translations = {
     community: 'Community',
     visitor: 'Traveler',
     localMember: 'Local Member',
-    
+    navigation: 'Navigation',
+
     // Landing Page
     heroBadge: 'AI-Personalized Itinerary Builder',
     heroTitle: 'Discover Hoi An like a',
@@ -201,7 +203,7 @@ const translations = {
     generateButton: 'GENERATE AI TRIP',
     generating: 'AI Analyzing...',
     loadingFact: 'Did you know?',
-    
+
     // Budget Dashboard
     yourBudget: 'Your Budget',
     remainingBalance: 'Remaining Balance',
@@ -218,7 +220,7 @@ const translations = {
     advisorTitle: 'AI Guide Assessment:',
     advisorOver: 'Your current itinerary exceeds your targeted budget. Click the "OPTIMIZE BUDGET" button to automatically swap entries with cost-effective alternatives.',
     advisorUnder: 'Itinerary perfectly optimized! Well-distributed costs leave you with ample budget for souvenir shopping or late-night street food walks.',
-    
+
     // Timeline
     restPlace: 'Stay / Rest Area',
     estimatedNight: 'Estimated/night',
@@ -273,13 +275,13 @@ const translations = {
     suggestMeal: 'What is good to eat near Little Pie Homestay?',
     suggestHistory: 'What is the history of the Japanese Bridge (Chua Cau)?',
     suggestSunset: 'Where can a Healing enthusiast go for sunset views?',
-    
+
     // Bot responses
     botMealReply: 'Since you are staying at Little Pie Homestay, I highly recommend two amazing lunch spots within 250m: Thanh Cao Lau diner or Ba Buoi Chicken Rice. If you want to sip coffee overlooking vast green fields, drop by FeFe Coffee. The route is very flat and takes only 5 minutes on foot!',
     botHistoryReply: '🏮 [AI History Thuyết Minh]: The Japanese Covered Bridge (Chua Cau) was constructed by Japanese merchants in the early 17th century. It features a unique bridge-temple design shaped like the kanji "Gong", housing statues of the Monkey deity Sarutahiko and the Dog deity Tenshogu to subdue the earthquake-causing water serpent Namazu. It symbolizes the historical merger of Japanese, Chinese, and Vietnamese cultures.',
     botSunsetReply: 'For your Healing style, the best sunset views in Hoi An can be found at An Bang Beach (the quiet pine tree patch behind the main strip) or by relaxing at Roving Chill House nestled in the Cam Chau rice paddies. Watching the amber sunset fall over the fields or waves will recharge your spirit!',
     botDefaultReply: 'I have received your query. Hoi An has many amazing secrets waiting for you! Would you like me to optimize your walking path from your current location to the Old Town?',
-    
+
     // Map Routing
     mapTitle: 'AI Route & Navigation Map',
     mapCurrentLocation: 'Starting Point (Your Location)',
