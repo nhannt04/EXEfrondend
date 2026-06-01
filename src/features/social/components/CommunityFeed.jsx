@@ -1,16 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageSquare, Bookmark, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Star, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X } from 'lucide-react';
+import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2 } from 'lucide-react';
+
 import { useLanguage } from '../../../context/LanguageContext';
-import axiosClient from '../../../services/axiosClient';
 import diaryService from '../../../services/diaryService';
 import expertService from '../../../services/expertService';
+import spotService from '../../../services/spotService';
 import authService from '../../../services/authService';
+import tripService from '../../../services/tripService';
+
 
 export default function CommunityFeed() {
   const { language, t } = useLanguage();
   const [posts, setPosts] = useState([]);
   const [newPostText, setNewPostText] = useState('');
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const REACTION_STORAGE_KEY = 'travelist-diary-reactions';
+
+  const getStoredReactions = () => {
+    try {
+      return JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || '{}');
+    } catch (e) {
+      return {};
+    }
+  };
+
+  const getStoredReactionForPost = (userId, postId) => {
+    if (!userId || !postId) return null;
+    const allReactions = getStoredReactions();
+    return allReactions?.[String(userId)]?.[String(postId)] || null;
+  };
+
+  const setStoredReactionForPost = (userId, postId, reaction) => {
+    if (!userId || !postId) return;
+    const allReactions = getStoredReactions();
+    const userKey = String(userId);
+    const postKey = String(postId);
+    allReactions[userKey] = allReactions[userKey] || {};
+    allReactions[userKey][postKey] = reaction;
+    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(allReactions));
+  };
 
   useEffect(() => {
     const handleSyncUser = () => {
@@ -24,9 +52,41 @@ export default function CommunityFeed() {
   const [experts, setExperts] = useState([]);
 
   // Custom interactive post settings
-  const [postCategory, setPostCategory] = useState('healing');
-  const [postLinkedSpot, setPostLinkedSpot] = useState('Chùa Cầu Nhật Bản');
+  // store selected spot id (nullable)
+  const [postLinkedSpot, setPostLinkedSpot] = useState(null);
   const [activeTag, setActiveTag] = useState('all');
+  const [feedViewMode, setFeedViewMode] = useState('all'); // 'all', 'my_posts'
+  const [myPostsSubFilter, setMyPostsSubFilter] = useState('all'); // 'all', 'public', 'hidden', 'reported'
+  const [activeDropdownPostId, setActiveDropdownPostId] = useState(null);
+
+  const [completedItineraries, setCompletedItineraries] = useState([]);
+  const [selectedItineraryId, setSelectedItineraryId] = useState(null);
+  const [spotsForSelectedItinerary, setSpotsForSelectedItinerary] = useState([]);
+  const [postedSpotIds, setPostedSpotIds] = useState([]);
+
+  const extractSpotsFromItinerary = (tripDataStr) => {
+    try {
+      const itineraryData = JSON.parse(tripDataStr);
+      const spotsMap = {};
+      itineraryData.forEach(day => {
+        if (day.accommodation && day.accommodation.id) {
+          spotsMap[day.accommodation.id] = day.accommodation;
+        }
+        if (day.slots) {
+          day.slots.forEach(slot => {
+            if (slot.spot && slot.spot.id) {
+              spotsMap[slot.spot.id] = slot.spot;
+            }
+          });
+        }
+      });
+      return Object.values(spotsMap);
+    } catch (e) {
+      console.error("Failed to parse tripData:", e);
+      return [];
+    }
+  };
+
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -44,7 +104,34 @@ export default function CommunityFeed() {
   const [replyInputs, setReplyInputs] = useState({});
   const [activeReplyBoxId, setActiveReplyBoxId] = useState(null);
 
+  const [sharedPostId, setSharedPostId] = useState(null);
+
+  const handleShareLink = (postId) => {
+    const shareUrl = `${window.location.origin}/social?post=${postId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setSharedPostId(postId);
+      setTimeout(() => setSharedPostId(null), 2000);
+    }).catch(err => {
+      console.error("Failed to copy link:", err);
+    });
+  };
+
+
+  const [postIdFromUrl, setPostIdFromUrl] = useState(null);
+  const [activeHashtagFilter, setActiveHashtagFilter] = useState(null);
+
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const postParam = params.get('post');
+    if (postParam) {
+      setPostIdFromUrl(Number(postParam));
+    }
+  }, []);
+
+
   // Modals / Dialog alerts states
+
   const [showQuestSuccess, setShowQuestSuccess] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [activeExpert, setActiveExpert] = useState(null);
@@ -77,6 +164,23 @@ export default function CommunityFeed() {
       });
     }
 
+    const spotObj = d.spot ? {
+      id: d.spot.id,
+      name: language === 'vi' ? d.spot.nameVi : d.spot.nameEn,
+      address: d.spot.address || (language === 'vi' ? 'Hội An, Quảng Nam' : 'Hoi An, Quang Nam'),
+      tags: d.spot.tags ? d.spot.tags.split(',').map(t => {
+        const trimmed = t.trim();
+        return trimmed.startsWith('#') ? trimmed : '#' + trimmed;
+      }) : []
+    } : null;
+
+    const reaction = d.myReaction || getStoredReactionForPost(currentUser?.id, d.id);
+
+    const fromContentVi = d.contentVi ? (d.contentVi.match(/#[\p{L}\w]+/gu) || []) : [];
+    const fromContentEn = d.contentEn ? (d.contentEn.match(/#[\p{L}\w]+/gu) || []) : [];
+    const fromSpot = spotObj ? spotObj.tags : [];
+    const postHashtags = [...new Set([...fromContentVi, ...fromContentEn, ...fromSpot])];
+
     return {
       id: d.id,
       authorId: d.user ? d.user.id : null,
@@ -90,6 +194,8 @@ export default function CommunityFeed() {
       },
       category: d.category || 'healing',
       spotName: d.spot ? (language === 'vi' ? d.spot.nameVi : d.spot.nameEn) : null,
+      spot: spotObj,
+      hashtags: postHashtags,
       date: {
         vi: new Date(d.createdAt).toLocaleDateString('vi-VN') + ' (Live)',
         en: new Date(d.createdAt).toLocaleDateString('en-US') + ' (Live)'
@@ -100,11 +206,18 @@ export default function CommunityFeed() {
       },
       images: d.imageUrl ? [d.imageUrl] : [],
       likes: d.likesCount || 0,
-      hasLiked: false,
+      dislikes: d.dislikesCount || 0,
+      myReaction: reaction || null,
+      hasLiked: reaction === 'LIKE',
+      hasDisliked: reaction === 'DISLIKE',
       hasSaved: false,
+      status: d.status || 'public',
+      reported: d.reported || false,
       comments: topLevelComments
     };
   };
+
+
 
   // Tải dữ liệu thật từ Spring Boot khi mở trang
   useEffect(() => {
@@ -139,49 +252,175 @@ export default function CommunityFeed() {
       } catch (e) {
         console.warn("Could not load experts from backend, using default mock data:", e);
       }
+
+      // Load spots for "Liên kết Địa điểm" dropdown
+      try {
+        const spotsRes = await spotService.getFeaturedSpots(12);
+        if (spotsRes && spotsRes.success) {
+          if (spotsRes.data && spotsRes.data.length > 0 && postLinkedSpot == null) {
+            setPostLinkedSpot(spotsRes.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load spots for diary dropdown:", e);
+      }
     };
 
     fetchDiariesAndExperts();
-  }, [language]);
+  }, [language, currentUser?.id]);
 
-  // Thả tim bài viết (Like) - Đồng bộ lên Server PostgreSQL
+  useEffect(() => {
+    const fetchCompletedItineraries = async () => {
+      if (!currentUser) {
+        setCompletedItineraries([]);
+        return;
+      }
+      try {
+        const response = await tripService.getCompletedItineraries();
+        if (response && response.success) {
+          setCompletedItineraries(response.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch completed itineraries:", err);
+      }
+    };
+    fetchCompletedItineraries();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const updateSpotsAndPosted = async () => {
+      if (!selectedItineraryId) {
+        setSpotsForSelectedItinerary([]);
+        setPostedSpotIds([]);
+        setPostLinkedSpot(null);
+        return;
+      }
+      const itinerary = completedItineraries.find(it => it.id === Number(selectedItineraryId));
+      if (itinerary) {
+        const spots = extractSpotsFromItinerary(itinerary.tripData);
+        setSpotsForSelectedItinerary(spots);
+        
+        try {
+          const response = await diaryService.getPostedSpots(selectedItineraryId);
+          if (response && response.success) {
+            setPostedSpotIds(response.data || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch posted spots:", err);
+        }
+      }
+    };
+    updateSpotsAndPosted();
+  }, [selectedItineraryId, completedItineraries]);
+
+  // Tương tác Thích (Like)
   const handleLike = async (postId) => {
     if (!currentUser) {
       window.dispatchEvent(new Event('auth-required'));
       return;
     }
 
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
+    if (post.myReaction || storedReaction) {
+      return;
+    }
+
     // Optimistic UI update
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
         return {
-          ...post,
-          likes: post.hasLiked ? post.likes - 1 : post.likes + 1,
-          hasLiked: !post.hasLiked
+          ...p,
+          likes: p.likes + 1,
+          hasLiked: true,
+          hasDisliked: false,
+          myReaction: 'LIKE'
         };
       }
-      return post;
+      return p;
     }));
 
+    setStoredReactionForPost(currentUser.id, postId, 'LIKE');
+
     try {
-      await diaryService.likeDiary(postId);
+      await diaryService.likeDiary(postId, 'LIKE');
     } catch (e) {
       console.warn("Could not register like on server:", e);
     }
   };
 
-  // Lưu bài viết
-  const handleSave = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
+  // Tương tác Ghét (Dislike)
+  const handleDislike = async (postId) => {
+    if (!currentUser) {
+      window.dispatchEvent(new Event('auth-required'));
+      return;
+    }
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
+    if (post.myReaction || storedReaction) {
+      return;
+    }
+
+    // Optimistic UI update
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
         return {
-          ...post,
-          hasSaved: !post.hasSaved
+          ...p,
+          dislikes: p.dislikes + 1,
+          hasDisliked: true,
+          hasLiked: false,
+          myReaction: 'DISLIKE'
         };
       }
-      return post;
+      return p;
     }));
+
+    setStoredReactionForPost(currentUser.id, postId, 'DISLIKE');
+
+    try {
+      await diaryService.likeDiary(postId, 'DISLIKE');
+    } catch (e) {
+      console.warn("Could not register dislike on server:", e);
+    }
   };
+
+  const handleReportPost = (postId) => {
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return { ...p, reported: true };
+      }
+      return p;
+    }));
+    alert(language === 'vi' ? '🔔 Đã báo cáo bài viết này đến admin thành công!' : '🔔 Reported this post to admin successfully!');
+    setActiveDropdownPostId(null);
+  };
+
+  const handleDeletePost = (postId) => {
+    if (window.confirm(language === 'vi' ? 'Bạn có chắc chắn muốn xóa bài viết này?' : 'Are you sure you want to delete this post?')) {
+      setPosts(posts.filter(p => p.id !== postId));
+      setActiveDropdownPostId(null);
+    }
+  };
+
+  const handleToggleHidePost = (postId, newStatus) => {
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return { ...p, status: newStatus };
+      }
+      return p;
+    }));
+    const msg = newStatus === 'hidden'
+      ? (language === 'vi' ? 'Bài viết đã được ẩn thành công!' : 'Post has been hidden successfully!')
+      : (language === 'vi' ? 'Bài viết đã được hiển thị công khai!' : 'Post is now public!');
+    alert(msg);
+    setActiveDropdownPostId(null);
+  };
+
 
   // Đăng bài viết nhật ký du ký mới - Gửi Multipart Form lên Cloudflare Images API
   const handleCreatePost = async (e) => {
@@ -193,12 +432,46 @@ export default function CommunityFeed() {
       return;
     }
 
+    if (!selectedItineraryId) {
+      alert(language === 'vi' ? "Vui lòng chọn một lịch trình đã hoàn thành!" : "Please select a completed itinerary!");
+      return;
+    }
+    if (!postLinkedSpot) {
+      alert(language === 'vi' ? "Vui lòng chọn một địa điểm để đánh giá!" : "Please select a spot to review!");
+      return;
+    }
+    if (postedSpotIds.includes(postLinkedSpot)) {
+      alert(language === 'vi' 
+        ? "Địa điểm này đã được đánh giá trong lịch trình này. Hãy hoàn thành một lịch trình khác để đánh giá lại!" 
+        : "This spot has already been reviewed in this itinerary. Complete a new journey to review again!");
+      return;
+    }
+
     try {
+      const itinerary = completedItineraries.find(it => it.id === Number(selectedItineraryId));
+      let categoryVal = 'healing';
+      if (itinerary && itinerary.travelStyle) {
+        const styleLower = itinerary.travelStyle.toLowerCase();
+        if (styleLower.includes('chill') || styleLower.includes('thư giãn')) {
+          categoryVal = 'healing';
+        } else if (styleLower.includes('ảo') || styleLower.includes('scenic') || styleLower.includes('sống ảo')) {
+          categoryVal = 'scenic';
+        } else if (styleLower.includes('trải nghiệm') || styleLower.includes('experience') || styleLower.includes('local')) {
+          categoryVal = 'adventure';
+        }
+      }
+
       const formData = new FormData();
       formData.append('userId', currentUser.id.toString());
-      formData.append('category', postCategory);
+      formData.append('category', categoryVal);
       formData.append('contentVi', newPostText);
       formData.append('contentEn', newPostText);
+      if (postLinkedSpot) {
+        formData.append('spotId', postLinkedSpot.toString());
+      }
+      if (selectedItineraryId) {
+        formData.append('itineraryId', selectedItineraryId.toString());
+      }
       if (selectedImage) {
         formData.append('image', selectedImage);
       }
@@ -211,6 +484,9 @@ export default function CommunityFeed() {
         setNewPostText('');
         setSelectedImage(null);
         setImagePreview('');
+        // Cập nhật lại danh sách địa điểm đã đánh giá
+        setPostedSpotIds([...postedSpotIds, postLinkedSpot]);
+        setPostLinkedSpot(null);
       } else {
         alert("Đăng tải bài viết thất bại!");
       }
@@ -220,8 +496,37 @@ export default function CommunityFeed() {
     }
   };
 
+
+  const handleDeleteComment = async (postId, commentId) => {
+    if (!window.confirm(language === 'vi' ? 'Bạn có chắc chắn muốn xóa bình luận này?' : 'Are you sure you want to delete this comment?')) return;
+    try {
+      const response = await diaryService.deleteComment(postId, commentId);
+      if (response && response.success) {
+        setPosts(posts.map(post => {
+          if (post.id === postId) {
+            const updatedComments = post.comments
+              .filter(c => c.id !== commentId)
+              .map(c => ({
+                ...c,
+                replies: c.replies.filter(r => r.id !== commentId)
+              }));
+            return {
+              ...post,
+              comments: updatedComments
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to delete comment:", e);
+      alert(language === 'vi' ? 'Xóa bình luận thất bại!' : 'Failed to delete comment!');
+    }
+  };
+
   // Đăng bình luận lồng nhau dưới bài viết - Kết nối Spring Boot
   const handleAddComment = async (postId) => {
+
     const text = commentInputs[postId];
     if (!text || !text.trim()) return;
 
@@ -263,35 +568,52 @@ export default function CommunityFeed() {
   };
 
   // Đăng bình luận con
-  const handleAddReply = (postId, commentId) => {
+  const handleAddReply = async (postId, commentId) => {
     const text = replyInputs[commentId];
     if (!text || !text.trim()) return;
 
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const nextComments = post.comments.map(c => {
-          if (c.id === commentId) {
-            const newReply = {
-              id: `r_new_${Date.now()}`,
-              userId: currentUser?.id || null,
-              userName: currentUser?.fullName || (language === 'vi' ? 'Bạn' : 'You'),
-              userAvatar: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-              content: { vi: text, en: text }
-            };
+    if (!currentUser) {
+      window.dispatchEvent(new Event('auth-required'));
+      return;
+    }
+
+    try {
+      const response = await diaryService.addComment(postId, currentUser.id, text, commentId);
+
+      if (response && response.success) {
+        const c = response.data;
+        const newReply = {
+          id: c.id,
+          userId: c.user ? c.user.id : (currentUser?.id || null),
+          userName: c.user ? c.user.fullName : (currentUser?.fullName || 'Ẩn danh'),
+          userAvatar: c.user ? (c.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80') : (currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'),
+          content: { vi: c.content, en: c.content },
+          replies: []
+        };
+
+        setPosts(posts.map(post => {
+          if (post.id === postId) {
+            const nextComments = post.comments.map(comment => {
+              if (comment.id === commentId) {
+                return {
+                  ...comment,
+                  replies: [...(comment.replies || []), newReply]
+                };
+              }
+              return comment;
+            });
             return {
-              ...c,
-              replies: [...c.replies, newReply]
+              ...post,
+              comments: nextComments
             };
           }
-          return c;
-        });
-        return {
-          ...post,
-          comments: nextComments
-        };
+          return post;
+        }));
       }
-      return post;
-    }));
+    } catch (err) {
+      console.error("Error adding reply:", err);
+      alert(language === 'vi' ? 'Lỗi khi trả lời bình luận' : 'Error adding reply');
+    }
 
     setReplyInputs({ ...replyInputs, [commentId]: '' });
     setActiveReplyBoxId(null);
@@ -332,13 +654,75 @@ export default function CommunityFeed() {
     }
   };
 
-  // Filter posts by tag
-  const filteredPosts = activeTag === 'all'
-    ? posts
-    : posts.filter(p => p.category === activeTag);
+  const getTrendingHashtags = () => {
+    const tagLikesMap = {};
+    posts.forEach(post => {
+      if (post.hashtags) {
+        post.hashtags.forEach(tag => {
+          tagLikesMap[tag] = (tagLikesMap[tag] || 0) + (post.likes || 0);
+        });
+      }
+    });
+
+    const sortedTags = Object.keys(tagLikesMap)
+      .map(tag => ({
+        tag,
+        likes: tagLikesMap[tag]
+      }))
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 5);
+
+    if (sortedTags.length === 0) {
+      return [
+        { tag: '#FeFeRicefield', likes: 120, status: 'hot' },
+        { tag: '#BanhMiPhuongTrueLocal', likes: 85, status: 'rising' },
+        { tag: '#LanternCraftGuild', likes: 62, status: 'new' },
+        { tag: '#ChamIslandCorals', likes: 48, status: 'rising' }
+      ];
+    }
+    return sortedTags;
+  };
+
+  // Filter posts by tag, hashtag filter, or shared parameter
+
+  const filteredPosts = posts.filter(p => {
+    // 1. URL Shared Post
+    if (postIdFromUrl) return p.id === postIdFromUrl;
+
+    // 2. Hashtag Filter
+    if (activeHashtagFilter) {
+      if (!p.hashtags || !p.hashtags.includes(activeHashtagFilter)) return false;
+    }
+
+    // 3. Category Tag Filter (chill & thư giãn, sống ảo, trải nghiệm local)
+    if (activeTag !== 'all' && p.category !== activeTag) return false;
+
+    // 4. Feed View Mode Filter
+    if (feedViewMode === 'all') {
+      // All posts mode: only show public posts
+      return p.status !== 'hidden';
+    } else if (feedViewMode === 'my_posts') {
+      // My posts mode: must belong to current user
+      if (p.authorId !== currentUser?.id) return false;
+
+      // Sub-filter for my posts
+      if (myPostsSubFilter === 'public') {
+        return p.status !== 'hidden';
+      } else if (myPostsSubFilter === 'hidden') {
+        return p.status === 'hidden';
+      } else if (myPostsSubFilter === 'reported') {
+        return p.reported === true;
+      }
+      // 'all' subfilter: show all of my posts (both public and hidden)
+      return true;
+    }
+    return true;
+  });
+
+
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col gap-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col gap-8">
 
       {/* Visual Title Header */}
       <div className="text-center flex flex-col items-center gap-2">
@@ -354,13 +738,103 @@ export default function CommunityFeed() {
         </p>
       </div>
 
+      {postIdFromUrl && (
+        <div className="bg-heritage-amber/10 border border-heritage-amber p-4 rounded-xl flex justify-between items-center animate-fade-in relative z-10">
+          <span className="text-xs font-bold text-gray-700">
+            {language === 'vi' ? '📌 Bạn đang xem một bài viết được chia sẻ từ liên kết.' : '📌 You are viewing a shared post from link.'}
+          </span>
+          <button
+            onClick={() => setPostIdFromUrl(null)}
+            className="px-3 py-1.5 bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-extrabold rounded-lg cursor-pointer transition-colors border-none"
+          >
+            {language === 'vi' ? 'Xem tất cả' : 'View all'}
+          </button>
+        </div>
+      )}
+
+      {activeHashtagFilter && (
+        <div className="bg-ricefield-green/10 border border-ricefield-green p-4 rounded-xl flex justify-between items-center animate-fade-in relative z-10">
+          <span className="text-xs font-bold text-gray-700">
+            {language === 'vi' 
+              ? `📌 Đang lọc theo chủ đề hashtag: ${activeHashtagFilter}` 
+              : `📌 Filtering by hashtag: ${activeHashtagFilter}`}
+          </span>
+          <button
+            onClick={() => setActiveHashtagFilter(null)}
+            className="px-3 py-1.5 bg-ricefield-green hover:bg-ricefield-light text-white text-xs font-extrabold rounded-lg cursor-pointer transition-colors border-none"
+          >
+            {language === 'vi' ? 'Xem tất cả' : 'View all'}
+          </button>
+        </div>
+      )}
+
+
+
+      {/* Feed View Mode Filter */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/90 border border-heritage-gold/25 p-4 rounded-2xl relative z-20 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setFeedViewMode('all'); setMyPostsSubFilter('all'); }}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
+              feedViewMode === 'all'
+                ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+            }`}
+          >
+            {language === 'vi' ? 'Tất cả bài viết' : 'All Posts'}
+          </button>
+          
+          {currentUser && (
+            <button
+              onClick={() => { setFeedViewMode('my_posts'); setMyPostsSubFilter('all'); }}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
+                feedViewMode === 'my_posts'
+                  ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              {language === 'vi' ? 'Bài viết của tôi' : 'My Posts'}
+            </button>
+          )}
+        </div>
+
+        {/* Sub-filters under My Posts */}
+        {feedViewMode === 'my_posts' && (
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 w-full sm:w-auto animate-fade-in">
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase whitespace-nowrap">
+              {language === 'vi' ? 'Trạng thái bài viết:' : 'Post status:'}
+            </span>
+            <div className="flex gap-1.5">
+              {[
+                { id: 'all', label: language === 'vi' ? 'Tất cả' : 'All' },
+                { id: 'public', label: language === 'vi' ? 'Công khai' : 'Public' },
+                { id: 'hidden', label: language === 'vi' ? 'Đã ẩn' : 'Hidden' },
+                // Only show reported sub-filter to Admin
+                ...(currentUser && currentUser.role === 'ADMIN' ? [{ id: 'reported', label: language === 'vi' ? 'Bị báo cáo ⚠️' : 'Reported ⚠️' }] : [])
+              ].map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => setMyPostsSubFilter(sub.id)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-300 cursor-pointer ${
+                    myPostsSubFilter === sub.id
+                      ? 'bg-ricefield-green border-ricefield-green text-white shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Category Filter Tabs */}
       <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
         <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { id: 'all', label: t('all'), icon: Compass },
-            { id: 'food', label: t('tagFood'), icon: Star },
             { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
             { id: 'healing', label: t('tagHealing'), icon: Sparkles },
             { id: 'scenic', label: t('tagScenic'), icon: MapPin }
@@ -372,8 +846,8 @@ export default function CommunityFeed() {
                 key={tag.id}
                 onClick={() => setActiveTag(tag.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                  ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
                   }`}
               >
                 <TagIcon className="w-4 h-4 relative z-10" />
@@ -385,7 +859,7 @@ export default function CommunityFeed() {
       </div>
 
       {/* Split Layout: Posts Column (8) vs Local Guide Sidebar (4) */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
         {/* Main social posts Column */}
         <div className="lg:col-span-8 flex flex-col gap-6">
@@ -393,7 +867,7 @@ export default function CommunityFeed() {
           {/* Advanced Local Diary Composer */}
           <form
             onSubmit={handleCreatePost}
-            className="bg-gradient-to-tr from-[#FAF9F5] to-white border border-heritage-gold/20 p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
+            className="bg-gradient-to-tr from-white to-blue-50/40 border border-heritage-gold/20 p-4 sm:p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
           >
             {/* Subtle light overlay */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl" />
@@ -413,41 +887,59 @@ export default function CommunityFeed() {
             </div>
 
             {/* Custom tagging parameters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/50 border border-gray-150 p-3 rounded-xl relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/60 border border-gray-150 p-3 rounded-xl relative z-10">
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">{t('diaryCategory')}</label>
+                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                  {language === 'vi' ? 'Lịch trình đã hoàn thành' : 'Completed Itinerary'}
+                </label>
                 <select
-                  value={postCategory}
-                  onChange={(e) => setPostCategory(e.target.value)}
+                  value={selectedItineraryId || ''}
+                  onChange={(e) => {
+                    setSelectedItineraryId(e.target.value ? Number(e.target.value) : null);
+                    setPostLinkedSpot(null);
+                  }}
                   className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
+                  required
                 >
-                  <option value="healing">🧘 {t('tagHealing')}</option>
-                  <option value="food">🍗 {t('tagFood')}</option>
-                  <option value="adventure">🏮 {t('tagAdventure')}</option>
-                  <option value="scenic">📸 {t('tagScenic')}</option>
+                  <option value="">{language === 'vi' ? '-- Chọn lịch trình --' : '-- Select itinerary --'}</option>
+                  {completedItineraries.map((it) => (
+                    <option key={it.id} value={it.id}>
+                      📍 {it.title} ({it.destination})
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Liên kết Địa điểm' : 'Link Destination'}</label>
+                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                  {language === 'vi' ? 'Chọn Địa điểm đã đi' : 'Select Visited Spot'}
+                </label>
                 <select
-                  value={postLinkedSpot}
-                  onChange={(e) => setPostLinkedSpot(e.target.value)}
+                  value={postLinkedSpot || ''}
+                  onChange={(e) => setPostLinkedSpot(e.target.value ? Number(e.target.value) : null)}
                   className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
+                  disabled={!selectedItineraryId}
+                  required
                 >
-                  <option value="FeFe Coffee">☕ FeFe Coffee</option>
-                  <option value="Cơm Gà Bà Buội">🍚 Cơm Gà Bà Buội</option>
-                  <option value="Workshop Đèn Lồng">🏮 Workshop Đèn Lồng</option>
-                  <option value="Rừng dừa Bảy Mẫu">🛶 Rừng dừa Bảy Mẫu</option>
-                  <option value="Cham Island Snorkeling">🐠 Cham Island Snorkeling</option>
+                  <option value="">{language === 'vi' ? '-- Chọn địa điểm --' : '-- Select spot --'}</option>
+                  {spotsForSelectedItinerary.map((s) => {
+                    const isPosted = postedSpotIds.includes(s.id);
+                    const name = s.name?.[language] || s.nameVi || s.nameEn || s.name;
+                    return (
+                      <option key={s.id} value={s.id} disabled={isPosted}>
+                        {name} {isPosted ? `(${language === 'vi' ? 'Đã đánh giá' : 'Reviewed'})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
 
+
             {/* Selected Image Preview with close trigger */}
             {imagePreview && (
-              <div className="relative w-32 h-20 border border-gray-150 rounded-xl overflow-hidden shadow-inner group relative z-10 animate-scale-up">
-                <img src={imagePreview} className="w-full h-full object-cover animate-fade-in" />
+              <div className="relative w-32 h-20 border border-gray-150 rounded-xl overflow-hidden shadow-inner group z-10 animate-scale-up">
+                <img src={imagePreview} alt={language === 'vi' ? 'Ảnh xem trước bài viết' : 'Post preview'} className="w-full h-full object-cover animate-fade-in" />
                 <button
                   type="button"
                   onClick={() => { setSelectedImage(null); setImagePreview(''); }}
@@ -458,8 +950,8 @@ export default function CommunityFeed() {
               </div>
             )}
 
-            <div className="flex justify-between items-center border-t border-gray-100 pt-3 relative z-10">
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-t border-gray-100 pt-3 relative z-10">
+              <div className="flex gap-2 flex-wrap">
                 <label className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none flex items-center justify-center select-none">
                   <ImageIcon className="w-5 h-5 text-ricefield-green" />
                   <input
@@ -476,7 +968,7 @@ export default function CommunityFeed() {
 
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-md shadow-heritage-amber/10 hover:scale-[1.02] active:scale-95"
+                className="px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-none shadow-md shadow-heritage-amber/10 hover:scale-[1.02] active:scale-95 w-full sm:w-auto"
               >
                 <Send className="w-3.5 h-3.5" />
                 {t('postButton')}
@@ -495,12 +987,12 @@ export default function CommunityFeed() {
               filteredPosts.map((post, idx) => (
                 <article
                   key={post.id}
-                  className={`bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col p-5 gap-4 shadow-sm hover:shadow-md hover:border-heritage-gold/30 transition-all duration-300 group shimmer-trigger animate-fade-in-up`}
+                  className={`bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col p-4 sm:p-5 gap-4 shadow-sm hover:shadow-md hover:border-heritage-gold/30 transition-all duration-300 group shimmer-trigger animate-fade-in-up`}
                   style={{ animationDelay: `${(idx + 1) * 150}ms` }}
                 >
 
                   {/* Post Header */}
-                  <div className="flex justify-between items-start relative z-10">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 relative z-10">
                     <div className="flex gap-3">
                       <img
                         src={post.user.avatar}
@@ -519,14 +1011,14 @@ export default function CommunityFeed() {
                     </div>
 
                     {/* Visual Category Badge pill */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
                       <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${post.category === 'food'
-                          ? 'bg-amber-50 text-amber-600 border-amber-200'
-                          : post.category === 'adventure'
-                            ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                            : post.category === 'scenic'
-                              ? 'bg-orange-50 text-orange-600 border-orange-200'
-                              : 'bg-green-50 text-ricefield-green border-ricefield-green/20'
+                        ? 'bg-blue-50 text-blue-600 border-blue-200'
+                        : post.category === 'adventure'
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                          : post.category === 'scenic'
+                            ? 'bg-sky-50 text-sky-600 border-sky-200'
+                            : 'bg-green-50 text-ricefield-green border-ricefield-green/20'
                         }`}>
                         {post.category === 'food'
                           ? t('tagFood')
@@ -540,19 +1032,61 @@ export default function CommunityFeed() {
                     </div>
                   </div>
 
+                  {post.reported && (
+                    <div className="bg-red-50 border border-red-250 text-red-600 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 animate-pulse relative z-10 select-none">
+                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <span>{language === 'vi' ? 'Bài viết này đã bị báo cáo đến admin!' : 'This post has been reported to admin!'}</span>
+                    </div>
+                  )}
+
+                  {post.status === 'hidden' && (
+                    <div className="bg-gray-50 border border-gray-200 text-gray-500 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 relative z-10 select-none">
+                      <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span>{language === 'vi' ? 'Bài viết này đang bị ẩn đối với cộng đồng.' : 'This post is currently hidden from the community.'}</span>
+                    </div>
+                  )}
+
                   {/* Content body text */}
                   <p className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium relative z-10">
                     {post.content[language]}
                   </p>
 
-                  {/* Optional Linked Spot Badge */}
-                  {post.spotName && (
-                    <div className="inline-flex self-start items-center gap-1.5 bg-gray-50 border border-gray-150 p-2 rounded-xl text-[10.5px] font-bold text-gray-700 shadow-sm relative z-10 hover:scale-[1.03] transition-transform">
-                      <MapPin className="w-3.5 h-3.5 text-heritage-amber animate-pulse" />
-                      <span>{language === 'vi' ? 'Địa điểm' : 'Place'}:</span>
-                      <span className="text-heritage-amber font-extrabold">{post.spotName}</span>
+                  {/* Optional Linked Spot Details */}
+                  {post.spot && (
+                    <div className="flex flex-col gap-1.5 bg-gradient-to-r from-gray-50 to-blue-50/20 border border-gray-150 p-3 rounded-xl text-[11.5px] font-bold text-gray-700 shadow-sm relative z-10 select-none">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-heritage-amber animate-pulse" />
+                        <span className="text-gray-400">{language === 'vi' ? 'Địa điểm' : 'Place'}:</span>
+                        <span className="text-heritage-amber font-extrabold">{post.spot.name}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500 pl-5 font-semibold">
+                        📍 {post.spot.address}
+                      </div>
                     </div>
                   )}
+
+                  {/* Clickable Hashtags */}
+                  {post.hashtags && post.hashtags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 relative z-10 select-none">
+                      {post.hashtags.map((tag, tIdx) => (
+                        <button
+                          key={tIdx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveHashtagFilter(tag);
+                          }}
+                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                            activeHashtagFilter === tag
+                              ? 'bg-heritage-amber text-white border-heritage-amber shadow-sm shadow-heritage-amber/20 scale-105'
+                              : 'bg-white text-heritage-amber border-heritage-amber/35 hover:border-heritage-amber'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
 
                   {/* Images attachments */}
                   {post.images && post.images.length > 0 && (
@@ -566,17 +1100,31 @@ export default function CommunityFeed() {
                   )}
 
                   {/* Bottom Action indicators */}
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-xs text-gray-500 relative z-10">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-gray-100 pt-4 text-xs text-gray-500 relative z-10">
 
-                    {/* Likes */}
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-1.5 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-red-500 hover:text-red-600 font-bold scale-[1.05]' : ''
-                        }`}
-                    >
-                      <Heart className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                      <span>{post.likes} {t('likeStat')}</span>
-                    </button>
+                    {/* Likes & Dislikes */}
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                      {/* Like */}
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        disabled={Boolean(post.myReaction)}
+                        className={`flex items-center gap-1.5 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
+                        <span>{language === 'vi' ? 'Thích' : 'Like'} ({post.likes})</span>
+                      </button>
+
+                      {/* Dislike */}
+                      <button
+                        onClick={() => handleDislike(post.id)}
+                        disabled={Boolean(post.myReaction)}
+                        className={`flex items-center gap-1.5 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      >
+                        <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                        <span>{language === 'vi' ? 'Không thích' : 'Dislike'} ({post.dislikes})</span>
+                      </button>
+                    </div>
+
 
                     {/* Comments trigger */}
                     <button
@@ -587,16 +1135,88 @@ export default function CommunityFeed() {
                       <span>{post.comments.length} {t('commentStat')}</span>
                     </button>
 
-                    {/* Bookmark */}
-                    <button
-                      onClick={() => handleSave(post.id)}
-                      className={`flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer bg-white border-none ${post.hasSaved ? 'text-heritage-amber font-bold scale-[1.02]' : ''
-                        }`}
-                    >
-                      <Bookmark className={`w-4 h-4 transition-transform ${post.hasSaved ? 'fill-heritage-amber text-heritage-amber' : 'text-gray-400'}`} />
-                      <span>{post.hasSaved ? t('savedStat') : t('saveStat')}</span>
-                    </button>
+                    {/* Actions Dropdown Button (3-dots) */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdownPostId(activeDropdownPostId === post.id ? null : post.id);
+                        }}
+                        className="flex items-center gap-1.5 p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
+                        title={language === 'vi' ? 'Thao tác' : 'Actions'}
+                      >
+                        <MoreHorizontal className="w-5 h-5 text-gray-400" />
+                      </button>
+
+                      {activeDropdownPostId === post.id && (
+                        <div className="absolute right-0 bottom-10 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 z-50 animate-scale-up select-none">
+                          {/* Case A: Is the Owner of the post */}
+                          {post.authorId === currentUser?.id ? (
+                            <>
+                              {/* Option 1: Can DELETE if 0 likes AND 0 comments */}
+                              {post.likes === 0 && post.comments.length === 0 ? (
+                                <button
+                                  onClick={() => handleDeletePost(post.id)}
+                                  className="w-full text-left px-4 py-2 text-xs font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                  <span>{language === 'vi' ? 'Xóa bài viết' : 'Delete Post'}</span>
+                                </button>
+                              ) : (
+                                /* Option 2: Can HIDE or SHOW if likes > 0 OR comments > 0 */
+                                post.status === 'hidden' ? (
+                                  <button
+                                    onClick={() => handleToggleHidePost(post.id, 'public')}
+                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                  >
+                                    <Eye className="w-4 h-4 text-ricefield-green" />
+                                    <span>{language === 'vi' ? 'Hiển thị bài viết' : 'Show Post'}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleHidePost(post.id, 'hidden')}
+                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                  >
+                                    <EyeOff className="w-4 h-4 text-gray-400" />
+                                    <span>{language === 'vi' ? 'Ẩn bài viết' : 'Hide Post'}</span>
+                                  </button>
+                                )
+                              )}
+                            </>
+                          ) : (
+                            /* Case B: NOT the Owner of the post */
+                            <button
+                              onClick={() => handleReportPost(post.id)}
+                              className="w-full text-left px-4 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                            >
+                              <AlertTriangle className="w-4 h-4 text-blue-500 animate-pulse" />
+                              <span>{language === 'vi' ? 'Báo cáo vi phạm' : 'Report Post'}</span>
+                            </button>
+                          )}
+
+                          {/* Share Link option inside menu */}
+                          <div className="border-t border-gray-100 my-1" />
+                          <button
+                            onClick={() => {
+                              handleShareLink(post.id);
+                              setActiveDropdownPostId(null);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-xs font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
+                              sharedPostId === post.id ? 'text-green-600 hover:bg-green-50' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <Share2 className="w-4 h-4 text-gray-400" />
+                            <span>
+                              {sharedPostId === post.id 
+                                ? (language === 'vi' ? 'Đã copy link!' : 'Copied!') 
+                                : (language === 'vi' ? 'Chia sẻ liên kết' : 'Copy Share Link')}
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
 
                   {/* Comment Thread */}
                   {openCommentsPostId === post.id && (
@@ -611,24 +1231,36 @@ export default function CommunityFeed() {
                           post.comments.map((comment) => (
                             <div key={comment.id} className="flex flex-col gap-2 bg-white border border-gray-200/80 p-3 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
                               {/* Comment Header */}
-                              <div className="flex gap-2.5 items-center">
-                                <img
-                                  src={comment.userAvatar}
-                                  alt={comment.userName}
-                                  className="w-7 h-7 rounded-full object-cover border border-gray-100"
-                                />
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
-                                    {post.authorId && comment.userId && post.authorId === comment.userId && (
-                                      <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                                        {language === 'vi' ? 'Tác giả' : 'Author'}
-                                      </span>
-                                    )}
+                              <div className="flex gap-2.5 items-center justify-between">
+                                <div className="flex gap-2.5 items-center">
+                                  <img
+                                    src={comment.userAvatar}
+                                    alt={comment.userName}
+                                    className="w-7 h-7 rounded-full object-cover border border-gray-100"
+                                  />
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
+                                      {post.authorId && comment.userId && post.authorId === comment.userId && (
+                                        <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                          {language === 'vi' ? 'Tác giả' : 'Author'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
                                   </div>
-                                  <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
                                 </div>
+                                {currentUser && currentUser.id === comment.userId && (
+                                  <button
+                                    onClick={() => handleDeleteComment(post.id, comment.id)}
+                                    className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors cursor-pointer border-none bg-transparent"
+                                    title={language === 'vi' ? 'Xóa bình luận' : 'Delete comment'}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
+
 
                               {/* Comment content */}
                               <p className="text-[12px] text-gray-700 leading-relaxed pl-9">
@@ -644,21 +1276,33 @@ export default function CommunityFeed() {
                                       <img
                                         src={reply.userAvatar}
                                         alt={reply.userName}
-                                        className="w-5.5 h-5.5 rounded-full object-cover border border-gray-150"
+                                        className="w-7 h-7 rounded-full object-cover border border-gray-150"
                                       />
-                                      <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
-                                          {post.authorId && reply.userId && post.authorId === reply.userId && (
-                                            <span className="text-[7.5px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                                              {language === 'vi' ? 'Tác giả' : 'Author'}
-                                            </span>
+                                      <div className="flex-grow min-w-0">
+                                        <div className="flex items-center justify-between w-full">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
+                                            {post.authorId && reply.userId && post.authorId === reply.userId && (
+                                              <span className="text-[7.5px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                                {language === 'vi' ? 'Tác giả' : 'Author'}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {currentUser && currentUser.id === reply.userId && (
+                                            <button
+                                              onClick={() => handleDeleteComment(post.id, reply.id)}
+                                              className="p-0.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors cursor-pointer border-none bg-transparent"
+                                              title={language === 'vi' ? 'Xóa phản hồi' : 'Delete reply'}
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
                                           )}
                                         </div>
                                         <p className="text-[11px] text-gray-600 mt-1 leading-normal">
                                           {reply.content[language]}
                                         </p>
                                       </div>
+
                                     </div>
                                   ))}
                                 </div>
@@ -667,7 +1311,7 @@ export default function CommunityFeed() {
                               {/* Reply trigger input */}
                               <div className="pl-9 mt-2">
                                 {activeReplyBoxId === comment.id ? (
-                                  <div className="flex gap-2 items-center animate-fade-in">
+                                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center animate-fade-in">
                                     <input
                                       type="text"
                                       value={replyInputs[comment.id] || ''}
@@ -677,7 +1321,7 @@ export default function CommunityFeed() {
                                     />
                                     <button
                                       onClick={() => handleAddReply(post.id, comment.id)}
-                                      className="px-3 py-1 bg-ricefield-green hover:bg-ricefield-light text-white font-bold text-[10px] rounded-lg cursor-pointer border-none shadow-sm transition-colors"
+                                      className="px-3 py-2 sm:py-1 bg-ricefield-green hover:bg-ricefield-light text-white font-bold text-[10px] rounded-lg cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
                                     >
                                       {t('replyButton')}
                                     </button>
@@ -698,7 +1342,7 @@ export default function CommunityFeed() {
                       </div>
 
                       {/* Create top-level comment Input */}
-                      <div className="flex gap-2 items-center border-t border-gray-200 pt-3">
+                      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center border-t border-gray-200 pt-3">
                         <input
                           type="text"
                           value={commentInputs[post.id] || ''}
@@ -708,7 +1352,7 @@ export default function CommunityFeed() {
                         />
                         <button
                           onClick={() => handleAddComment(post.id)}
-                          className="p-2.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-xl flex items-center justify-center cursor-pointer border-none shadow-sm transition-colors"
+                          className="p-2.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-xl flex items-center justify-center cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
                         >
                           <Send className="w-3.5 h-3.5" />
                         </button>
@@ -728,7 +1372,7 @@ export default function CommunityFeed() {
         <div className="lg:col-span-4 flex flex-col gap-6">
 
           {/* Daily Cultural Quest Card with Shimmer trigger */}
-          <div className="bg-gradient-to-tr from-amber-500 to-heritage-amber text-white p-5 rounded-3xl shadow-lg shadow-heritage-amber/10 flex flex-col gap-4 relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:200ms]">
+          <div className="bg-gradient-to-tr from-blue-500 to-heritage-amber text-white p-5 rounded-3xl shadow-lg shadow-heritage-amber/10 flex flex-col gap-4 relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:200ms]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
 
             <div className="flex items-center gap-2 border-b border-white/20 pb-2.5 relative z-10">
@@ -746,7 +1390,7 @@ export default function CommunityFeed() {
               </p>
               <div className="bg-white/15 border border-white/10 p-3 rounded-2xl mt-1 flex flex-col gap-1">
                 <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng AI' : 'AI Reward'}:</span>
-                <span className="text-[10.5px] font-bold text-amber-200">{t('challengeReward')}</span>
+                <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
               </div>
             </div>
 
@@ -781,11 +1425,7 @@ export default function CommunityFeed() {
                   </div>
                   <div className="flex-grow min-w-0">
                     <h4 className="text-xs font-bold text-gray-800 truncate leading-tight">{expert.name}</h4>
-                    <span className="text-[9px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
-                    <div className="flex items-center gap-1 text-[10px] text-heritage-gold font-bold mt-1">
-                      <Star className="w-3 h-3 fill-heritage-gold text-heritage-gold" />
-                      <span>{expert.rating}</span>
-                    </div>
+                     <span className="text-[9px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
                   </div>
                   <button
                     onClick={() => handleOpenExpertChat(expert)}
@@ -802,34 +1442,34 @@ export default function CommunityFeed() {
           {/* Hot Trending Hashtags */}
           <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]">
             <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
-              <Flame className="w-4 h-4 text-orange-500" />
+              <Flame className="w-4 h-4 text-blue-500" />
               {t('trendingHashtags')}
             </h3>
 
             <div className="flex flex-col gap-3 relative z-10">
-              {[
-                { tag: '#FeFeRicefield', views: '12.4k views', status: 'hot' },
-                { tag: '#BanhMiPhuongTrueLocal', views: '8.5k views', status: 'rising' },
-                { tag: '#LanternCraftGuild', views: '6.2k views', status: 'new' },
-                { tag: '#ChamIslandCorals', views: '4.8k views', status: 'rising' }
-              ].map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:translate-x-0.5 transition-transform duration-200">
+              {getTrendingHashtags().map((item, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setActiveHashtagFilter(item.tag)}
+                  className="flex justify-between items-center text-xs group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
+                >
                   <div className="flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
                     <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-semibold">{item.views}</span>
-                    {item.status === 'hot' && (
+                    <span className="text-[10px] text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
+                    {idx === 0 && (
                       <span className="text-[9px] bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
                     )}
-                    {item.status === 'rising' && (
-                      <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
+                    {idx > 0 && idx < 3 && (
+                      <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
                     )}
                   </div>
                 </div>
               ))}
             </div>
+
           </div>
 
         </div>
@@ -930,3 +1570,4 @@ export default function CommunityFeed() {
     </div>
   );
 }
+

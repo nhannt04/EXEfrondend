@@ -73,7 +73,6 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
     raw: s,
     name:     { vi: s.nameVi, en: s.nameEn },
     category: { vi: s.category === 'sightseeing' ? 'Tham quan' : s.category === 'cafe' ? 'Cà phê' : s.category === 'stay' ? 'Chỗ nghỉ' : 'Ẩm thực', en: s.category },
-    rating:   s.rating || 4.8,
     image:    (s.images && s.images.length > 0) ? s.images[0].imageUrl : 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
     tag:      s.tags ? s.tags.split(',')[0].trim() : s.category,
     price:    { 
@@ -177,36 +176,57 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Hero Section */}
-      <section className="relative w-full h-[540px] flex items-center justify-center overflow-hidden border-b border-dark-border bg-gradient-to-b from-[#FDFCF7] via-[#FAF5E6] to-[#F5EEDC]">
-        {/* Background Image / Overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-overlay"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-[#FDFCF7]/50" />
+      {/* Hero Section with Background Image */}
+      <section className="relative w-full overflow-hidden border-b border-dark-border min-h-[480px] sm:min-h-[550px] lg:min-h-[620px] flex items-center pt-12 sm:pt-14 lg:pt-16">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://i.pinimg.com/736x/af/89/d1/af89d1688621a527e576ebad376340fe.jpg"
+            alt="Vietnam landscape"
+            className="w-full h-full object-cover"
+          />
+          {/* Subtle overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/55 via-slate-900/35 to-transparent" />
+        </div>
 
-        {/* Content - Cascade Fade In Up Animations */}
-        <div className="relative z-10 max-w-4xl px-6 text-center flex flex-col items-center gap-5">
-          <div className="inline-flex items-center gap-1.5 bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/30 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider animate-float shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-heritage-amber animate-spin-slow" />
-            {t('heroBadge')}
+        {/* Content */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full">
+          <div className="flex flex-col items-start gap-6 text-left animate-fade-in-up max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 bg-heritage-amber/40 text-white border border-heritage-amber/80 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider animate-float shadow-lg shadow-heritage-amber/50 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-white animate-spin-slow" />
+              {language === 'vi' ? 'Khám phá Việt Nam' : 'Discover Vietnam'}
+            </div>
+
+            <h1 className="font-outfit text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white max-w-2xl">
+              {language === 'vi' ? 'Khám phá Việt Nam theo cách Local thực thụ' : 'Discover Vietnam the True Local Way'}
+            </h1>
+
+            <p className="text-blue-50 text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
+              {language === 'vi'
+                ? 'Nhập ngân sách, thời gian và gu của bạn. Trí tuệ nhân tạo sẽ lập tức thiết lập lịch trình ăn chơi, ngủ nghỉ tối ưu và tiết kiệm nhất trên khắp Việt Nam.'
+                : 'Enter your budget, time and style. Artificial intelligence will instantly create the optimal and most economical eating, entertainment, and rest schedule throughout Vietnam.'}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pt-2">
+              <button
+                onClick={handleQuickStart}
+                className="px-6 py-3.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-heritage-amber/40 transition-all duration-300 cursor-pointer border-none hover:scale-105 active:scale-95"
+              >
+                {language === 'vi' ? 'Bắt đầu ngay' : 'Start Now'}
+              </button>
+              <button
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.35, behavior: 'smooth' })}
+                className="px-6 py-3.5 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-extrabold text-sm rounded-2xl transition-all duration-300 cursor-pointer backdrop-blur-sm hover:scale-105 active:scale-95"
+              >
+                {language === 'vi' ? 'Xem điểm đến nổi bật' : 'View Highlighted Destinations'}
+              </button>
+            </div>
           </div>
-
-          <h1 className="font-outfit text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 max-w-3xl animate-fade-in-up [animation-delay:200ms]">
-            {t('heroTitle')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-heritage-amber via-heritage-gold to-ricefield-green">{t('heroTitleHighlight')}</span>
-          </h1>
-
-          <p className="text-gray-600 text-sm sm:text-base max-w-2xl leading-relaxed animate-fade-in-up [animation-delay:400ms]">
-            {t('heroSubtitle')}
-          </p>
-
-
         </div>
       </section>
 
       {/* ── Featured Spots Spotlight ─────────────────────────── */}
-      <section className="max-w-6xl w-full px-6 py-16 flex flex-col gap-8">
+      <section className="max-w-6xl w-full px-4 sm:px-6 py-12 sm:py-16 flex flex-col gap-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 border-b border-gray-200/80 pb-4">
           <div>
             <span className="text-[10px] text-ricefield-green font-extrabold uppercase tracking-widest block mb-1">{t('localSpotlight')}</span>
@@ -216,7 +236,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
               key={f.key}
@@ -234,7 +254,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
         {/* Spots Grid */}
         {loadingSpots ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
             ))}
@@ -254,12 +274,8 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </div>
                 <div className="p-5 flex flex-col flex-grow gap-2">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors line-clamp-1">{spot.name[language]}</h3>
-                    <div className="flex items-center gap-1 text-[11px] text-heritage-amber font-bold flex-shrink-0 ml-1">
-                      <Star className="w-3 h-3 fill-heritage-amber text-heritage-amber" />
-                      <span>{spot.rating}</span>
-                    </div>
-                  </div>
+                     <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors line-clamp-1">{spot.name[language]}</h3>
+                   </div>
                   <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{spot.desc[language]}</p>
                   <div className="border-t border-gray-100 mt-auto pt-3 flex justify-between items-center text-[10px]">
                     <span className="text-gray-400 font-semibold">{t('estimateCost')}</span>
@@ -277,7 +293,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       </section>
 
       {/* ── Category Sections ─────────────────────────────────── */}
-      <section className="max-w-6xl w-full px-6 pb-12 flex flex-col gap-10">
+      <section className="max-w-6xl w-full px-4 sm:px-6 pb-12 flex flex-col gap-10">
         {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
           categorySpots[cat]?.length > 0 && (
             <div key={cat} className="flex flex-col gap-4">
@@ -288,23 +304,19 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                   className="text-[11px] text-heritage-amber font-extrabold hover:underline cursor-pointer"
                 >{language === 'vi' ? 'Xem thêm →' : 'See more →'}</button>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
                 {categorySpots[cat].map(spot => (
-                  <div key={spot.id} className="flex-shrink-0 w-52 bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                  <div key={spot.id} className="flex-shrink-0 w-52 sm:w-56 bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer snap-start"
                     onClick={() => { setPlannerPrefill({ days: 2, budget: 3000000, style: spot.tag }); setActiveTab('planner'); }}
                   >
                     <div className="h-32 overflow-hidden bg-gray-100">
                       <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                     <div className="p-3 flex flex-col gap-1">
-                      <p className="text-xs font-extrabold text-gray-900 line-clamp-1 group-hover:text-heritage-amber transition-colors">{spot.name[language]}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-400">{spot.price[language]}</span>
-                        <div className="flex items-center gap-0.5 text-[10px] text-heritage-amber font-bold">
-                          <Star className="w-2.5 h-2.5 fill-heritage-amber" />
-                          {spot.rating}
-                        </div>
-                      </div>
+                       <p className="text-xs font-extrabold text-gray-900 line-clamp-1 group-hover:text-heritage-amber transition-colors">{spot.name[language]}</p>
+                       <div className="flex items-center justify-between">
+                         <span className="text-[10px] text-gray-400">{spot.price[language]}</span>
+                       </div>
                     </div>
                   </div>
                 ))}
@@ -315,7 +327,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       </section>
 
       {/* GPS Nearby Radar Scanner Section */}
-      <section className="max-w-6xl w-full px-6 py-12 flex flex-col gap-8 bg-white border border-gray-200/80 rounded-3xl shadow-sm p-8 mt-4 shimmer-trigger relative overflow-hidden">
+      <section className="max-w-6xl w-full px-4 sm:px-6 py-12 flex flex-col gap-8 bg-white border border-gray-200/80 rounded-3xl shadow-sm p-5 sm:p-8 mt-4 shimmer-trigger relative overflow-hidden">
         {/* Animated Radar Pulse Background elements */}
         <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-ricefield-green/5 rounded-full animate-pulse pointer-events-none" />
 
@@ -336,7 +348,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 relative z-10">
           {/* Controls Panel */}
           <div className="lg:col-span-4 flex flex-col gap-5 bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="font-outfit text-sm font-bold text-gray-800">{language === 'vi' ? 'Cấu hình quét Radar' : 'Radar Configuration'}</h3>
@@ -381,23 +393,23 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 <span className="text-xs text-gray-500 font-bold">{language === 'vi' ? 'Đang gửi sóng định vị GPS...' : 'Emitting GPS radar signal...'}</span>
               </div>
             ) : radarError ? (
-              <div className="w-full h-48 border border-dashed border-amber-200 bg-amber-50/40 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6 animate-fade-in">
-                <div className="p-2.5 bg-amber-100 border border-amber-200 rounded-full">
-                  <Compass className="w-6 h-6 text-amber-500" />
+              <div className="w-full h-48 border border-dashed border-blue-200 bg-blue-50/40 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6 animate-fade-in">
+                <div className="p-2.5 bg-blue-100 border border-blue-200 rounded-full">
+                  <Compass className="w-6 h-6 text-blue-500" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-extrabold text-amber-700">
+                  <span className="text-xs font-extrabold text-blue-700">
                     {radarError === 'timeout'
                       ? (language === 'vi' ? '⏱ Server đang khởi động, vui lòng thử lại sau ít giây!' : '⏱ Server is warming up, please retry in a moment!')
                       : (language === 'vi' ? '⚠️ Không thể kết nối tới máy chủ GPS Radar.' : '⚠️ Could not connect to GPS Radar server.')}
                   </span>
-                  <span className="text-[10.5px] text-amber-600/80 max-w-xs leading-normal">
+                  <span className="text-[10.5px] text-blue-600/80 max-w-xs leading-normal">
                     {language === 'vi' ? 'Máy chủ backend có thể đang khởi động (cold start). Chờ 10–30 giây rồi thử lại.' : 'The backend server may be starting up (cold start). Wait 10–30 seconds and try again.'}
                   </span>
                 </div>
                 <button
                   onClick={handleRadarScan}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-extrabold rounded-xl border-none cursor-pointer transition-colors shadow-sm"
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-extrabold rounded-xl border-none cursor-pointer transition-colors shadow-sm"
                 >
                   {language === 'vi' ? '↻ Thử lại' : '↻ Retry'}
                 </button>
@@ -411,7 +423,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2">
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1 sm:pr-2">
                 {radarResults.map((item, idx) => (
                   <div
                     key={idx}
@@ -458,7 +470,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       </section>
 
       {/* Value Prepositions Section */}
-      <section className="w-full bg-[#FAF7EE]/60 border-y border-dark-border py-16 px-6">
+      <section className="w-full bg-blue-50/70 border-y border-dark-border py-14 sm:py-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { title: t('valuePropTitle1'), desc: t('valuePropDesc1'), icon: Compass, bg: 'bg-heritage-amber/10 text-heritage-amber border-heritage-amber/20' },

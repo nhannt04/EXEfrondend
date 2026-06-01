@@ -11,6 +11,20 @@ const cafeService = {
     return await axiosClient.get(`/cafes/${id}`);
   },
 
+  // Get only cafes that are currently operating
+  getOperatingCafes: async () => {
+    return await axiosClient.get('/cafes/operating/now');
+  },
+
+  // Get all unique addresses for dropdown
+  getAddresses: async () => {
+    const response = await axiosClient.get('/cafes');
+    if (response?.data) {
+      return [...new Set(response.data.map(c => c.address).filter(Boolean))];
+    }
+    return [];
+  },
+
   createCafe: async (cafeData) => {
     return await axiosClient.post('/cafes', cafeData);
   },

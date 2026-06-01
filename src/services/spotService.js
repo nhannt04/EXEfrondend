@@ -5,7 +5,10 @@ const spotService = {
     const params = {};
     if (category) params.category = category;
     if (keyword) params.keyword = keyword;
-    return await axiosClient.get('/spots', { params });
+    return await axiosClient.get('/spots', { 
+      params,
+      timeout: 30000 // 30s cold-start budget
+    });
   },
 
   getSpotById: async (id) => {
@@ -21,12 +24,18 @@ const spotService = {
 
   // Lấy N địa điểm nổi bật ngẫu nhiên cho trang chủ
   getFeaturedSpots: async (limit = 8) => {
-    return await axiosClient.get('/spots/featured', { params: { limit } });
+    return await axiosClient.get('/spots/featured', { 
+      params: { limit },
+      timeout: 30000 // 30s cold-start budget
+    });
   },
 
   // Lấy top spots theo danh mục cho section phân loại
   getTopByCategory: async (category, limit = 4) => {
-    return await axiosClient.get(`/spots/category/${category}`, { params: { limit } });
+    return await axiosClient.get(`/spots/category/${category}`, { 
+      params: { limit },
+      timeout: 30000 // 30s cold-start budget
+    });
   },
 
   createSpot: async (spotData) => {
