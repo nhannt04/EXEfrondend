@@ -12,7 +12,11 @@ const tripService = {
   getMyItineraries: async () => {
     return await axiosClient.get('/itineraries/my');
   },
+  getCompletedItineraries: async () => {
+    return await axiosClient.get('/itineraries/completed');
+  },
   deleteItinerary: async (id) => {
+
     return await axiosClient.delete(`/itineraries/${id}`);
   },
   updateItineraryStatus: async (id, status) => {

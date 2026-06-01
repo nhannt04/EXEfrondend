@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Star, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X } from 'lucide-react';
+import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import tripService from '../../../services/tripService';
@@ -29,17 +29,17 @@ const HOI_AN_STREETS = [
 
 const SPOTS_DATABASE = {
   Homestay: {
-    Healing: { id: 'eco-01', name: { vi: 'Homestay Làng Rau Trà Quế', en: 'Tra Que Herb Village Homestay' }, lat: 15.9019, lng: 108.3456, category: 'stay', reason: { vi: 'Không gian xanh mát, giá bình dân, gần làng rau hữu cơ', en: 'Green peaceful space, affordable, near organic herb village' }, rating: '4.8' }
+    Healing: { id: 'eco-01', name: { vi: 'Homestay Làng Rau Trà Quế', en: 'Tra Que Herb Village Homestay' }, lat: 15.9019, lng: 108.3456, category: 'stay', reason: { vi: 'Không gian xanh mát, giá bình dân, gần làng rau hữu cơ', en: 'Green peaceful space, affordable, near organic herb village' } }
   },
   Cafe: [
-    { id: 'eco-cafe-01', name: { vi: 'Cà Phê Reaching Out', en: 'Reaching Out Tea House' }, lat: 15.8771, lng: 108.3290, category: 'cafe', reason: { vi: 'Quán cà phê im lặng dành cho người khiếm thính, rất độc đáo', en: 'Silent café run by hearing-impaired staff, truly unique' }, rating: '4.9' }
+    { id: 'eco-cafe-01', name: { vi: 'Cà Phê Reaching Out', en: 'Reaching Out Tea House' }, lat: 15.8771, lng: 108.3290, category: 'cafe', reason: { vi: 'Quán cà phê im lặng dành cho người khiếm thính, rất độc đáo', en: 'Silent café run by hearing-impaired staff, truly unique' } }
   ],
   Activity: [
-    { id: 'eco-act-01', name: { vi: 'Đạp Xe Làng Cổ', en: 'Ancient Village Cycling' }, lat: 15.8870, lng: 108.3350, category: 'activity', reason: { vi: 'Khám phá làng cổ bằng xe đạp, thân thiện môi trường', en: 'Explore ancient village by bicycle, eco-friendly' }, rating: '4.7' }
+    { id: 'eco-act-01', name: { vi: 'Đạp Xe Làng Cổ', en: 'Ancient Village Cycling' }, lat: 15.8870, lng: 108.3350, category: 'activity', reason: { vi: 'Khám phá làng cổ bằng xe đạp, thân thiện môi trường', en: 'Explore ancient village by bicycle, eco-friendly' } }
   ],
   Food: [
-    { id: 'eco-food-01', name: { vi: 'Nhà Hàng Morning Glory', en: 'Morning Glory Restaurant' }, lat: 15.8780, lng: 108.3280, category: 'food', reason: { vi: 'Ẩm thực Hội An truyền thống, sử dụng rau hữu cơ địa phương', en: 'Traditional Hoi An cuisine with local organic vegetables' }, rating: '4.8' },
-    { id: 'eco-food-02', name: { vi: 'Quán Cơm Gà Bà Buội', en: 'Ba Buoi Chicken Rice' }, lat: 15.8795, lng: 108.3268, category: 'food', reason: { vi: 'Cơm gà nổi tiếng nhất Hội An, phải thử một lần', en: 'Most famous chicken rice in Hoi An, a must-try' }, rating: '4.9' }
+    { id: 'eco-food-01', name: { vi: 'Nhà Hàng Morning Glory', en: 'Morning Glory Restaurant' }, lat: 15.8780, lng: 108.3280, category: 'food', reason: { vi: 'Ẩm thực Hội An truyền thống, sử dụng rau hữu cơ địa phương', en: 'Traditional Hoi An cuisine with local organic vegetables' } },
+    { id: 'eco-food-02', name: { vi: 'Quán Cơm Gà Bà Buội', en: 'Ba Buoi Chicken Rice' }, lat: 15.8795, lng: 108.3268, category: 'food', reason: { vi: 'Cơm gà nổi tiếng nhất Hội An, phải thử một lần', en: 'Most famous chicken rice in Hoi An, a must-try' } }
   ]
 };
 
@@ -3242,13 +3242,7 @@ export default function TripPlannerStudio({ prefill }) {
                 <div className={`w-full md:w-80 border-t md:border-t-0 md:border-l border-gray-200 dark:border-slate-850 flex flex-col bg-white dark:bg-slate-950 overflow-y-auto p-5 gap-5 animate-slide-in-right ${activeModalView === 'details' ? 'flex' : 'hidden md:flex'}`}>
                   <div className="flex flex-col gap-1 pb-3 border-b border-gray-100 dark:border-slate-850">
                     <span className="text-[10px] text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{t('mapRouteTo')}:</span>
-                    <h3 className="font-outfit text-base font-bold text-gray-900 dark:text-slate-100">{selectedSpot ? selectedSpot.name[language] : ''}</h3>
-                    {selectedSpot && (
-                      <div className="flex items-center gap-1 mt-1 text-[11px] text-heritage-amber dark:text-heritage-gold font-bold">
-                        <Star className="w-3.5 h-3.5 fill-heritage-gold text-heritage-gold" />
-                        <span>{selectedSpot.rating || '4.8'} (215 {language === 'vi' ? 'đánh giá' : 'reviews'})</span>
-                      </div>
-                    )}
+                     <h3 className="font-outfit text-base font-bold text-gray-900 dark:text-slate-100">{selectedSpot ? selectedSpot.name[language] : ''}</h3>
                   </div>
 
                   {/* Metrics */}
