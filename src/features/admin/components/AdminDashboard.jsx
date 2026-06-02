@@ -1124,7 +1124,7 @@ export default function AdminDashboard() {
       if (cleanCat === 'scenic') return '📸 Phong cảnh';
       if (cleanCat === 'sightseeing') return '🏛️ Tham quan';
       if (cleanCat === 'cafe') return '☕ Cà phê';
-      if (cleanCat === 'stay') return '🏨 Chỗ nghỉ';
+      if (cleanCat === 'stay') return '🏨 Nghỉ dưỡng';
       return cat;
     } else {
       if (cleanCat === 'healing') return '🧘 Healing';
@@ -2352,7 +2352,7 @@ export default function AdminDashboard() {
                           <option value="scenic">{language === 'vi' ? '📸 Phong cảnh' : '📸 Scenic'}</option>
                           <option value="sightseeing">{language === 'vi' ? '🏛️ Tham quan' : '🏛️ Sightseeing'}</option>
                           <option value="cafe">{language === 'vi' ? '☕ Cà phê' : '☕ Cafe'}</option>
-                          <option value="stay">{language === 'vi' ? '🏨 Chỗ nghỉ' : '🏨 Stay'}</option>
+                          <option value="stay">{language === 'vi' ? '🏨 Nghỉ dưỡng' : '🏨 Stay'}</option>
                         </select>
                       </div>
 
@@ -2652,7 +2652,7 @@ export default function AdminDashboard() {
                           <option value="scenic">{language === 'vi' ? '📸 Phong cảnh' : '📸 Scenic'}</option>
                           <option value="sightseeing">{language === 'vi' ? '🏛️ Tham quan' : '🏛️ Sightseeing'}</option>
                           <option value="cafe">{language === 'vi' ? '☕ Cà phê' : '☕ Cafe'}</option>
-                          <option value="stay">{language === 'vi' ? '🏨 Chỗ nghỉ' : '🏨 Stay'}</option>
+                          <option value="stay">{language === 'vi' ? '🏨 Nghỉ dưỡng' : '🏨 Stay'}</option>
                         </select>
                       </div>
 

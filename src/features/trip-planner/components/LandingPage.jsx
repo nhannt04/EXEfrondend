@@ -16,20 +16,23 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [categorySpots, setCategorySpots] = useState({ sightseeing: [], cafe: [], food: [], stay: [] });
   const [loadingSpots, setLoadingSpots] = useState(true);
+  const [selectedSpotDetail, setSelectedSpotDetail] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const spotsPerPage = 4;
 
   const FILTERS = [
     { key: 'all',         labelVi: 'Tất cả',    labelEn: 'All' },
     { key: 'sightseeing', labelVi: 'Tham quan',  labelEn: 'Sightseeing' },
     { key: 'food',        labelVi: 'Ẩm thực',   labelEn: 'Food' },
     { key: 'cafe',        labelVi: 'Cà phê',     labelEn: 'Cafe' },
-    { key: 'stay',        labelVi: 'Chỗ nghỉ',  labelEn: 'Stay' },
+    { key: 'stay',        labelVi: 'Nghỉ dưỡng',  labelEn: 'Stay' },
   ];
 
   const CATEGORY_LABELS = {
     sightseeing: { vi: '🏛️ Di sản & Tham quan', en: '🏛️ Sightseeing & Heritage' },
     cafe:        { vi: '☕ Cafe & Chill',         en: '☕ Cafe & Chill' },
     food:        { vi: '🍜 Ẩm thực đặc sản',     en: '🍜 Local Food' },
-    stay:        { vi: '🏨 Chỗ nghỉ & Healing',  en: '🏨 Stay & Healing' },
+    stay:        { vi: '🏨 Nghỉ dưỡng & Healing',  en: '🏨 Stay & Healing' },
   };
 
   // Radar scanner states
@@ -71,8 +74,10 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const mapSpot = (s) => ({
     id: s.id,
     raw: s,
+    lat: s.latitude,
+    lng: s.longitude,
     name:     { vi: s.nameVi, en: s.nameEn },
-    category: { vi: s.category === 'sightseeing' ? 'Tham quan' : s.category === 'cafe' ? 'Cà phê' : s.category === 'stay' ? 'Chỗ nghỉ' : 'Ẩm thực', en: s.category },
+    category: { vi: s.category === 'sightseeing' ? 'Tham quan' : s.category === 'cafe' ? 'Cà phê' : s.category === 'stay' ? 'Nghỉ dưỡng' : 'Ẩm thực', en: s.category },
     image:    (s.images && s.images.length > 0) ? s.images[0].imageUrl : 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
     tag:      s.tags ? s.tags.split(',')[0].trim() : s.category,
     price:    { 
@@ -108,13 +113,27 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
     fetchAll();
   }, []);
 
-  // Filter featured spots client-side
+  // Filter featured spots client-side or fetch by category from API
   useEffect(() => {
-    if (activeFilter === 'all') {
-      setSpots(allFeaturedSpots);
-    } else {
-      setSpots(allFeaturedSpots.filter(s => s.raw.category === activeFilter));
-    }
+    const filterSpots = async () => {
+      setCurrentPage(1);
+      if (activeFilter === 'all') {
+        setSpots(allFeaturedSpots);
+      } else {
+        try {
+          const res = await spotService.getSpots(activeFilter);
+          if (res?.success && res.data) {
+            setSpots(res.data.map(mapSpot));
+          } else {
+            setSpots([]);
+          }
+        } catch (err) {
+          console.error('Error fetching filtered spots:', err);
+          setSpots([]);
+        }
+      }
+    };
+    filterSpots();
   }, [activeFilter, allFeaturedSpots]);
 
   const handleRadarScan = async () => {
@@ -172,6 +191,37 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       style: cleanStyle
     });
     setActiveTab('planner');
+  };
+
+  const renderFormattedDescription = (descText) => {
+    if (!descText) return null;
+    const sentences = descText
+      .split(/[.\n]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    return (
+      <div className="flex flex-col gap-1 bg-gray-50 p-4.5 rounded-2xl border border-gray-150 shadow-inner">
+        {sentences.map((sentence, index) => {
+          if (sentence.includes(':')) {
+            const [key, ...valueParts] = sentence.split(':');
+            const value = valueParts.join(':').trim();
+            return (
+              <div key={index} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 py-2.5 border-b border-gray-100 last:border-0 text-sm">
+                <span className="font-bold text-gray-700 sm:w-28 flex-shrink-0">{key.trim()}</span>
+                <span className="text-gray-600 leading-relaxed flex-grow font-medium">{value}</span>
+              </div>
+            );
+          }
+          return (
+            <div key={index} className="flex items-start gap-2 py-1.5 text-sm text-gray-650 leading-relaxed font-medium">
+              <span className="text-heritage-amber text-xs select-none mt-1">✦</span>
+              <span>{sentence}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -264,31 +314,68 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
             {language === 'vi' ? 'Không có địa điểm nào trong danh mục này.' : 'No spots found in this category.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {spots.map((spot) => (
-              <div key={spot.id} className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-heritage-amber/40 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col group">
-                <div className="relative h-44 overflow-hidden bg-gray-100">
-                  <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">{spot.category[language]}</span>
-                  <span className="absolute bottom-3 right-3 bg-ricefield-green text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md z-10">{spot.tag}</span>
-                </div>
-                <div className="p-5 flex flex-col flex-grow gap-2">
-                  <div className="flex justify-between items-center">
-                     <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors line-clamp-1">{spot.name[language]}</h3>
-                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{spot.desc[language]}</p>
-                  <div className="border-t border-gray-100 mt-auto pt-3 flex justify-between items-center text-[10px]">
-                    <span className="text-gray-400 font-semibold">{t('estimateCost')}</span>
-                    <span className="text-gray-900 font-extrabold">{spot.price[language]}</span>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {spots.slice((currentPage - 1) * spotsPerPage, currentPage * spotsPerPage).map((spot) => (
+                <div key={spot.id} className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-heritage-amber/40 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col group">
+                  <div 
+                    onClick={() => setSelectedSpotDetail(spot)}
+                    className="relative h-44 overflow-hidden bg-gray-100 cursor-pointer"
+                  >
+                    <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">{spot.category[language]}</span>
+                    <span className="absolute bottom-3 right-3 bg-ricefield-green text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md z-10">{spot.tag}</span>
                   </div>
-                  <button
-                    onClick={() => { setPlannerPrefill({ days: 3, budget: 4000000, style: spot.tag }); setActiveTab('planner'); }}
-                    className="w-full mt-2 py-2.5 border border-gray-200 hover:border-heritage-amber hover:bg-heritage-amber/5 rounded-xl text-xs text-gray-600 hover:text-heritage-amber transition-all duration-300 font-extrabold cursor-pointer bg-gray-50/50"
-                  >{t('planByGu')}</button>
+                  <div className="p-5 flex flex-col flex-grow gap-2">
+                    <div 
+                      onClick={() => setSelectedSpotDetail(spot)}
+                      className="flex flex-col gap-2 cursor-pointer flex-grow"
+                    >
+                      <div className="flex justify-between items-center">
+                         <h3 className="font-outfit text-base font-bold text-gray-900 group-hover:text-heritage-amber transition-colors line-clamp-1">{spot.name[language]}</h3>
+                       </div>
+                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{spot.desc[language]}</p>
+                      <div className="border-t border-gray-100 mt-auto pt-3 flex justify-between items-center text-[10px]">
+                        <span className="text-gray-400 font-semibold">{t('estimateCost')}</span>
+                        <span className="text-gray-900 font-extrabold">{spot.price[language]}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {Math.ceil(spots.length / spotsPerPage) > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-heritage-amber hover:text-heritage-amber'
+                  }`}
+                >
+                  {language === 'vi' ? 'Trước' : 'Prev'}
+                </button>
+                <span className="text-xs font-bold text-gray-600 px-2">
+                  {currentPage} / {Math.ceil(spots.length / spotsPerPage)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(spots.length / spotsPerPage)))}
+                  disabled={currentPage === Math.ceil(spots.length / spotsPerPage)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                    currentPage === Math.ceil(spots.length / spotsPerPage)
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-heritage-amber hover:text-heritage-amber'
+                  }`}
+                >
+                  {language === 'vi' ? 'Sau' : 'Next'}
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </section>
 
@@ -307,7 +394,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
                 {categorySpots[cat].map(spot => (
                   <div key={spot.id} className="flex-shrink-0 w-52 sm:w-56 bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer snap-start"
-                    onClick={() => { setPlannerPrefill({ days: 2, budget: 3000000, style: spot.tag }); setActiveTab('planner'); }}
+                    onClick={() => setSelectedSpotDetail(spot)}
                   >
                     <div className="h-32 overflow-hidden bg-gray-100">
                       <img src={spot.image} alt={spot.name[language]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -424,45 +511,37 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               </div>
             ) : (
                 <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1 sm:pr-2">
-                {radarResults.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3.5 bg-white border border-gray-150 hover:border-heritage-amber/30 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md animate-scale-up"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.spot.imageUrl || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=100&q=80'}
-                        alt={item.spot.nameVi}
-                        className="w-11 h-11 rounded-lg object-cover border border-gray-150"
-                      />
-                      <div>
-                        <h4 className="text-xs font-extrabold text-gray-900">{language === 'vi' ? item.spot.nameVi : item.spot.nameEn}</h4>
-                        <span className="text-[9.5px] text-gray-400 uppercase font-bold block mt-0.5">{item.spot.category}</span>
+                {radarResults.map((item, idx) => {
+                  const mapped = mapSpot(item.spot);
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3.5 bg-white border border-gray-150 hover:border-heritage-amber/30 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md animate-scale-up"
+                    >
+                      <div 
+                        onClick={() => setSelectedSpotDetail(mapped)}
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-90 flex-grow"
+                      >
+                        <img
+                          src={mapped.image}
+                          alt={mapped.name[language]}
+                          className="w-11 h-11 rounded-lg object-cover border border-gray-150"
+                        />
+                        <div>
+                          <h4 className="text-xs font-extrabold text-gray-900 group-hover:text-heritage-amber transition-colors">{mapped.name[language]}</h4>
+                          <span className="text-[9.5px] text-gray-400 uppercase font-bold block mt-0.5">{mapped.category[language]}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Distance Badge */}
+                        <span className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2 py-0.5 rounded-full font-extrabold">
+                          {item.distance < 1 ? `${Math.round(item.distance * 1000)} m` : `${item.distance.toFixed(1)} km`}
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      {/* Distance Badge */}
-                      <span className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2 py-0.5 rounded-full font-extrabold">
-                        {item.distance < 1 ? `${Math.round(item.distance * 1000)} m` : `${item.distance.toFixed(1)} km`}
-                      </span>
-
-                      <button
-                        onClick={() => {
-                          setPlannerPrefill({
-                            days: 2,
-                            budget: 3000000,
-                            style: item.spot.category === 'stay' ? 'Retreat' : item.spot.category === 'cafe' ? 'Healing' : 'Explorer'
-                          });
-                          setActiveTab('planner');
-                        }}
-                        className="px-3 py-1.5 bg-gray-50 border border-gray-200 hover:border-heritage-amber hover:text-heritage-amber text-gray-600 rounded-lg text-[10px] font-extrabold cursor-pointer transition-colors"
-                      >
-                        {language === 'vi' ? 'Đi tới Plan' : 'Plan Trip'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -497,6 +576,107 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
           })}
         </div>
       </section>
+
+      {/* Spot Detail Modal overlay */}
+      {selectedSpotDetail && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white border border-gray-200 w-full max-w-lg rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-up max-h-[90vh]">
+            
+            {/* Modal Image Header */}
+            <div className="relative h-60 bg-gray-150 flex-shrink-0">
+              <img 
+                src={selectedSpotDetail.image} 
+                alt={selectedSpotDetail.name[language]} 
+                className="w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedSpotDetail(null)}
+                className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full border-none cursor-pointer backdrop-blur-md transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Title & Badges in overlay */}
+              <div className="absolute bottom-4 left-6 right-6 text-white flex flex-col gap-1.5">
+                <div className="flex gap-2">
+                  <span className="bg-heritage-amber text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    {selectedSpotDetail.category[language]}
+                  </span>
+                  <span className="bg-ricefield-green text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    {selectedSpotDetail.tag}
+                  </span>
+                </div>
+                <h3 className="font-outfit text-xl sm:text-2xl font-black tracking-tight leading-tight drop-shadow-sm">
+                  {selectedSpotDetail.name[language]}
+                </h3>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 flex flex-col gap-5 overflow-y-auto">
+              
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                  {language === 'vi' ? 'Mô tả chi tiết' : 'Description'}
+                </span>
+                {selectedSpotDetail.desc[language] ? (
+                  renderFormattedDescription(selectedSpotDetail.desc[language])
+                ) : (
+                  <p className="text-xs sm:text-sm text-gray-650 leading-relaxed font-medium">
+                    {language === 'vi' ? 'Không có mô tả chi tiết cho địa điểm này.' : 'No detailed description available.'}
+                  </p>
+                )}
+              </div>
+
+              {/* Cost / Price */}
+              <div className="flex justify-between items-center bg-gray-50 border border-gray-150 p-4 rounded-2xl">
+                <div className="flex flex-col">
+                  <span className="text-[9px] text-gray-400 font-bold uppercase">
+                    {language === 'vi' ? 'Chi phí ước tính' : 'Estimated Cost'}
+                  </span>
+                  <span className="text-sm font-black text-gray-800 mt-0.5">
+                    {selectedSpotDetail.price[language]}
+                  </span>
+                </div>
+
+                {/* Latitude & Longitude display */}
+                {selectedSpotDetail.lat && selectedSpotDetail.lng && (
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] text-gray-400 font-bold uppercase">GPS</span>
+                    <span className="text-[10.5px] font-bold text-gray-500 mt-0.5">
+                      {selectedSpotDetail.lat.toFixed(4)}, {selectedSpotDetail.lng.toFixed(4)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 pt-2">
+                {/* Directions Button using local map */}
+                {selectedSpotDetail.lat && selectedSpotDetail.lng && (
+                  <button
+                    onClick={() => {
+                      setPlannerPrefill({ directionSpot: selectedSpotDetail });
+                      setSelectedSpotDetail(null);
+                      setActiveTab('planner');
+                    }}
+                    className="w-full py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 border-none"
+                  >
+                    🗺️ {language === 'vi' ? 'XEM CHỈ ĐƯỜNG' : 'GET DIRECTIONS'}
+                  </button>
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
