@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, Bot, Compass, MapPin, Sparkles, HelpCircle } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
+import { getChatReply } from '../../../services/chatService';
 
 export default function ChatbotWidget() {
   const { language, t } = useLanguage();
@@ -37,7 +38,7 @@ export default function ChatbotWidget() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = async (text) => {
     if (!text.trim()) return;
 
     // Add user message
@@ -52,20 +53,9 @@ export default function ChatbotWidget() {
     setInputText('');
     setIsTyping(true);
 
-    // AI Simulated logic responding specifically to local context & active language
-    setTimeout(() => {
-      let reply = '';
-      const lowercaseText = text.toLowerCase();
-      
-      if (lowercaseText.includes('little pie') || lowercaseText.includes('ăn gì ngon') || lowercaseText.includes('eat') || lowercaseText.includes('meal')) {
-        reply = t('botMealReply');
-      } else if (lowercaseText.includes('chùa cầu') || lowercaseText.includes('lịch sử') || lowercaseText.includes('history') || lowercaseText.includes('bridge')) {
-        reply = t('botHistoryReply');
-      } else if (lowercaseText.includes('healing') || lowercaseText.includes('hoàng hôn') || lowercaseText.includes('sunset') || lowercaseText.includes('chill')) {
-        reply = t('botSunsetReply');
-      } else {
-        reply = t('botDefaultReply');
-      }
+    try {
+      const responseData = await getChatReply(text);
+      const reply = responseData.reply;
 
       const botMsg = {
         id: `m_bot_${Date.now()}`,
@@ -75,8 +65,72 @@ export default function ChatbotWidget() {
       };
 
       setMessages((prev) => [...prev, botMsg]);
+    } catch (error) {
+      console.error('Error fetching chat reply:', error);
+      const botMsg = {
+        id: `m_bot_${Date.now()}`,
+        sender: 'bot',
+        text: 'Hiện tại tôi đang gặp khó khăn khi kết nối. Hãy thử lại sau nhé!',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } finally {
       setIsTyping(false);
-    }, 1800);
+    }
+  };
+
+  const renderMessageText = (text) => {
+    if (!text) return null;
+    const lines = text.split('\n');
+    return lines.map((line, lineIdx) => {
+      let trimmed = line.trim();
+      if (!trimmed) return <div key={lineIdx} className="h-1.5" />;
+
+      let isBullet = false;
+      let indentClass = "";
+      if (line.startsWith('    *') || line.startsWith('    -') || line.startsWith('\t*') || line.startsWith('\t-')) {
+        isBullet = true;
+        indentClass = "ml-6 my-0.5 text-xs text-gray-600";
+        trimmed = trimmed.replace(/^[\s*-]+/, '').trim();
+      } else if (line.startsWith('*') || line.startsWith('-')) {
+        isBullet = true;
+        indentClass = "ml-3 my-1 text-xs text-gray-700";
+        trimmed = trimmed.replace(/^[\s*-]+/, '').trim();
+      }
+
+      const boldParts = trimmed.split('**');
+      const parsedElements = boldParts.map((bPart, bIdx) => {
+        const isBold = bIdx % 2 === 1;
+        const italicParts = bPart.split('*');
+        const subElements = italicParts.map((iPart, iIdx) => {
+          const isItalic = iIdx % 2 === 1;
+          if (isItalic) {
+            return <em key={iIdx} className="italic">{iPart}</em>;
+          }
+          return iPart;
+        });
+
+        if (isBold) {
+          return <strong key={bIdx} className="font-bold text-gray-900">{subElements}</strong>;
+        }
+        return <span key={bIdx}>{subElements}</span>;
+      });
+
+      if (isBullet) {
+        return (
+          <div key={lineIdx} className={`flex items-start gap-1.5 ${indentClass}`}>
+            <span className="text-heritage-amber mt-1 select-none">•</span>
+            <div className="flex-1">{parsedElements}</div>
+          </div>
+        );
+      }
+
+      return (
+        <p key={lineIdx} className="my-1 leading-relaxed">
+          {parsedElements}
+        </p>
+      );
+    });
   };
 
   return (
@@ -140,7 +194,7 @@ export default function ChatbotWidget() {
                         : 'bg-white border border-gray-200 text-gray-700 rounded-tl-none'
                     }`}
                   >
-                    {msg.text}
+                    {renderMessageText(msg.text)}
                   </div>
                   <span className={`text-[8.5px] text-gray-400 font-semibold ${msg.sender === 'user' ? 'text-right' : ''}`}>
                     {msg.time}
@@ -191,7 +245,8 @@ export default function ChatbotWidget() {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputText)}
               placeholder={t('botInputPlaceholder')}
-              className="flex-grow bg-gray-50 border border-gray-200 text-xs text-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-heritage-amber placeholder-gray-400"
+              className="flex-grow bg-gray-50 border border-gray-200 text-base text-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-heritage-amber placeholder-gray-400"
+              style={{ fontSize: '16px' }}
             />
             <button
               onClick={() => handleSendMessage(inputText)}

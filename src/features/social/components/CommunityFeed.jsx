@@ -1389,7 +1389,7 @@ export default function CommunityFeed() {
                 "{t('challengeQuest')}"
               </p>
               <div className="bg-white/15 border border-white/10 p-3 rounded-2xl mt-1 flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng AI' : 'AI Reward'}:</span>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
                 <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
               </div>
             </div>
