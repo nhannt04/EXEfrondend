@@ -915,6 +915,12 @@ export default function TripPlannerStudio({ prefill }) {
   };
 
   const handleStartNavigation = () => {
+    if (!currentUser) {
+      alert(language === 'vi' ? "Vui lòng đăng nhập để sử dụng tính năng xem chỉ đường!" : "Please login to use the directions feature!");
+      window.dispatchEvent(new Event('auth-required'));
+      return;
+    }
+
     if (!selectedSpot) {
       alert(language === 'vi' ? "Vui lòng chọn một địa điểm để bắt đầu dẫn đường!" : "Please select a destination to start navigation!");
       return;
@@ -1864,11 +1870,8 @@ export default function TripPlannerStudio({ prefill }) {
                     isDarkMode={isDarkMode}
                     alternativeRoutes={alternativeRoutes}
                     selectedRouteIndex={selectedRouteIndex}
-                    setSelectedRouteIndex={setSelectedRouteIndex}
+                    onSelectRoute={setSelectedRouteIndex}
                     mapRotationActive={mapRotationActive}
-                    autoFollow={autoFollow}
-                    setAutoFollow={setAutoFollow}
-                    getFollowTarget={getFollowTarget}
                   />
                 </div>
               </div>
