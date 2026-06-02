@@ -44,7 +44,7 @@ export default function InstructionBanner({
         directionIcon = <ArrowUp className="w-8 h-8 text-emerald-400" />;
         streetName = 'Đường Phạm Như Xương';
         nextManeuver = 'Tiếp tục lộ trình';
-        subText = 'Dẫn đường bằng AI';
+        subText = 'Dẫn đường tự động';
     }
   } else {
     switch (currentSegmentIndex) {
@@ -76,7 +76,7 @@ export default function InstructionBanner({
         directionIcon = <ArrowUp className="w-8 h-8 text-emerald-400" />;
         streetName = 'Pham Nhu Xuong St';
         nextManeuver = 'Continue on active route';
-        subText = 'Smart AI Navigation';
+        subText = 'Smart Navigation';
     }
   }
 
