@@ -317,7 +317,7 @@ export default function AdminDashboard() {
       setInquiries([
         {
           id: 101,
-          travelerName: 'Khách Local Việt',
+          travelerName: 'Nguyen Van A',
           travelerEmail: 'traveler@travelist.vn',
           question: 'Tôi muốn tìm quán cơm gà Hội An ngon, không quá đông đúc vào giờ trưa?',
           date: '26/05/2026 18:40',

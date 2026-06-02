@@ -208,7 +208,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   type="text"
                   value={registerName}
                   onChange={(e) => setRegisterName(e.target.value)}
-                  placeholder="Khách Local Việt"
+                  placeholder="Nguyen Van A"
                   className="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 focus:border-heritage-amber focus:ring-1 focus:ring-heritage-amber/30 text-sm font-medium transition-all bg-gray-50/50"
                   required
                 />
