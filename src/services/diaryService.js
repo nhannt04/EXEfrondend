@@ -29,6 +29,10 @@ const diaryService = {
     return await axiosClient.get(`/diaries/posted-spots`, { params: { itineraryId } });
   },
 
+  updateDiaryStatus: async (id, status) => {
+    return await axiosClient.put(`/diaries/${id}/status?status=${status}`);
+  },
+
   deleteComment: async (diaryId, commentId) => {
     return await axiosClient.delete(`/diaries/${diaryId}/comments/${commentId}`);
   }

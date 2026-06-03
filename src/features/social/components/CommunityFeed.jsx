@@ -407,17 +407,27 @@ export default function CommunityFeed() {
     }
   };
 
-  const handleToggleHidePost = (postId, newStatus) => {
-    setPosts(posts.map(p => {
-      if (p.id === postId) {
-        return { ...p, status: newStatus };
+  const handleToggleHidePost = async (postId, newStatus) => {
+    try {
+      const response = await diaryService.updateDiaryStatus(postId, newStatus);
+      if (response && response.success) {
+        setPosts(posts.map(p => {
+          if (p.id === postId) {
+            return { ...p, status: newStatus };
+          }
+          return p;
+        }));
+        const msg = newStatus === 'hidden'
+          ? (language === 'vi' ? 'Bài viết đã được ẩn thành công!' : 'Post has been hidden successfully!')
+          : (language === 'vi' ? 'Bài viết đã được hiển thị công khai!' : 'Post is now public!');
+        alert(msg);
+      } else {
+        alert(language === 'vi' ? 'Cập nhật trạng thái thất bại!' : 'Failed to update status!');
       }
-      return p;
-    }));
-    const msg = newStatus === 'hidden'
-      ? (language === 'vi' ? 'Bài viết đã được ẩn thành công!' : 'Post has been hidden successfully!')
-      : (language === 'vi' ? 'Bài viết đã được hiển thị công khai!' : 'Post is now public!');
-    alert(msg);
+    } catch (e) {
+      console.error("Failed to toggle hide post:", e);
+      alert(language === 'vi' ? 'Lỗi khi cập nhật trạng thái bài viết' : 'Error updating post status');
+    }
     setActiveDropdownPostId(null);
   };
 
