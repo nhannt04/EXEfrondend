@@ -1,6 +1,7 @@
 import React from 'react';
 import { Compass, Mail, Phone, MapPin } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import logoImg from '../../assets/logo.jpg';
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -11,8 +12,8 @@ export default function Footer() {
         {/* Brand section */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <div className="bg-heritage-amber p-1.5 rounded-lg text-white">
-              <Compass className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-200/80 shadow-md">
+              <img src={logoImg} alt="Travelist Logo" className="w-full h-full object-cover" />
             </div>
             <span className="font-outfit text-xl font-bold tracking-tight text-gray-900">
               Travel<span className="text-heritage-amber">ist</span>

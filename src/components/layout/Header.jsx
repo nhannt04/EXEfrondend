@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import authService from '../../services/authService';
+import logoImg from '../../assets/logo.jpg';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuth }) {
   const { language, setLanguage, t } = useLanguage();
@@ -59,8 +60,8 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
         className="flex items-center gap-2.5 cursor-pointer group"
         onClick={() => setActiveTab('home')}
       >
-        <div className="bg-heritage-amber p-2 rounded-xl text-white transition-all duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-heritage-amber/30">
-          <Compass className="w-5 h-5" />
+        <div className="w-11 h-11 rounded-xl overflow-hidden border border-gray-200/80 shadow-md transition-all duration-300 group-hover:rotate-6 group-hover:scale-110">
+          <img src={logoImg} alt="Travelist Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <span className="font-outfit text-xl font-bold tracking-tight text-gray-900 group-hover:text-heritage-amber transition-colors duration-300">
