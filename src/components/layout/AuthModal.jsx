@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
 import authService from '../../services/authService';
+import logoImg from '../../assets/logo.jpg';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
@@ -103,8 +104,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {/* Logo and Brand Header */}
         <div className="flex flex-col items-center gap-1 text-center mb-6">
-          <div className="bg-heritage-amber p-3 rounded-2xl text-white shadow-lg shadow-heritage-amber/20">
-            <ShieldCheck className="w-6 h-6 animate-pulse" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200/80 shadow-lg shadow-black/5">
+            <img src={logoImg} alt="Travelist Logo" className="w-full h-full object-cover" />
           </div>
           <h2 className="font-outfit text-2xl font-extrabold text-gray-900 tracking-tight mt-3">
             Chào mừng bạn đến với <span className="text-heritage-amber">Travelist</span>
