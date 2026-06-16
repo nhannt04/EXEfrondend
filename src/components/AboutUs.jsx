@@ -98,61 +98,73 @@ export default function AboutUs() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide snap-x snap-mandatory sm:snap-none">
             {[
 
               {
                 name: 'Đặng Đức Lương',
                 role: 'Team Leader',
                 desc: 'Điều phối dự án, phát triển Trợ lý ảo AI Travelist & đề xuất lộ trình thông minh.',
-                avatar: luongImg
+                avatar: luongImg,
+                fbLink: 'https://www.facebook.com/luongdang2201'
               },
               {
                 name: 'Phạm Nhật Bảo Hân',
                 role: 'Marketing Team',
                 desc: 'Thiết kế giao diện người dùng, thu thập dữ liệu trải nghiệm người dùng & bản đồ GPS.',
-                avatar: hanImg
+                avatar: hanImg,
+                fbLink: 'https://www.facebook.com/bao.han.87599'
               },
               {
                 name: 'Lữ Lê Thuỳ Linh',
                 role: 'Marketing Team',
                 desc: 'Định hướng sản phẩm, tối ưu trải nghiệm và thu thập dữ liệu nội dung số.',
-                avatar: linhImg
+                avatar: linhImg,
+                fbLink: 'https://www.facebook.com/lule.thuylinh'
               },
               {
                 name: 'Dương Thị Ngọc Châu',
                 role: 'Marketing Team',
                 desc: 'Đảm bảo chất lượng hệ thống, thu thập & biên soạn nội dung di sản.',
-                avatar: chauImg
+                avatar: chauImg,
+                fbLink: 'https://www.facebook.com/ngoc.chau.913780'
               },
               {
                 name: 'Nguyễn Thành Nhân',
                 role: 'IT Team',
                 desc: 'Kiến trúc hệ thống, Neon DB, Backend API & Frontend.',
-                avatar: nhanImg
+                avatar: nhanImg,
+                fbLink: 'https://www.facebook.com/nguyen.thanh.nhan.070704'
               },
               {
                 name: 'Nguyễn Văn An',
                 role: 'IT Team',
                 desc: 'Phát triển API dịch vụ, bảo mật hệ thống & tích hợp dữ liệu.',
-                avatar: anImg
+                avatar: anImg,
+                fbLink: 'https://www.facebook.com/michaelht271'
               }
 
             ].map((member, i) => (
-              <div key={i} className="glass-panel p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:-translate-y-1 transition-all duration-300">
+              <a 
+                href={member.fbLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                key={i} 
+                className="flex-shrink-0 snap-center w-[260px] sm:w-full glass-panel p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-heritage-amber/10 transition-all duration-300 no-underline cursor-pointer group"
+              >
                 <img
                   src={member.avatar}
                   alt={member.name}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-heritage-amber/30 p-1"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-heritage-amber/30 p-1 group-hover:scale-105 group-hover:border-heritage-amber transition-all duration-300"
                 />
                 <div>
                   <h4 className="font-outfit font-bold text-gray-900">{member.name}</h4>
                   <span className="text-xs text-heritage-amber font-semibold">{member.role}</span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 leading-relaxed group-hover:text-gray-700 transition-colors">
                   {language === 'vi' ? member.desc : member.role}
                 </p>
-              </div>
+              </a>
             ))}
           </div>
         </div>

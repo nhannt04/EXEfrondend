@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info } from 'lucide-react';
+import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import authService from '../../services/authService';
 import logoImg from '../../assets/logo.jpg';
@@ -139,7 +139,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
                   </div>
                   {/* Upload Avatar Label Trigger */}
                   <label className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer font-bold transition-all border-none bg-transparent m-0 select-none">
-                    <UserIcon className="w-4 h-4 text-heritage-amber" />
+                    <Camera className="w-4 h-4 text-heritage-amber" />
                     <span>{language === 'vi' ? 'Đổi ảnh đại diện' : 'Change Avatar'}</span>
                     <input
                       type="file"
@@ -148,6 +148,17 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
                       className="hidden"
                     />
                   </label>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('profile');
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-none bg-transparent cursor-pointer font-bold transition-all"
+                  >
+                    <UserIcon className="w-4 h-4 text-heritage-amber" />
+                    <span>{language === 'vi' ? 'Trang cá nhân' : 'My Profile'}</span>
+                  </button>
 
                   <button
                     onClick={() => {

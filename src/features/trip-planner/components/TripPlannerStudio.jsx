@@ -2052,12 +2052,12 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
-                <div className="flex gap-4 items-center">
-                  <div className="relative flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+                  <div className="relative flex-shrink-0 w-full sm:w-auto">
                     <img
                       src={itinerary[activeDay - 1].accommodation.img || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80'}
                       alt="Homestay"
-                      className="w-28 h-28 rounded-xl object-contain bg-gray-50 border border-gray-100 relative z-10"
+                      className="w-full sm:w-28 h-40 sm:h-28 rounded-xl object-cover bg-gray-50 border border-gray-100 relative z-10"
                     />
                     {showTravelRoute && (
                       <span className="absolute -top-1 -right-1 flex h-3 w-3 z-25">
@@ -2066,22 +2066,24 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                       </span>
                     )}
                   </div>
-                  <div className="flex-grow relative z-10">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
+                  <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
+                    <div className="flex-grow relative z-10">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
+                      </div>
+                      <h4 className="font-outfit text-sm font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
+                      <p className="text-[10.5px] text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
                     </div>
-                    <h4 className="font-outfit text-sm font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
-                    <p className="text-[10.5px] text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0 relative z-10">
-                    <span className="text-[10px] text-gray-400 block">{t('estimatedNight')}</span>
-                    <span className="text-xs font-extrabold text-heritage-amber">
-                      {formatPriceRange(
-                        itinerary[activeDay - 1].accommodation.minCost || 0,
-                        itinerary[activeDay - 1].accommodation.maxCost || 0,
-                        language === 'vi' ? 'Miễn phí' : 'Free'
-                      )}
-                    </span>
+                    <div className="text-right flex-shrink-0 relative z-10">
+                      <span className="text-[10px] text-gray-400 block">{t('estimatedNight')}</span>
+                      <span className="text-xs font-extrabold text-heritage-amber">
+                        {formatPriceRange(
+                          itinerary[activeDay - 1].accommodation.minCost || 0,
+                          itinerary[activeDay - 1].accommodation.maxCost || 0,
+                          language === 'vi' ? 'Miễn phí' : 'Free'
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -2180,38 +2182,40 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                         {/* Content using accommodation layout style */}
                         <div className="flex-grow relative z-10 flex flex-col gap-3">
-                          <div className="flex gap-4 items-center">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
                             {item.img && (
-                              <div className="relative flex-shrink-0">
+                              <div className="relative flex-shrink-0 w-full sm:w-auto">
                                 <img
                                   src={item.img}
                                   alt={item.name?.[language] || 'Spot'}
-                                  className="w-28 h-28 rounded-xl object-contain bg-gray-50 border border-gray-100 relative z-10"
+                                  className="w-full sm:w-28 h-40 sm:h-28 rounded-xl object-cover bg-gray-50 border border-gray-100 relative z-10"
                                 />
                                 {item.images && item.images.length > 0 && (
-                                  <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {item.images.length}</span>
+                                  <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold z-20">📸 {item.images.length}</span>
                                 )}
                               </div>
                             )}
-                            <div className="flex-grow relative z-10">
-                              <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                <span>{label}</span>
-                                <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
+                            <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
+                              <div className="flex-grow relative z-10">
+                                <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                  <span>{label}</span>
+                                  <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
+                                </div>
+                                <h4 className={`font-outfit text-sm font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
+                                  }`}>
+                                  {item.name?.[language] || 'Địa điểm tham quan'}
+                                </h4>
+                                <p className="text-[10.5px] text-gray-500 leading-normal mt-1 flex items-start gap-1">
+                                  <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
+                                  <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
+                                </p>
                               </div>
-                              <h4 className={`font-outfit text-sm font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
-                                }`}>
-                                {item.name?.[language] || 'Địa điểm tham quan'}
-                              </h4>
-                              <p className="text-[10.5px] text-gray-500 leading-normal mt-1 flex items-start gap-1">
-                                <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
-                                <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0 relative z-10">
-                              <span className="text-[10px] text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
-                              <span className="text-xs font-extrabold text-heritage-amber">
-                                {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
-                              </span>
+                              <div className="text-right flex-shrink-0 relative z-10">
+                                <span className="text-[10px] text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
+                                <span className="text-xs font-extrabold text-heritage-amber">
+                                  {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
+                                </span>
+                              </div>
                             </div>
                           </div>
 
