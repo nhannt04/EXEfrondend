@@ -370,7 +370,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 theme="outline"
                 size="large"
                 shape="rectangular"
-                width="100%"
                 text="continue_with"
               />
             </div>
@@ -504,7 +503,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     theme="outline"
                     size="large"
                     shape="rectangular"
-                    width="100%"
                     text="continue_with"
                   />
                 </div>
