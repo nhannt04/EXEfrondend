@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import tripService from '../../../services/tripService';
@@ -646,7 +646,7 @@ const LeafletMap = ({
   );
 };
 
-export default function TripPlannerStudio({ prefill }) {
+export default function TripPlannerStudio({ prefill, initialTab }) {
   const { language, t } = useLanguage();
   const [days, setDays] = useState(1);
   const [budget, setBudget] = useState(5000000); // 5 Million default
@@ -691,6 +691,17 @@ export default function TripPlannerStudio({ prefill }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const selectSpotAndScroll = (spot) => {
+    setSelectedSpot(spot);
+    setSidebarPage(1);
+    setTimeout(() => {
+      const el = document.getElementById('trip-planner-map-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   // Advanced Navigation States
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
@@ -719,7 +730,7 @@ export default function TripPlannerStudio({ prefill }) {
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tripTitle, setTripTitle] = useState('');
-  const [activePlannerTab, setActivePlannerTab] = useState('studio');
+  const [activePlannerTab, setActivePlannerTab] = useState(initialTab || 'studio');
   const [allDbSpots, setAllDbSpots] = useState([]);
   const [rentalPage, setRentalPage] = useState(1);
   const [isSavedItinerary, setIsSavedItinerary] = useState(false);
@@ -727,6 +738,12 @@ export default function TripPlannerStudio({ prefill }) {
   const [activeItineraryId, setActiveItineraryId] = useState(null);
   const [activeItineraryStatus, setActiveItineraryStatus] = useState('NOT_STARTED');
   const [savedFilter, setSavedFilter] = useState('ALL');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActivePlannerTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Load saved itineraries
   const fetchSavedItineraries = async () => {
@@ -799,6 +816,8 @@ export default function TripPlannerStudio({ prefill }) {
       setIsSaving(false);
     }
   };
+
+
 
   const handleDeleteSaved = async (id, e) => {
     e.stopPropagation();
@@ -1951,57 +1970,6 @@ export default function TripPlannerStudio({ prefill }) {
     }
     return (
       <div className="w-full flex flex-col gap-6 animate-fade-in">
-        {/* Financial Dashboard Banner - Apple Shimmer */}
-        <div className="w-full bg-white rounded-2xl p-6 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6 items-center shadow-sm shimmer-trigger">
-          <div className="flex flex-col relative z-10">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{t('yourBudget')}</span>
-            <div className="flex items-center gap-1.5 text-gray-800 font-extrabold font-outfit text-lg">
-              <DollarSign className="w-4 h-4 text-gray-400" />
-              {(budget).toLocaleString()}đ
-            </div>
-          </div>
-
-          <div className="flex flex-col relative z-10">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-              {language === 'vi' ? 'Tổng chi phí ước tính' : 'Estimated Cost'}
-            </span>
-            <div className="flex items-center gap-1 text-gray-850 font-extrabold font-outfit text-[13px] md:text-sm lg:text-[15px] whitespace-nowrap">
-              <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-              {formatPriceRange(costs.totalMin, costs.totalMax, language === 'vi' ? 'Miễn phí' : 'Free')}
-            </div>
-          </div>
-
-          <div className="flex flex-col relative z-10">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-              {language === 'vi' ? 'Trạng thái ngân sách' : 'Budget Status'}
-            </span>
-            <div className={`flex items-center gap-1 font-extrabold font-outfit text-xs md:text-sm ${budget < costs.totalMin
-              ? 'text-red-600'
-              : (budget >= costs.totalMin && budget <= costs.totalMax)
-                ? 'text-amber-600'
-                : 'text-ricefield-green'
-              }`}>
-              {budget < costs.totalMin ? (
-                <>
-                  <span className="text-sm">❌</span>
-                  {language === 'vi' ? 'Không đủ ngân sách' : 'Insufficient Budget'}
-                </>
-              ) : (budget >= costs.totalMin && budget <= costs.totalMax) ? (
-                <>
-                  <span className="text-sm">⚠️</span>
-                  {language === 'vi' ? 'Có thể vượt quá ngân sách' : 'May Exceed Budget'}
-                </>
-              ) : (
-                <>
-                  <span className="text-sm">✅</span>
-                  {language === 'vi' ? 'Trong tầm kiểm soát' : 'Trong tầm kiểm soát'}
-                </>
-              )}
-            </div>
-          </div>
-
-
-        </div>
 
         {/* Optimizing State indicator */}
         {optimizing && (
@@ -2075,10 +2043,10 @@ export default function TripPlannerStudio({ prefill }) {
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
 
           {/* Timeline Column */}
-          <div className="md:col-span-7 flex flex-col gap-4">
+          <div className="md:col-span-7 flex flex-col gap-4 order-2 md:order-1">
             {itinerary[activeDay - 1].accommodation ? (
               <div
-                onClick={() => setSelectedSpot(itinerary[activeDay - 1].accommodation)}
+                onClick={() => selectSpotAndScroll(itinerary[activeDay - 1].accommodation)}
                 className={`w-full bg-white border p-4 rounded-2xl flex flex-col gap-3 shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md shimmer-trigger animate-fade-in-up [animation-delay:100ms] ${selectedSpot && selectedSpot.lat === itinerary[activeDay - 1].accommodation.lat
                   ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
                   : 'border-gray-200 hover:border-gray-300'
@@ -2089,7 +2057,7 @@ export default function TripPlannerStudio({ prefill }) {
                     <img
                       src={itinerary[activeDay - 1].accommodation.img || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80'}
                       alt="Homestay"
-                      className="w-16 h-16 rounded-lg object-cover relative z-10"
+                      className="w-28 h-28 rounded-xl object-contain bg-gray-50 border border-gray-100 relative z-10"
                     />
                     {showTravelRoute && (
                       <span className="absolute -top-1 -right-1 flex h-3 w-3 z-25">
@@ -2190,7 +2158,7 @@ export default function TripPlannerStudio({ prefill }) {
                     return (
                       <div
                         key={`${s.slot}-${idx}`}
-                        onClick={() => setSelectedSpot(item)}
+                        onClick={() => selectSpotAndScroll(item)}
                         className={`relative flex gap-4 bg-white border p-4 rounded-2xl group hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer shimmer-trigger animate-fade-in-up ${delay} ${isFocus
                           ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
                           : 'border-gray-200 hover:border-gray-300'
@@ -2210,44 +2178,45 @@ export default function TripPlannerStudio({ prefill }) {
                           <div className="w-0.5 h-full bg-gray-150 mt-2 group-last:hidden" />
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-grow relative z-10">
-                          <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                            <span>{label}</span>
-                            <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
-                          </div>
-
-                          {/* Spot Image */}
-                          {item.img && (
-                            <div className="relative mt-2 mb-2 rounded-lg overflow-hidden border border-gray-150">
-                              <img
-                                src={item.img}
-                                alt={item.name?.[language] || 'Spot'}
-                                className="w-full h-24 object-cover hover:scale-105 transition-transform duration-300"
-                              />
-                              {item.images && item.images.length > 0 && (
-                                <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {item.images.length}</span>
-                              )}
+                        {/* Content using accommodation layout style */}
+                        <div className="flex-grow relative z-10 flex flex-col gap-3">
+                          <div className="flex gap-4 items-center">
+                            {item.img && (
+                              <div className="relative flex-shrink-0">
+                                <img
+                                  src={item.img}
+                                  alt={item.name?.[language] || 'Spot'}
+                                  className="w-28 h-28 rounded-xl object-contain bg-gray-50 border border-gray-100 relative z-10"
+                                />
+                                {item.images && item.images.length > 0 && (
+                                  <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {item.images.length}</span>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex-grow relative z-10">
+                              <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                <span>{label}</span>
+                                <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
+                              </div>
+                              <h4 className={`font-outfit text-sm font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
+                                }`}>
+                                {item.name?.[language] || 'Địa điểm tham quan'}
+                              </h4>
+                              <p className="text-[10.5px] text-gray-500 leading-normal mt-1 flex items-start gap-1">
+                                <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
+                                <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
+                              </p>
                             </div>
-                          )}
-
-                          <div className="flex justify-between items-start gap-2">
-                            <h4 className={`font-outfit text-sm font-bold transition-colors ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
-                              }`}>
-                              {item.name?.[language] || 'Địa điểm tham quan'}
-                            </h4>
-                            <span className="text-xs font-extrabold text-heritage-amber flex-shrink-0">
-                              {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
-                            </span>
+                            <div className="text-right flex-shrink-0 relative z-10">
+                              <span className="text-[10px] text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
+                              <span className="text-xs font-extrabold text-heritage-amber">
+                                {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
+                              </span>
+                            </div>
                           </div>
-
-                          <p className="text-[10.5px] text-gray-500 leading-relaxed mt-1 flex items-start gap-1">
-                            <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
-                            <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
-                          </p>
 
                           {/* Interchange actions */}
-                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                             <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
                             <button
                               onClick={(e) => {
@@ -2319,10 +2288,10 @@ export default function TripPlannerStudio({ prefill }) {
           </div>
 
           {/* Costs Breakdown & Dynamic Google Maps Sidebar Column */}
-          <div className="md:col-span-5 flex flex-col gap-4 animate-fade-in-up [animation-delay:250ms]">
+          <div className="md:col-span-5 flex flex-col gap-4 animate-fade-in-up [animation-delay:250ms] order-1 md:order-2">
 
             {/* Sidebar Segmented Control / Tabs */}
-            <div className="flex bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200 shadow-sm relative z-10">
+            <div id="trip-planner-map-section" className="flex bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200 shadow-sm relative z-10">
               <button
                 type="button"
                 onClick={() => setSidebarPage(1)}
@@ -2456,11 +2425,11 @@ export default function TripPlannerStudio({ prefill }) {
                   <div className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-2 relative z-10">
                     {/* Spot Image */}
                     {selectedSpot.img && (
-                      <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                      <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
                         <img
                           src={selectedSpot.img}
                           alt={selectedSpot.name[language]}
-                          className="w-full h-32 object-cover"
+                          className="w-full h-60 object-contain"
                         />
                         {selectedSpot.images && selectedSpot.images.length > 0 && (
                           <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {selectedSpot.images.length}</span>
@@ -2549,39 +2518,87 @@ export default function TripPlannerStudio({ prefill }) {
 
             {/* Financial analysis - Apple Shimmer */}
             {sidebarPage === 2 && (
-              <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-6 h-fit shadow-sm shimmer-trigger animate-fade-in-up">
+              <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-5 h-fit shadow-sm shimmer-trigger animate-fade-in-up">
                 <h3 className="font-outfit text-base font-bold text-gray-900 border-b border-gray-100 pb-2 relative z-10">
                   {t('financialAnalysis')}
                 </h3>
 
-                {/* Progress Bars */}
-                <div className="flex flex-col gap-4 relative z-10">
-                  {[
-                    { name: t('costsAccommodation'), min: costs.accommodationMin, max: costs.accommodationMax, color: 'bg-indigo-600' },
-                    { name: t('costsFood'), min: costs.foodMin, max: costs.foodMax, color: 'bg-heritage-amber' },
-                    { name: t('costsActivities'), min: costs.activitiesMin, max: costs.activitiesMax, color: 'bg-ricefield-green' },
-                    { name: t('costsTransport'), min: costs.transport, max: costs.transport, color: 'bg-gray-400' }
-                  ].map((cat) => {
-                    const pct = costs.totalMax > 0 ? (cat.max / costs.totalMax) * 100 : 0;
-                    return (
-                      <div key={cat.name} className="flex flex-col gap-1">
-                        <div className="flex justify-between text-[10.5px] font-bold text-gray-500">
-                          <span>{cat.name}</span>
-                          <span className="text-gray-900 font-extrabold">{pct.toFixed(0)}%</span>
+                {(() => {
+                  const total = costs.totalMax || 1;
+                  const pAccom = (costs.accommodationMax / total) * 100;
+                  const pFood = (costs.foodMax / total) * 100;
+                  const pAct = (costs.activitiesMax / total) * 100;
+                  const pTrans = (costs.transport / total) * 100;
+
+                  return (
+                    <div className="flex flex-col gap-5 relative z-10">
+                      {/* Donut Pie Chart & Legend Row */}
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        {/* Circular Donut Chart */}
+                        <div
+                          className="relative w-36 h-36 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
+                          style={{
+                            background: `conic-gradient(
+                              #4f46e5 0% ${pAccom}%,
+                              #d97706 ${pAccom}% ${pAccom + pFood}%,
+                              #15803d ${pAccom + pFood}% ${pAccom + pFood + pAct}%,
+                              #9ca3af ${pAccom + pFood + pAct}% 100%
+                            )`
+                          }}
+                        >
+                          {/* Inner white cutout for donut chart */}
+                          <div className="absolute w-24 h-24 bg-white rounded-full shadow-inner flex flex-col items-center justify-center p-2 text-center">
+                            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                              {language === 'vi' ? 'Ước tính' : 'Estimated'}
+                            </span>
+                            <span className="text-[11px] font-black text-gray-900 mt-0.5 truncate max-w-full">
+                              {(costs.totalMax).toLocaleString()}đ
+                            </span>
+                          </div>
                         </div>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
-                          <div
-                            className={`h-full ${cat.color} transition-all duration-700`}
-                            style={{ width: `${pct}%` }}
-                          />
+
+                        {/* Legend List */}
+                        <div className="flex flex-col gap-2.5 w-full">
+                          {[
+                            { name: t('costsAccommodation'), pct: pAccom, color: 'bg-indigo-600', val: costs.accommodationMax },
+                            { name: t('costsFood'), pct: pFood, color: 'bg-heritage-amber', val: costs.foodMax },
+                            { name: t('costsActivities'), pct: pAct, color: 'bg-ricefield-green', val: costs.activitiesMax },
+                            { name: t('costsTransport'), pct: pTrans, color: 'bg-gray-400', val: costs.transport }
+                          ].map((cat) => (
+                            <div key={cat.name} className="flex items-center justify-between text-[11px] font-bold text-gray-700">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2.5 h-2.5 rounded-full ${cat.color} flex-shrink-0`} />
+                                <span className="truncate max-w-[120px]">{cat.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-right font-black">
+                                <span className="text-gray-900">{cat.pct.toFixed(0)}%</span>
+                                <span className="text-gray-400 font-semibold text-[9.5px]">({(cat.val / 1000).toFixed(0)}k)</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <span className="text-[10px] text-gray-400 text-right font-semibold">
-                          {formatPriceRange(cat.min, cat.max, language === 'vi' ? 'Miễn phí' : 'Free')}
-                        </span>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {/* Budget Status Badge */}
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-150 p-3.5 rounded-xl text-xs">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-gray-400 font-extrabold uppercase">{language === 'vi' ? 'Ngân sách đề ra' : 'Target Budget'}</span>
+                          <span className="font-black text-gray-800 mt-0.5">{(budget).toLocaleString()}đ</span>
+                        </div>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border shadow-sm ${
+                          isOverBudget
+                            ? 'bg-red-50 text-red-600 border-red-200'
+                            : 'bg-green-50 text-green-600 border-green-200'
+                        }`}>
+                          {isOverBudget
+                            ? (language === 'vi' ? '⚠️ Vượt ngân sách' : '⚠️ Over Budget')
+                            : (language === 'vi' ? '✅ Đạt yêu cầu' : '✅ Within Budget')
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="border-t border-gray-100 pt-4 flex flex-col gap-2 relative z-10">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('advisorTitle')}</span>
@@ -2754,7 +2771,7 @@ export default function TripPlannerStudio({ prefill }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col items-center gap-10">
+    <div className="max-w-[95%] w-full mx-auto px-6 py-10 flex flex-col items-center gap-10">
       {/* Page Title */}
       <div className="text-center flex flex-col items-center gap-2">
         <div className="inline-flex items-center gap-2 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-1.5 rounded-full text-xs font-semibold animate-float">
@@ -2804,38 +2821,41 @@ export default function TripPlannerStudio({ prefill }) {
             }`}
         >
           <Calendar className="w-4 h-4" />
-          {language === 'vi' ? '🎒 Lịch Trình Của Tôi' : '🎒 My Saved Itineraries'}
+          {language === 'vi' ? 'Lịch Trình Của Tôi' : 'My Saved Itineraries'}
         </button>
       </div>
 
       {activePlannerTab === 'studio' && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Side - Input Panel - Apple Shimmer */}
-          <div className="lg:col-span-4 bg-white border border-gray-200 p-6 rounded-2xl flex flex-col gap-5 shadow-sm shimmer-trigger">
-            <h3 className="font-outfit text-lg font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 relative z-10">
+          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-6 sm:p-7 rounded-3xl flex flex-col gap-6 shadow-xl relative overflow-hidden shimmer-trigger">
+            {/* Absolute decorative glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl pointer-events-none" />
+
+            <h3 className="font-outfit text-lg font-black text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 relative z-10">
               <Calendar className="w-5 h-5 text-heritage-amber" />
               {t('tripParams')}
             </h3>
 
             {/* Destination */}
             <div className="flex flex-col gap-1.5 relative z-10">
-              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('destination')}</label>
+              <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('destination')}</label>
               <input
                 type="text"
                 value={language === 'vi' ? 'Hội An, Quảng Nam' : 'Hoi An, Quang Nam'}
                 disabled
-                className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold"
+                className="bg-gray-50/80 border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl text-sm font-bold shadow-inner"
               />
             </div>
 
             {/* Days & Style */}
             <div className="grid grid-cols-2 gap-4 relative z-10">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('daysCount')}</label>
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('daysCount')}</label>
                 <select
                   value={days}
                   onChange={(e) => setDays(Number(e.target.value))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
                 >
                   <option value={1}>{language === 'vi' ? '1 Ngày' : '1 Day'}</option>
                   <option value={2}>{language === 'vi' ? '2 Ngày' : '2 Days'}</option>
@@ -2846,11 +2866,11 @@ export default function TripPlannerStudio({ prefill }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('travelStyle')}</label>
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('travelStyle')}</label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
                 >
                   <option value="Chill & Thư giãn">{language === 'vi' ? 'Chill & Thư giãn' : 'Chill & Relax'}</option>
                   <option value="Sống ảo">{language === 'vi' ? 'Sống ảo' : 'Instagrammable / Aesthetic'}</option>
@@ -2860,10 +2880,10 @@ export default function TripPlannerStudio({ prefill }) {
             </div>
 
             {/* Budget Setting */}
-            <div className="flex flex-col gap-2 relative z-10">
+            <div className="flex flex-col gap-2.5 relative z-10">
               <div className="flex justify-between items-center text-xs">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('budgetLabel')}</label>
-                <span className="text-heritage-amber font-extrabold text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
+                <span className="text-heritage-amber font-black text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
               </div>
               <input
                 type="range"
@@ -2872,39 +2892,39 @@ export default function TripPlannerStudio({ prefill }) {
                 step={500000}
                 value={budget}
                 onChange={(e) => setBudget(Number(e.target.value))}
-                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-heritage-amber"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-heritage-amber"
               />
             </div>
 
             {/* Group size */}
-            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 relative z-10">
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-5 relative z-10">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('adults')}</label>
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('adults')}</label>
                 <input
                   type="number"
                   min={1}
                   max={10}
                   value={adults}
                   onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber text-center font-bold"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('children')}</label>
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('children')}</label>
                 <input
                   type="number"
                   min={0}
                   max={10}
                   value={children}
                   onChange={(e) => setChildren(Math.max(0, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber text-center font-bold"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
                 />
               </div>
             </div>
 
             {/* Interests Custom Text Input */}
-            <div className="flex flex-col gap-2 relative z-10 border-t border-gray-150 pt-4">
-              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('interests')}</label>
+            <div className="flex flex-col gap-2 relative z-10 border-t border-gray-150 pt-5">
+              <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('interests')}</label>
               <textarea
                 rows={4}
                 value={interests}
@@ -2912,7 +2932,7 @@ export default function TripPlannerStudio({ prefill }) {
                 placeholder={language === 'vi'
                   ? 'Hãy viết sở thích cá nhân của bạn (Ví dụ: Muốn ăn cao lầu Bà Bé, uống cà phê sữa đá ven sông, đi dạo ngắm đèn lồng Phố Cổ và ngắm hoàng hôn biển An Bàng...)'
                   : 'Write your personalized travel preferences...'}
-                className="w-full bg-white border border-gray-200 text-gray-800 px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-heritage-amber resize-none font-semibold leading-relaxed hover:border-gray-300 focus:ring-2 focus:ring-heritage-amber/10 transition-all duration-300"
+                className="w-full bg-white border border-gray-200 text-gray-850 px-4 py-3.5 rounded-2xl text-xs focus:outline-none focus:border-heritage-amber resize-none font-bold leading-relaxed hover:border-gray-300 focus:ring-4 focus:ring-heritage-amber/10 transition-all duration-300 shadow-sm"
               />
             </div>
 
@@ -2920,7 +2940,7 @@ export default function TripPlannerStudio({ prefill }) {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full mt-4 py-3 bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-extrabold text-sm rounded-xl flex items-center justify-center gap-2 tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-heritage-amber/15 cursor-pointer border-none z-10"
+              className="w-full mt-2 py-4 bg-gradient-to-tr from-heritage-amber to-heritage-gold hover:from-heritage-gold hover:to-heritage-amber disabled:bg-gray-300 text-white font-black text-xs rounded-2xl flex items-center justify-center gap-2 tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-heritage-amber/25 hover:shadow-heritage-amber/35 cursor-pointer border-none z-10 uppercase"
             >
               <Sparkles className="w-4 h-4 animate-spin-slow" />
               {loading ? t('generating') : t('generateButton')}
@@ -2931,11 +2951,11 @@ export default function TripPlannerStudio({ prefill }) {
           <div className="lg:col-span-8 flex flex-col gap-6">
             {/* Loading Animation */}
             {loading && (
-              <div className="w-full h-[500px] bg-white border border-gray-200 rounded-2xl flex flex-col items-center justify-center p-8 gap-6 shadow-sm animate-scale-up">
+              <div className="w-full h-[550px] bg-gradient-to-br from-white to-gray-50/50 border border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 gap-6 shadow-xl animate-scale-up">
                 <div className="relative w-16 h-16 border-4 border-heritage-amber/20 border-t-heritage-amber rounded-full animate-spin flex items-center justify-center" />
                 <div className="text-center flex flex-col gap-2 max-w-sm">
-                  <span className="text-heritage-amber font-outfit text-sm font-extrabold tracking-wide uppercase">{t('generating')}</span>
-                  <p className="text-xs text-gray-500 italic leading-relaxed">
+                  <span className="text-heritage-amber font-outfit text-sm font-black tracking-widest uppercase">{t('generating')}</span>
+                  <p className="text-xs text-gray-550 font-semibold italic leading-relaxed">
                     "{t('loadingFact')} {facts[loadingFactIndex]}"
                   </p>
                 </div>
@@ -2944,13 +2964,14 @@ export default function TripPlannerStudio({ prefill }) {
 
             {/* Placeholder state */}
             {!loading && !itinerary && (
-              <div className="w-full h-[500px] border border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-center p-8 gap-4 bg-[#FAF7EE]/10 animate-fade-in">
-                <div className="bg-white border border-gray-200 p-4 rounded-full text-gray-400 shadow-sm animate-float">
+              <div className="w-full h-[550px] border border-dashed border-gray-250 bg-gradient-to-br from-white to-gray-50/30 rounded-3xl flex flex-col items-center justify-center text-center p-8 gap-5 animate-fade-in relative overflow-hidden shadow-inner">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px]" />
+                <div className="bg-white border border-gray-250/60 p-4.5 rounded-full text-heritage-amber shadow-md animate-float relative z-10">
                   <Calendar className="w-8 h-8" />
                 </div>
-                <div>
-                  <h3 className="font-outfit text-lg font-bold text-gray-800 mb-1">{t('noItinerary')}</h3>
-                  <p className="text-xs text-gray-500 max-w-xs leading-relaxed">
+                <div className="relative z-10">
+                  <h3 className="font-outfit text-lg font-black text-gray-800 mb-1.5">{t('noItinerary')}</h3>
+                  <p className="text-xs text-gray-400 max-w-xs leading-relaxed font-bold">
                     {t('noItineraryDesc')}
                   </p>
                 </div>
@@ -2964,15 +2985,15 @@ export default function TripPlannerStudio({ prefill }) {
       )}
 
       {activePlannerTab === 'viewer' && (
-        <div className="w-full max-w-5xl">
+        <div className="w-full">
           {renderItineraryContent()}
         </div>
       )}
 
       {activePlannerTab === 'saved' && (
-        <div className="w-full max-w-5xl bg-white border border-gray-200 rounded-3xl p-8 flex flex-col gap-6 shadow-sm">
+        <div className="w-full bg-white border border-gray-200 rounded-3xl p-8 flex flex-col gap-6 shadow-sm">
           <h3 className="font-outfit text-xl font-bold text-gray-900 border-b border-gray-100 pb-4">
-            🎒 {language === 'vi' ? 'Lịch trình bạn đã lưu' : 'Your Saved Itineraries'}
+            {language === 'vi' ? 'Lịch trình bạn đã lưu' : 'Your Saved Itineraries'}
           </h3>
 
           {!currentUser && (
@@ -3044,7 +3065,7 @@ export default function TripPlannerStudio({ prefill }) {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                   {filtered.map((saved) => (
                     <div
                       key={saved.id}
@@ -3108,9 +3129,11 @@ export default function TripPlannerStudio({ prefill }) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 justify-end text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
-                        <span>{language === 'vi' ? 'Mở lịch trình này' : 'Open this itinerary'}</span>
-                        <span>➔</span>
+                      <div className="flex items-center justify-end mt-1 pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                          <span>{language === 'vi' ? 'Mở chi tiết' : 'Open Details'}</span>
+                          <span>➔</span>
+                        </div>
                       </div>
                     </div>
                   ))}
