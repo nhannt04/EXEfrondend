@@ -11,6 +11,20 @@ const translations = {
     visitor: 'Khách du lịch',
     localMember: 'Hội viên Local',
     navigation: 'Dẫn đường',
+    about: 'Giới thiệu',
+    handbook: 'Cẩm nang bỏ túi',
+
+    // About Us Page
+    aboutTitle: 'Về Travelist',
+    aboutMission: 'Sứ mệnh của chúng tôi',
+    aboutMissionDesc: 'Giúp mọi người lưu giữ và chia sẻ những câu chuyện hành trình đáng nhớ',
+    aboutParagraph: 'Chào mừng bạn đến với Travelist! Sứ mệnh của chúng tôi là giúp mọi người lưu giữ và chia sẻ những câu chuyện hành trình đáng nhớ trên khắp mọi miền đất nước. Tại Travelist, việc lên kế hoạch cho chuyến đi của bạn chưa bao giờ dễ dàng và trực quan đến thế nhờ công nghệ thông minh tự động tối ưu hóa lộ trình và chi phí. Không dừng lại ở đó, Travelist còn là cầu nối gắn kết cộng đồng những người đam mê xê dịch – nơi bạn có thể khám phá những góc ẩn mình độc đáo do chính người bản địa chia sẻ, tìm kiếm bạn đồng hành và truyền cảm hứng xê dịch cho nhau. Hãy cùng chúng tôi bắt đầu hành trình và viết nên câu chuyện của riêng bạn!',
+    aboutCardTitlePlan: 'Lên Kế Hoạch Thông Minh',
+    aboutCardDescPlan: 'Tự động tối ưu hóa lộ trình, thời gian và chi phí phù hợp nhất cho phong cách của riêng bạn.',
+    aboutCardTitleCommunity: 'Kết Nối Cộng Đồng',
+    aboutCardDescCommunity: 'Giao lưu, kết nối với những người đam mê xê dịch, chia sẻ trải nghiệm thực tế không quảng cáo.',
+    aboutCardTitlePreserve: 'Lưu Giữ Kỷ Niệm',
+    aboutCardDescPreserve: 'Tạo nhật ký hành trình sinh động của riêng bạn để lưu trữ trọn vẹn từng khoảnh khắc đáng nhớ.',
 
     // Landing Page
     heroBadge: 'Hành trình cá nhân hóa',
@@ -170,6 +184,20 @@ const translations = {
     visitor: 'Traveler',
     localMember: 'Local Member',
     navigation: 'Navigation',
+    about: 'About Us',
+    handbook: 'Pocket Handbooks',
+
+    // About Us Page
+    aboutTitle: 'About Travelist',
+    aboutMission: 'Our Mission',
+    aboutMissionDesc: 'Help everyone preserve and share their memorable journey stories',
+    aboutParagraph: 'Welcome to Travelist! Our mission is to help everyone preserve and share their memorable journey stories across all regions. At Travelist, planning your next trip has never been easier and more intuitive, thanks to smart technology that automatically optimizes routes and costs. More than just a planner, Travelist serves as a bridge connecting a vibrant community of travel enthusiasts. Here, you can discover unique hidden gems shared by locals, find travel companions, and inspire one another. Join us to start your journey and write your own story!',
+    aboutCardTitlePlan: 'Smart Planning',
+    aboutCardDescPlan: 'Automatically optimize route, time, and budget to fit your unique travel style.',
+    aboutCardTitleCommunity: 'Community Connection',
+    aboutCardDescCommunity: 'Engage and connect with other travelers, sharing real ad-free local experiences.',
+    aboutCardTitlePreserve: 'Preserve Memories',
+    aboutCardDescPreserve: 'Create your own vivid travel journals to fully capture every memorable moment.',
 
     // Landing Page
     heroBadge: 'Personalized Itinerary Builder',

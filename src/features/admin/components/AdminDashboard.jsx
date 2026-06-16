@@ -1272,7 +1272,7 @@ export default function AdminDashboard() {
 
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in heritage-pattern min-h-screen">
+    <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 animate-fade-in heritage-pattern min-h-screen">
 
       {/* Brand Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

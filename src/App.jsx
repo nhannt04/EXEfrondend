@@ -6,6 +6,7 @@ import CommunityFeed from './features/social/components/CommunityFeed';
 import AdminDashboard from './features/admin/components/AdminDashboard';
 import ChatbotWidget from './features/chatbot/components/ChatbotWidget';
 import Footer from './components/layout/Footer';
+import AboutUs from './components/AboutUs';
 import { LanguageProvider } from './context/LanguageContext';
 import authService from './services/authService';
 import AuthModal from './components/layout/AuthModal';
@@ -52,6 +53,8 @@ function AppContent() {
         return <CommunityFeed />;
       case 'admin':
         return <AdminDashboard />;
+      case 'about':
+        return <AboutUs />;
       default:
         return (
           <LandingPage 

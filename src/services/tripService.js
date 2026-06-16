@@ -21,6 +21,11 @@ const tripService = {
   },
   updateItineraryStatus: async (id, status) => {
     return await axiosClient.put(`/itineraries/${id}/status?status=${status}`);
+  },
+  getItineraryHandbook: async (id) => {
+    return await axiosClient.get(`/itineraries/${id}/handbook`, {
+      timeout: 60000
+    });
   }
 };
 

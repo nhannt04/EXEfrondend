@@ -732,7 +732,7 @@ export default function CommunityFeed() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col gap-8">
+    <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col gap-8">
 
       {/* Visual Title Header */}
       <div className="text-center flex flex-col items-center gap-2">
