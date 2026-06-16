@@ -7,6 +7,7 @@ import AdminDashboard from './features/admin/components/AdminDashboard';
 import ChatbotWidget from './features/chatbot/components/ChatbotWidget';
 import Footer from './components/layout/Footer';
 import AboutUs from './components/AboutUs';
+import UserProfile from './components/profile/UserProfile';
 import { LanguageProvider } from './context/LanguageContext';
 import authService from './services/authService';
 import AuthModal from './components/layout/AuthModal';
@@ -55,6 +56,16 @@ function AppContent() {
         return <AdminDashboard />;
       case 'about':
         return <AboutUs />;
+      case 'profile':
+        if (!currentUser) {
+          setActiveTab('home');
+          setIsAuthModalOpen(true);
+          return null;
+        }
+        return <UserProfile 
+          currentUser={currentUser} 
+          onUpdateSuccess={() => setCurrentUser(authService.getCurrentUser())} 
+        />;
       default:
         return (
           <LandingPage 

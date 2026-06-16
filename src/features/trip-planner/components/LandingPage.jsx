@@ -42,29 +42,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
     fetchFeaturedPost();
   }, []);
 
-  // Intersection Observer for Scroll Animations
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
-          }
-        });
-      },
-      {
-        threshold: 0.05,
-        rootMargin: '0px 0px -40px 0px'
-      }
-    );
 
-    const elements = document.querySelectorAll('.scroll-reveal');
-    elements.forEach((el) => observer.observe(el));
-
-    return () => {
-      elements.forEach((el) => observer.unobserve(el));
-    };
-  }, [allFeaturedSpots, spots, categorySpots, featuredCommunityPost]);
 
   const FILTERS = [
     { key: 'all', labelVi: 'Tất cả', labelEn: 'All' },
@@ -92,6 +70,30 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const [showAllCategory, setShowAllCategory] = useState(null); // null | 'cafe' | 'entertainment' | 'food' | 'stay'
   const [savedScrollY, setSavedScrollY] = useState(0);
   const [cafeSearchQuery, setCafeSearchQuery] = useState('');
+
+  // Intersection Observer for Scroll Animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      {
+        threshold: 0.05,
+        rootMargin: '0px 0px -40px 0px'
+      }
+    );
+
+    const elements = document.querySelectorAll('.scroll-reveal');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, [allFeaturedSpots, spots, categorySpots, featuredCommunityPost, showAllCategory, activeFilter]);
 
   useEffect(() => {
     if (!showAllCategory && savedScrollY > 0) {
@@ -529,7 +531,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
           </div>
 
           {/* Right 70%: Marquee Scrolling Spots */}
-          <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/50 rounded-2xl py-2 px-1">
+          <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/50 rounded-2xl py-2 px-1">
             {allFeaturedSpots.length > 0 ? (
               <div className="animate-marquee-horizontal flex gap-4 select-none">
                 {/* Triple the array elements to ensure seamless loop */}
@@ -735,7 +737,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                   </div>
 
                   {/* Right 70%: Marquee displaying detailed cards */}
-                  <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
+                  <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
                     <div
                       className="animate-marquee-horizontal flex gap-4 select-none"
                       style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
@@ -857,7 +859,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                   </div>
 
                   {/* Right 70%: Scrollable spot cards */}
-                  <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
+                  <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
                     <div
                       className="animate-marquee-horizontal flex gap-4 select-none"
                       style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
@@ -961,7 +963,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </div>
 
                 {/* Right 70%: Marquee */}
-                <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
+                <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
                   <div
                     className="animate-marquee-horizontal flex gap-4 select-none"
                     style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
@@ -1064,7 +1066,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </div>
 
                 {/* Right 70%: Marquee */}
-                <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
+                <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
                   <div
                     className="animate-marquee-horizontal flex gap-4 select-none"
                     style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
@@ -1172,7 +1174,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
       {/* YouTube Shorts Videos grid container */}
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-12 flex justify-center scroll-reveal">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full justify-items-center">
+        <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 w-full justify-items-center overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide snap-x snap-mandatory sm:snap-none">
           {[
             { id: 'xM4PQ1gQah8', title: 'Hoi An Ancient Town' },
             { id: 'wUz9ue-IWzY', title: 'Hoi An Street Food' },
@@ -1180,7 +1182,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
             { id: 'H0wjXWGXva4', title: 'Hoi An Lanterns' },
             { id: 'U7rYj3uPU4Q', title: 'Hoi An Travel Guide' },
           ].map((video) => (
-            <div key={video.id} className="w-full max-w-[280px] aspect-[9/16] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-black">
+            <div key={video.id} className="flex-shrink-0 snap-center w-[260px] sm:w-full max-w-[280px] aspect-[9/16] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-black justify-self-center">
               <iframe
                 width="100%"
                 height="100%"
@@ -1208,7 +1210,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
       {/* News Section Grid */}
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-16 flex justify-center scroll-reveal">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full justify-items-center">
+        <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 w-full justify-items-center overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide snap-x snap-mandatory sm:snap-none">
           {[
             {
               id: '1',
@@ -1241,7 +1243,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               : `https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=280`;
 
             return (
-              <div key={item.id} className="w-full max-w-[280px] h-[500px] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-white">
+              <div key={item.id} className="flex-shrink-0 snap-center w-[260px] sm:w-full max-w-[280px] h-[500px] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-white justify-self-center">
                 <iframe
                   src={iframeSrc}
                   width="100%"

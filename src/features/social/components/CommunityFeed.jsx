@@ -1110,40 +1110,42 @@ export default function CommunityFeed() {
                   )}
 
                   {/* Bottom Action indicators */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-gray-100 pt-4 text-xs text-gray-500 relative z-10">
+                  <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 relative z-10 w-full">
+                    
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      {/* Likes & Dislikes */}
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Like */}
+                        <button
+                          onClick={() => handleLike(post.id)}
+                          disabled={Boolean(post.myReaction)}
+                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
+                          <span>{post.likes}</span>
+                        </button>
 
-                    {/* Likes & Dislikes */}
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                      {/* Like */}
-                      <button
-                        onClick={() => handleLike(post.id)}
-                        disabled={Boolean(post.myReaction)}
-                        className={`flex items-center gap-1.5 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      >
-                        <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
-                        <span>{language === 'vi' ? 'Thích' : 'Like'} ({post.likes})</span>
-                      </button>
+                        {/* Dislike */}
+                        <button
+                          onClick={() => handleDislike(post.id)}
+                          disabled={Boolean(post.myReaction)}
+                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                          <span>{post.dislikes}</span>
+                        </button>
+                      </div>
 
-                      {/* Dislike */}
+                      {/* Comments trigger */}
                       <button
-                        onClick={() => handleDislike(post.id)}
-                        disabled={Boolean(post.myReaction)}
-                        className={`flex items-center gap-1.5 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
+                        className="flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer bg-white border-none font-semibold"
                       >
-                        <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                        <span>{language === 'vi' ? 'Không thích' : 'Dislike'} ({post.dislikes})</span>
+                        <MessageSquare className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
+                        <span className="hidden sm:inline">{post.comments.length} {t('commentStat')}</span>
+                        <span className="inline sm:hidden">{post.comments.length}</span>
                       </button>
                     </div>
-
-
-                    {/* Comments trigger */}
-                    <button
-                      onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
-                      className="flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer bg-white border-none font-semibold"
-                    >
-                      <MessageSquare className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
-                      <span>{post.comments.length} {t('commentStat')}</span>
-                    </button>
 
                     {/* Actions Dropdown Button (3-dots) */}
                     <div className="relative">
@@ -1152,7 +1154,7 @@ export default function CommunityFeed() {
                           e.stopPropagation();
                           setActiveDropdownPostId(activeDropdownPostId === post.id ? null : post.id);
                         }}
-                        className="flex items-center gap-1.5 p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
+                        className="flex items-center gap-1.5 p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
                         title={language === 'vi' ? 'Thao tác' : 'Actions'}
                       >
                         <MoreHorizontal className="w-5 h-5 text-gray-400" />

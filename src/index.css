@@ -329,7 +329,8 @@ h1, h2, h3, h4, h5, h6 {
   animation: marquee-horizontal 160s linear infinite;
 }
 
-.animate-marquee-horizontal:hover {
+.animate-marquee-horizontal:hover,
+.animate-marquee-horizontal:active {
   animation-play-state: paused;
 }
 
