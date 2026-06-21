@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/layout/Header';
-import LandingPage from './features/trip-planner/components/LandingPage';
-import TripPlannerStudio from './features/trip-planner/components/TripPlannerStudio';
-import CommunityFeed from './features/social/components/CommunityFeed';
-import AdminDashboard from './features/admin/components/AdminDashboard';
-import ChatbotWidget from './features/chatbot/components/ChatbotWidget';
-import Footer from './components/layout/Footer';
-import AboutUs from './components/AboutUs';
-import UserProfile from './components/profile/UserProfile';
-import { LanguageProvider } from './context/LanguageContext';
-import authService from './services/authService';
-import AuthModal from './components/layout/AuthModal';
+import Header from '@/components/layout/Header';
+import LandingPage from '@/features/trip-planner/components/LandingPage';
+import TripPlannerStudio from '@/features/trip-planner/components/TripPlannerStudio';
+import CommunityFeed from '@/features/social/components/CommunityFeed';
+import AdminDashboard from '@/features/admin/components/AdminDashboard';
+import ChatbotWidget from '@/features/chatbot/components/ChatbotWidget';
+import Footer from '@/components/layout/Footer';
+import AboutUs from '@/components/AboutUs';
+import UserProfile from '@/components/profile/UserProfile';
+import { LanguageProvider } from '@/context/LanguageContext';
+import authService from '@/services/authService';
+import AuthModal from '@/components/layout/AuthModal';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('home');
