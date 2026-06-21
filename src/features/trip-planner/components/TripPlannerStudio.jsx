@@ -3468,12 +3468,12 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         className="bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-800 flex flex-col items-center text-center cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-300 hover:border-cyan-500/30 text-white"
                         title={language === 'vi' ? 'Định vị lại vị trí hiện tại' : 'Recenter Map'}
                       >
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
                           {language === 'vi' ? 'TỐC ĐỘ' : 'SPEED'}
                         </span>
                         <div className="flex items-baseline gap-0.5">
                           <span className="text-3xl font-black font-outfit text-white tracking-tighter leading-none animate-pulse">{userSpeed}</span>
-                          <span className="text-[9px] font-bold text-slate-400 font-outfit leading-none">km/h</span>
+                          <span className="text-[10.5px] font-bold text-slate-400 font-outfit leading-none">km/h</span>
                         </div>
                       </button>
                     </div>
@@ -3487,7 +3487,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                               <span className="text-2xl sm:text-3xl font-black font-outfit text-emerald-500 leading-none">{simDuration}</span>
                               <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase leading-none">{language === 'vi' ? 'phút' : 'min'}</span>
                             </div>
-                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
+                            <span className="text-[10.5px] text-slate-400 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
                               {language === 'vi'
                                 ? `Đến: ${(() => {
                                   const date = new Date();

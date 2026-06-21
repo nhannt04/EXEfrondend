@@ -899,7 +899,7 @@ export default function CommunityFeed() {
             {/* Custom tagging parameters */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/60 border border-gray-150 p-3 rounded-xl relative z-10">
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-[10px] sm:text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Lịch trình đã hoàn thành' : 'Completed Itinerary'}
                 </label>
                 <select
@@ -921,7 +921,7 @@ export default function CommunityFeed() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-[10px] sm:text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Chọn Địa điểm đã đi' : 'Select Visited Spot'}
                 </label>
                 <select
@@ -1254,12 +1254,12 @@ export default function CommunityFeed() {
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
                                       {post.authorId && comment.userId && post.authorId === comment.userId && (
-                                        <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                        <span className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
                                           {language === 'vi' ? 'Tác giả' : 'Author'}
                                         </span>
                                       )}
                                     </div>
-                                    <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
+                                    <span className="text-[10.5px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
                                   </div>
                                 </div>
                                 {currentUser && currentUser.id === comment.userId && (
@@ -1401,9 +1401,9 @@ export default function CommunityFeed() {
                 "{t('challengeQuest')}"
               </p>
               <div className="bg-white/15 border border-white/10 p-3 rounded-2xl mt-1 flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
-                <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
-              </div>
+                                <span className="text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
+                                <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
+                              </div>
             </div>
 
             <button
@@ -1437,7 +1437,7 @@ export default function CommunityFeed() {
                   </div>
                   <div className="flex-grow min-w-0">
                     <h4 className="text-xs font-bold text-gray-800 truncate leading-tight">{expert.name}</h4>
-                     <span className="text-[9px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
+                     <span className="text-[10.5px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
                   </div>
                   <button
                     onClick={() => handleOpenExpertChat(expert)}

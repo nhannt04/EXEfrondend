@@ -550,7 +550,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                       <h4 className="text-[11.5px] font-black text-gray-800 truncate leading-snug">
                         {spot.name[language]}
                       </h4>
-                      <span className="text-[9px] text-heritage-amber uppercase font-extrabold mt-0.5 tracking-wider">
+                      <span className="text-[10px] text-heritage-amber uppercase font-extrabold mt-0.5 tracking-wider">
                         {spot.category[language]}
                       </span>
                     </div>
@@ -1306,7 +1306,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                       {new Date(featuredCommunityPost.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
                     </span>
                   </div>
-                  <span className="ml-auto bg-green-50 text-ricefield-green border border-ricefield-green/20 text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
+                  <span className="ml-auto bg-green-50 text-ricefield-green border border-ricefield-green/20 text-[10px] sm:text-[11px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
                     {featuredCommunityPost.category === 'food'
                       ? (language === 'vi' ? 'Ẩm thực' : 'Food')
                       : featuredCommunityPost.category === 'adventure'
@@ -1385,10 +1385,10 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               {/* Title & Badges in overlay */}
               <div className="absolute bottom-4 left-6 right-6 text-white flex flex-col gap-1.5">
                 <div className="flex gap-2">
-                  <span className="bg-heritage-amber text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                  <span className="bg-heritage-amber text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
                     {selectedSpotDetail.category[language]}
                   </span>
-                  <span className="bg-ricefield-green text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                  <span className="bg-ricefield-green text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
                     {selectedSpotDetail.tag}
                   </span>
                 </div>
@@ -1417,7 +1417,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               {/* Cost / Price */}
               <div className="flex justify-between items-center bg-gray-50 border border-gray-150 p-4 rounded-2xl">
                 <div className="flex flex-col">
-                  <span className="text-[9px] text-gray-400 font-bold uppercase">
+                  <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase">
                     {language === 'vi' ? 'Chi phí ước tính' : 'Estimated Cost'}
                   </span>
                   <span className="text-sm font-black text-gray-800 mt-0.5">
@@ -1428,7 +1428,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 {/* Latitude & Longitude display */}
                 {selectedSpotDetail.lat && selectedSpotDetail.lng && (
                   <div className="flex flex-col text-right">
-                    <span className="text-[9px] text-gray-400 font-bold uppercase">GPS</span>
+                    <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase">GPS</span>
                     <span className="text-[10.5px] font-bold text-gray-500 mt-0.5">
                       {selectedSpotDetail.lat.toFixed(4)}, {selectedSpotDetail.lng.toFixed(4)}
                     </span>
