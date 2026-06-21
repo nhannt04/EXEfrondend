@@ -1239,17 +1239,17 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
           ].map((item) => {
             const encodedUrl = encodeURIComponent(item.href);
             const iframeSrc = item.type === 'video'
-              ? `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=false&width=280`
-              : `https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=280`;
+              ? `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=false&width=350&height=500`
+              : `https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=350`;
 
             return (
-              <div key={item.id} className="flex-shrink-0 snap-center w-[260px] sm:w-full max-w-[280px] h-[500px] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-white justify-self-center">
+              <div key={item.id} className="flex-shrink-0 snap-center w-[320px] sm:w-[350px] max-w-full h-[500px] rounded-3xl overflow-hidden border border-gray-200 shadow-lg bg-white justify-self-center">
                 <iframe
                   src={iframeSrc}
                   width="100%"
                   height="100%"
-                  style={{ border: 'none', overflow: 'hidden' }}
-                  scrolling="no"
+                  style={{ border: 'none', overflow: 'auto' }}
+                  scrolling="auto"
                   frameBorder="0"
                   allowFullScreen={true}
                   allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
