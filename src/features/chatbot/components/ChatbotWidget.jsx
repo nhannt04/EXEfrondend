@@ -134,7 +134,7 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end">
       {/* Floating Action Button */}
       {!isOpen && (
         <button
@@ -147,7 +147,7 @@ export default function ChatbotWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[520px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in">
+        <div className="w-[calc(100vw-32px)] sm:w-[400px] max-w-full h-[520px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in">
           {/* Header */}
           <div className="bg-heritage-amber text-white p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
@@ -156,7 +156,7 @@ export default function ChatbotWidget() {
               </div>
               <div>
                 <h4 className="font-outfit text-sm font-extrabold tracking-tight">{t('botTitle')}</h4>
-                <span className="block text-[9px] font-bold text-white/80 uppercase tracking-wider leading-none">
+                <span className="block text-[10.5px] font-bold text-white/80 uppercase tracking-wider leading-none">
                   {t('botSubtitle')}
                 </span>
               </div>
@@ -196,7 +196,7 @@ export default function ChatbotWidget() {
                   >
                     {renderMessageText(msg.text)}
                   </div>
-                  <span className={`text-[8.5px] text-gray-400 font-semibold ${msg.sender === 'user' ? 'text-right' : ''}`}>
+                  <span className={`text-[10px] text-gray-400 font-semibold ${msg.sender === 'user' ? 'text-right' : ''}`}>
                     {msg.time}
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export default function ChatbotWidget() {
 
           {/* Quick Suggestions Pills */}
           <div className="px-4 py-2 border-t border-gray-100 flex flex-col gap-1.5 bg-white">
-            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-extrabold flex items-center gap-1">
+            <span className="text-[11px] text-gray-400 uppercase tracking-wider font-extrabold flex items-center gap-1">
               <HelpCircle className="w-3.5 h-3.5 text-heritage-amber" /> {t('botSuggestHeader')}
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-1">

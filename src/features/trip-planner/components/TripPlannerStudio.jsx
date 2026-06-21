@@ -678,6 +678,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
   const [userHeading, setUserHeading] = useState(null); // Compass heading degrees
   // Detect mobile screen (< 768px) for 3rd-person perspective mode
   const [isMobileDevice, setIsMobileDevice] = useState(() => window.innerWidth < 768);
+  const [mobileViewMode, setMobileViewMode] = useState('list'); // 'list' | 'map'
   const watchIdRef = React.useRef(null);
   const prevGpsPosRef = React.useRef(null); // Previous GPS position for heading calc
   const prevGpsTimeRef = React.useRef(null); // Previous GPS timestamp for speed calc
@@ -694,12 +695,15 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
   const selectSpotAndScroll = (spot) => {
     setSelectedSpot(spot);
     setSidebarPage(1);
+    if (window.innerWidth < 768) {
+      setMobileViewMode('map');
+    }
     setTimeout(() => {
       const el = document.getElementById('trip-planner-map-section');
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    }, 100);
+    }, 150);
   };
 
   // Advanced Navigation States
@@ -2043,7 +2047,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
 
           {/* Timeline Column */}
-          <div className="md:col-span-7 flex flex-col gap-4 order-2 md:order-1">
+          <div className={`md:col-span-7 flex flex-col gap-4 order-2 md:order-1 ${isMobileDevice && mobileViewMode !== 'list' ? 'hidden md:flex' : ''}`}>
             {itinerary[activeDay - 1].accommodation ? (
               <div
                 onClick={() => selectSpotAndScroll(itinerary[activeDay - 1].accommodation)}
@@ -2292,7 +2296,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
           </div>
 
           {/* Costs Breakdown & Dynamic Google Maps Sidebar Column */}
-          <div className="md:col-span-5 flex flex-col gap-4 animate-fade-in-up [animation-delay:250ms] order-1 md:order-2">
+          <div className={`md:col-span-5 flex flex-col gap-4 animate-fade-in-up [animation-delay:250ms] order-1 md:order-2 ${isMobileDevice && mobileViewMode !== 'map' ? 'hidden md:flex' : ''}`}>
 
             {/* Sidebar Segmented Control / Tabs */}
             <div id="trip-planner-map-section" className="flex bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200 shadow-sm relative z-10">
@@ -2770,6 +2774,28 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
           </div>
 
         </div>
+
+        {/* Floating View Toggle for Mobile */}
+        {isMobileDevice && itinerary && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+            <button
+              onClick={() => setMobileViewMode(mobileViewMode === 'list' ? 'map' : 'list')}
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-heritage-amber text-white font-extrabold text-xs shadow-lg shadow-heritage-amber/40 border-none cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300"
+            >
+              {mobileViewMode === 'list' ? (
+                <>
+                  <span>🗺️</span>
+                  <span>{language === 'vi' ? 'Xem Bản đồ' : 'Show Map'}</span>
+                </>
+              ) : (
+                <>
+                  <span>📋</span>
+                  <span>{language === 'vi' ? 'Xem Lịch trình' : 'Show List'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     );
   };
