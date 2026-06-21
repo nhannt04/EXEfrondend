@@ -326,12 +326,17 @@ h1, h2, h3, h4, h5, h6 {
 .animate-marquee-horizontal {
   display: flex;
   width: max-content;
-  animation: marquee-horizontal 160s linear infinite;
 }
 
-.animate-marquee-horizontal:hover,
-.animate-marquee-horizontal:active {
-  animation-play-state: paused;
+@media (min-width: 768px) {
+  .animate-marquee-horizontal {
+    animation: marquee-horizontal 160s linear infinite;
+  }
+
+  .animate-marquee-horizontal:hover,
+  .animate-marquee-horizontal:active {
+    animation-play-state: paused;
+  }
 }
 
 /* Scroll Animation classes */

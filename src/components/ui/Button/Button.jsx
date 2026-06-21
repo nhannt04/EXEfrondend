@@ -10,9 +10,9 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm: 'px-3.5 py-1.5 text-xs rounded-lg font-bold',
-  md: 'px-4.5 py-2.5 rounded-xl text-sm font-bold',
-  lg: 'px-6 py-3.5 rounded-2xl text-base font-extrabold',
+  sm: 'px-3 py-1.5 text-xs rounded-lg font-bold',
+  md: 'px-5 py-2.5 rounded-xl text-sm font-bold',
+  lg: 'px-6 py-3 rounded-2xl text-base font-extrabold',
 };
 
 export default function Button({

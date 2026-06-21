@@ -77,7 +77,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-800 flex flex-col font-inter transition-colors duration-300">
+    <div className=" min-h-screen bg-dark-bg text-gray-800 flex flex-col font-inter transition-colors duration-300">
       {/* Header Navigation */}
       <Header 
         activeTab={activeTab} 
@@ -87,7 +87,7 @@ function AppContent() {
       />
       
       {/* Dynamic Content Panel */}
-      <main className="flex-grow w-full">
+      <main className="  flex-grow w-full ">
         {renderContent()}
       </main>
 

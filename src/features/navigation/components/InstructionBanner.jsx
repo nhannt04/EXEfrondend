@@ -86,7 +86,7 @@ export default function InstructionBanner({
   return (
     <div className="absolute top-5 left-4 right-4 md:left-6 md:right-6 max-w-xl mx-auto z-10 animate-fade-in">
       <div className="bg-slate-950/85 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-4 md:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-cyan-500/30">
-        <div className="flex items-center gap-4.5">
+        <div className="flex items-center gap-5">
           {/* Direction Icon Container */}
           <div className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-center shadow-inner relative group-hover:scale-105 transition-transform duration-300">
             {directionIcon}

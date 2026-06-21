@@ -3,6 +3,7 @@ import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIco
 import { useLanguage } from '@/context/LanguageContext';
 import authService from '@/services/authService';
 import logoImg from '@/assets/logo.jpg';
+import Button from '@/components/ui/Button/Button';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuth }) {
   const { language, setLanguage, t } = useLanguage();
@@ -175,13 +176,15 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             </div>
           </div>
         ) : (
-          <button
+          <Button
             onClick={onOpenAuth}
-            className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-extrabold transition-all duration-300 shadow-md shadow-heritage-amber/15 cursor-pointer border-none scale-95 hover:scale-100"
+            variant="primary"
+            size="sm"
+            iconLeft={LogIn}
+            className="rounded-full scale-95 hover:scale-100"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>{language === 'vi' ? 'Đăng nhập' : 'Log in'}</span>
-          </button>
+            {language === 'vi' ? 'Đăng nhập' : 'Log in'}
+          </Button>
         )}
 
         {/* Mobile hamburger */}

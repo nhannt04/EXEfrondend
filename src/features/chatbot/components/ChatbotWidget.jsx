@@ -134,12 +134,12 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end pointer-events-none">
       {/* Floating Action Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse-gold cursor-pointer border-none"
+          className="w-14 h-14 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse-gold cursor-pointer border-none pointer-events-auto"
         >
           <Bot className="w-7 h-7 text-white" />
         </button>
@@ -147,7 +147,7 @@ export default function ChatbotWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[calc(100vw-32px)] sm:w-[400px] max-w-full h-[520px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in">
+        <div className="w-full sm:w-[400px] h-[75vh] sm:h-[520px] max-h-[600px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in pointer-events-auto">
           {/* Header */}
           <div className="bg-heritage-amber text-white p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">

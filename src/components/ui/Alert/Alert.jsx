@@ -34,7 +34,7 @@ export default function Alert({
 
   return (
     <div
-      className={`p-4.5 rounded-2xl border border-solid flex gap-3.5 shadow-sm transition-all duration-300 relative ${config.container} ${className}`}
+      className={`p-5 rounded-2xl border border-solid flex gap-3.5 shadow-sm transition-all duration-300 relative ${config.container} ${className}`}
       role="alert"
       {...props}
     >
