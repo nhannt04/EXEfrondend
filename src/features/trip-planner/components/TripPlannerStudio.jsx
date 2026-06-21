@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import { useLanguage } from '../../../context/LanguageContext';
-import axiosClient from '../../../services/axiosClient';
-import tripService from '../../../services/tripService';
-import authService from '../../../services/authService';
-import spotService from '../../../services/spotService';
+import { useLanguage } from '@/context/LanguageContext';
+import axiosClient from '@/services/axiosClient';
+import tripService from '@/services/tripService';
+import authService from '@/services/authService';
+import spotService from '@/services/spotService';
 
 const LOADING_FACTS_VI = [
   "Hội An có hơn 1360 di tích kiến trúc cổ được xếp hạng bảo tồn.",

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
-import authService from '../../services/authService';
-import logoImg from '../../assets/logo.jpg';
+import { useLanguage } from '@/context/LanguageContext';
+import authService from '@/services/authService';
+import logoImg from '@/assets/logo.jpg';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuth }) {
   const { language, setLanguage, t } = useLanguage();

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Compass, MapPin, Star, ShieldAlert, CalendarDays, Plane, Map, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
-import { useLanguage } from '../../../context/LanguageContext';
-import axiosClient from '../../../services/axiosClient';
-import spotService from '../../../services/spotService';
-import diaryService from '../../../services/diaryService';
-import cafeVideo from '../../../assets/cafe.mp4';
-import homestayVideo from '../../../assets/vuichoi.mp4';
-import foodVideo from '../../../assets/monan.mp4';
-import stayVideo from '../../../assets/homestay.mp4';
+import { useLanguage } from '@/context/LanguageContext';
+import axiosClient from '@/services/axiosClient';
+import spotService from '@/services/spotService';
+import diaryService from '@/services/diaryService';
+import cafeVideo from '@/assets/cafe.mp4';
+import homestayVideo from '@/assets/vuichoi.mp4';
+import foodVideo from '@/assets/monan.mp4';
+import stayVideo from '@/assets/homestay.mp4';
 
 export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const { language, t } = useLanguage();

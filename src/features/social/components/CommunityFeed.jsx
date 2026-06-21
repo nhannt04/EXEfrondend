@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2 } from 'lucide-react';
 
-import { useLanguage } from '../../../context/LanguageContext';
-import diaryService from '../../../services/diaryService';
-import expertService from '../../../services/expertService';
-import spotService from '../../../services/spotService';
-import authService from '../../../services/authService';
-import tripService from '../../../services/tripService';
+import { useLanguage } from '@/context/LanguageContext';
+import diaryService from '@/services/diaryService';
+import expertService from '@/services/expertService';
+import spotService from '@/services/spotService';
+import authService from '@/services/authService';
+import tripService from '@/services/tripService';
 
 
 export default function CommunityFeed() {
