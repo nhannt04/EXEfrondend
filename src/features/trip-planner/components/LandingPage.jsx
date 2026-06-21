@@ -690,7 +690,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 <div className="w-full mt-12 mb-4 scroll-reveal">
                   <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
                     <div className="h-[1px] bg-gray-300 flex-grow" />
-                    <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+                    <span className="font-outfit text-[clamp(0.875rem,3.5vw,1.125rem)] font-black text-gray-800 uppercase tracking-widest text-center px-4">
                       {language === 'vi' ? 'Cafe và Ẩm thực' : 'Cafe & Local Food'}
                     </span>
                     <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -815,7 +815,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 <div className="w-full mt-12 mb-4 scroll-reveal">
                   <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
                     <div className="h-[1px] bg-gray-300 flex-grow" />
-                    <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+                    <span className="font-outfit text-[clamp(0.875rem,3.5vw,1.125rem)] font-black text-gray-800 uppercase tracking-widest text-center px-4">
                       {language === 'vi' ? 'Vui chơi và Nghỉ dưỡng' : 'Entertainment & Stay'}
                     </span>
                     <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -1165,7 +1165,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 scroll-reveal">
         <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-[clamp(0.875rem,3.5vw,1.125rem)] font-black text-gray-800 uppercase tracking-widest text-center px-4">
             Video
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -1201,7 +1201,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 mt-4 scroll-reveal">
         <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-[clamp(0.875rem,3.5vw,1.125rem)] font-black text-gray-800 uppercase tracking-widest text-center px-4">
             {language === 'vi' ? 'Tin tức nổi bật của chúng tôi' : 'Our Featured News'}
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -1265,7 +1265,7 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 mt-4 scroll-reveal">
         <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-[clamp(0.875rem,3.5vw,1.125rem)] font-black text-gray-800 uppercase tracking-widest text-center px-4">
             {language === 'vi' ? 'Bài viết cộng đồng nổi bật nhất' : 'Most Outstanding Community Post'}
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />
