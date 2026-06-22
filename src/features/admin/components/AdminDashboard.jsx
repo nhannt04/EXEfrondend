@@ -1331,12 +1331,7 @@ export default function AdminDashboard() {
           { id: 'cafes', label: language === 'vi' ? 'Quản lý Cà phê' : 'Manage Cafes' },
           { id: 'stays', label: language === 'vi' ? 'Quản lý Chỗ ở' : 'Manage Stays' },
           { id: 'entertainments', label: language === 'vi' ? 'Quản lý Khu vui chơi' : 'Manage Entertainments' },
-          { id: 'rentals', label: language === 'vi' ? 'Quản lý Cho thuê' : 'Manage Rentals' },
-          { id: 'diaries', label: language === 'vi' ? 'Kiểm duyệt Nhật ký' : 'Moderate Diaries' },
-
-
-          { id: 'experts', label: language === 'vi' ? 'Hội đồng Chuyên gia' : 'Expert Council' },
-          { id: 'inquiries', label: language === 'vi' ? 'Hòm thư Tư vấn' : 'Consulting Inbox' }
+          { id: 'rentals', label: language === 'vi' ? 'Quản lý Cho thuê' : 'Manage Rentals' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1420,7 +1415,13 @@ export default function AdminDashboard() {
                         {currentDishes.map((dish) => (
                           <tr key={dish.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={dish.imageUrl} alt={dish.dishName} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img 
+                                src={dish.imageUrl} 
+                                alt={dish.dishName} 
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0" 
+                                referrerPolicy="no-referrer"
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'; }}
+                              />
                               <span className="font-bold text-gray-900 text-sm">{dish.dishName}</span>
                             </td>
                             <td className="p-4 font-bold text-gray-700">{dish.restaurantName}</td>
@@ -1560,7 +1561,13 @@ export default function AdminDashboard() {
                         {currentCafes.map((cafe) => (
                           <tr key={cafe.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={cafe.imageUrl} alt={cafe.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img 
+                                src={cafe.imageUrl} 
+                                alt={cafe.name} 
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0" 
+                                referrerPolicy="no-referrer"
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'; }}
+                              />
                               <span className="font-bold text-gray-900 text-sm">{cafe.name}</span>
                             </td>
                             <td className="p-4">
@@ -1706,7 +1713,13 @@ export default function AdminDashboard() {
                         {currentStays.map((stay) => (
                           <tr key={stay.id} className="hover:bg-gray-50/55 transition-colors">
                             <td className="p-4 flex items-center gap-3">
-                              <img src={stay.imageUrl} alt={stay.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img 
+                                src={stay.imageUrl} 
+                                alt={stay.name} 
+                                className="w-12 h-10 rounded-lg object-cover flex-shrink-0" 
+                                referrerPolicy="no-referrer"
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'; }}
+                              />
                               <span className="font-bold text-gray-900 text-sm">{stay.name}</span>
                             </td>
                             <td className="p-4">
@@ -1858,7 +1871,13 @@ export default function AdminDashboard() {
                       {currentEntertainments.map((ent) => (
                         <tr key={ent.id} className="hover:bg-gray-50/55 transition-colors">
                           <td className="p-4 flex items-center gap-3">
-                            <img src={ent.imageUrl} alt={ent.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                            <img 
+                              src={ent.imageUrl} 
+                              alt={ent.name} 
+                              className="w-12 h-10 rounded-lg object-cover flex-shrink-0" 
+                              referrerPolicy="no-referrer"
+                              onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'; }}
+                            />
                             <span className="font-bold text-gray-900 text-sm">{ent.name}</span>
                           </td>
                           <td className="p-4">
@@ -2019,7 +2038,13 @@ export default function AdminDashboard() {
                       {currentRentals.map((rental) => (
                         <tr key={rental.id} className="hover:bg-gray-50/55 transition-colors">
                           <td className="p-4 flex items-center gap-3">
-                            <img src={rental.imageUrl} alt={rental.name} className="w-12 h-10 rounded-lg object-cover flex-shrink-0" />
+                            <img 
+                              src={rental.imageUrl} 
+                              alt={rental.name} 
+                              className="w-12 h-10 rounded-lg object-cover flex-shrink-0" 
+                              referrerPolicy="no-referrer"
+                              onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'; }}
+                            />
                             <span className="font-bold text-gray-900 text-sm">{rental.name}</span>
                           </td>
                           <td className="p-4">
@@ -2113,194 +2138,6 @@ export default function AdminDashboard() {
               )}
             </div>
           )}
-
-          {/* TAB 2: Diaries Manager (Moderation) */}
-
-          {activeSubTab === 'diaries' && (
-            <div className="flex flex-col gap-4">
-              <h3 className="font-outfit text-lg font-extrabold text-gray-900 mb-2">
-                {language === 'vi' ? 'Kiểm duyệt Nhật ký Hành trình' : 'Moderate Travel Diaries'}
-              </h3>
-              <div className="overflow-x-auto border border-gray-150 rounded-2xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 font-bold text-gray-500">
-                      <th className="p-4">{language === 'vi' ? 'Tác giả' : 'Author'}</th>
-                      <th className="p-4">{language === 'vi' ? 'Phân loại' : 'Category'}</th>
-                      <th className="p-4 w-1/3">{language === 'vi' ? 'Nội dung' : 'Content'}</th>
-                      <th className="p-4 text-center">{language === 'vi' ? 'Tương tác' : 'Interactions'}</th>
-                      <th className="p-4 text-center">{language === 'vi' ? 'Hành động' : 'Action'}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-medium">
-                    {diaries.map((post) => (
-                      <tr key={post.id} className="hover:bg-gray-50/55 transition-colors">
-                        <td className="p-4 flex items-center gap-3">
-                          <img src={post.user?.avatar} alt={post.user?.name || 'user avatar'} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
-                          <span className="font-bold text-gray-900">{post.user?.name}</span>
-                        </td>
-                        <td className="p-4 uppercase tracking-widest text-[9px] font-extrabold text-ricefield-green">
-                          {getCategoryLabel(post.category)}
-                        </td>
-                        <td className="p-4 truncate max-w-xs text-gray-600 text-sm">
-                          {language === 'vi' ? post.content?.vi : post.content?.en}
-                        </td>
-                        <td className="p-4 text-center font-bold text-gray-500">
-                          ❤️ {post.likes} | 💬 {post.comments?.length || 0}
-                        </td>
-                        <td className="p-4 text-center">
-                          <button
-                            onClick={() => handleDeleteDiary(post.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all border-none bg-transparent cursor-pointer"
-                            title={language === 'vi' ? 'Xoá / Gỡ bỏ bài viết' : 'Delete / Remove post'}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: Experts Coordinator */}
-          {activeSubTab === 'experts' && (
-            <div className="flex flex-col gap-4">
-              <h3 className="font-outfit text-lg font-extrabold text-gray-900 mb-2">
-                {language === 'vi' ? 'Hội đồng Chuyên gia bản địa Hội An' : 'Hoi An Local Experts Council'}
-              </h3>
-              <div className="overflow-x-auto border border-gray-150 rounded-2xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 font-bold text-gray-500">
-                      <th className="p-4">{language === 'vi' ? 'Chuyên gia' : 'Expert'}</th>
-                      <th className="p-4">{language === 'vi' ? 'Lĩnh vực tư vấn chính' : 'Consulting Specialty'}</th>
-                      <th className="p-4">{language === 'vi' ? 'Đánh giá' : 'Rating'}</th>
-                      <th className="p-4">{language === 'vi' ? 'Trạng thái Online' : 'Online Status'}</th>
-                      <th className="p-4 text-center">{language === 'vi' ? 'Hành động' : 'Action'}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-medium">
-                    {experts.map((exp) => (
-                      <tr key={exp.id} className="hover:bg-gray-50/55 transition-colors">
-                        <td className="p-4 flex items-center gap-3">
-                          <img src={exp.avatar} alt={exp.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
-                          <span className="font-bold text-gray-900">{exp.name}</span>
-                        </td>
-                        <td className="p-4 text-gray-600 font-semibold">
-                          {language === 'vi' ? exp.role?.vi : exp.role?.en}
-                        </td>
-                        <td className="p-4 font-bold text-heritage-amber flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-heritage-amber" /> {exp.rating}
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <span className={"w-2 h-2 rounded-full relative " + (exp.online ? "bg-green-500 animate-pulse" : "bg-gray-400")} />
-                            <span className="font-bold uppercase tracking-wider text-[10px] text-gray-500">
-                              {exp.online
-                                ? (language === 'vi' ? 'Trực tuyến' : 'Online')
-                                : (language === 'vi' ? 'Ngoại tuyến' : 'Offline')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          <button
-                            onClick={() => handleToggleExpertOnline(exp.id)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase border transition-all cursor-pointer ${exp.online
-                                ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                                : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'
-                              }`}
-                          >
-                            {exp.online
-                              ? (language === 'vi' ? 'Tạm ẩn' : 'Deactivate')
-                              : (language === 'vi' ? 'Kích hoạt' : 'Activate')}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: Inquiries Mailbox */}
-          {activeSubTab === 'inquiries' && (
-            <div className="flex flex-col gap-6">
-              <h3 className="font-outfit text-lg font-extrabold text-gray-900">
-                {language === 'vi' ? 'Yêu cầu tư vấn chưa trả lời' : 'Pending Inquiry Requests'}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inquiries.map((inq) => (
-                  <div
-                    key={inq.id}
-                    className={`bg-white border rounded-2xl p-4 flex flex-col gap-3 shadow-sm transition-all ${inq.replied ? 'border-gray-200 bg-gray-50/50' : 'border-rose-200 bg-rose-50/20'
-                      }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 text-sm">{inq.travelerName}</span>
-                        <span className="text-[10px] text-gray-400">{inq.travelerEmail}</span>
-                      </div>
-                      <span className="text-[10px] text-gray-400 font-bold">{inq.date}</span>
-                    </div>
-
-                    <p className="text-gray-700 text-xs leading-relaxed font-semibold bg-white/70 p-3 rounded-xl border border-gray-150">
-                      {inq.question}
-                    </p>
-
-                    {inq.replied ? (
-                      <div className="bg-emerald-50/50 border border-emerald-100/60 p-3 rounded-xl text-emerald-800 text-xs font-semibold leading-relaxed">
-                        <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block mb-1">
-                          {language === 'vi' ? '✓ Câu trả lời của chuyên gia:' : '✓ Expert Answer:'}
-                        </span>
-                        {inq.replyContent}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2 mt-2">
-                        {activeInquiryId === inq.id ? (
-                          <div className="flex flex-col gap-2 animate-scale-up">
-                            <textarea
-                              value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              placeholder={language === 'vi' ? "Nhập câu trả lời tư vấn cho du khách..." : "Type response to traveler..."}
-                              className="w-full p-2.5 bg-white border border-gray-200 text-xs font-medium rounded-xl focus:outline-none focus:border-heritage-amber h-16 resize-none"
-                            />
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => { setActiveInquiryId(null); setReplyText(''); }}
-                                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-[10px] font-bold text-gray-600 cursor-pointer border-none"
-                              >
-                                {language === 'vi' ? 'Hủy' : 'Cancel'}
-                              </button>
-                              <button
-                                onClick={() => handleSendInquiryReply(inq.id)}
-                                className="px-3 py-1.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-lg text-[10px] font-bold cursor-pointer border-none flex items-center gap-1"
-                              >
-                                <Send className="w-3 h-3" />
-                                {language === 'vi' ? 'Gửi phản hồi' : 'Send response'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setActiveInquiryId(inq.id); setReplyText(''); }}
-                            className="w-full py-2 bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-bold rounded-xl border-none cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            {language === 'vi' ? 'Phản hồi tư vấn ngay' : 'Respond to inquiry'}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
       )}
 

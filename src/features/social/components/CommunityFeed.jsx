@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { useLanguage } from '../../../context/LanguageContext';
 import diaryService from '../../../services/diaryService';
@@ -7,6 +7,7 @@ import expertService from '../../../services/expertService';
 import spotService from '../../../services/spotService';
 import authService from '../../../services/authService';
 import tripService from '../../../services/tripService';
+import axiosClient from '../../../services/axiosClient';
 
 
 export default function CommunityFeed() {
@@ -46,6 +47,22 @@ export default function CommunityFeed() {
     };
     window.addEventListener('auth-state-changed', handleSyncUser);
     return () => window.removeEventListener('auth-state-changed', handleSyncUser);
+  }, []);
+
+  const [dbStyles, setDbStyles] = useState([]);
+
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        const response = await axiosClient.get('/cafes/styles');
+        if (response && response.success && response.data) {
+          setDbStyles(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to load styles from DB:", err);
+      }
+    };
+    fetchStyles();
   }, []);
 
   // Danh sách chuyên gia lấy từ Backend
@@ -88,15 +105,21 @@ export default function CommunityFeed() {
   };
 
 
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setSelectedImages((prev) => [...prev, ...files]);
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
     }
+  };
+
+  const removeImage = (index) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const [openCommentsPostId, setOpenCommentsPostId] = useState(null);
@@ -105,6 +128,12 @@ export default function CommunityFeed() {
   const [activeReplyBoxId, setActiveReplyBoxId] = useState(null);
 
   const [sharedPostId, setSharedPostId] = useState(null);
+  
+  const [lightboxData, setLightboxData] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0
+  });
 
   const handleShareLink = (postId) => {
     const shareUrl = `${window.location.origin}/social?post=${postId}`;
@@ -137,6 +166,7 @@ export default function CommunityFeed() {
   const [activeExpert, setActiveExpert] = useState(null);
   const [expertMessageText, setExpertMessageText] = useState('');
   const [messageSuccess, setMessageSuccess] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   // Ánh xạ đối tượng Nhật ký du ký từ Spring Boot sang kết cấu React Frontend
   const mapBackendDiaryToFrontend = (d) => {
@@ -204,7 +234,9 @@ export default function CommunityFeed() {
         vi: d.contentVi,
         en: d.contentEn
       },
-      images: d.imageUrl ? [d.imageUrl] : [],
+      images: d.images && d.images.length > 0 
+        ? d.images.map(img => img.imageUrl) 
+        : (d.imageUrl ? [d.imageUrl] : []),
       likes: d.likesCount || 0,
       dislikes: d.dislikesCount || 0,
       myReaction: reaction || null,
@@ -323,12 +355,43 @@ export default function CommunityFeed() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
-    if (post.myReaction || storedReaction) {
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId) || post.myReaction;
+
+    if (storedReaction === 'LIKE') {
+      // Bấm lần nữa để hủy Like
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        likes: Math.max(0, p.likes - 1),
+        hasLiked: false,
+        myReaction: null
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, null);
+      try {
+        await diaryService.likeDiary(postId, 'LIKE');
+      } catch (e) {
+        console.warn("Could not cancel like on server:", e);
+      }
+      return;
+    } else if (storedReaction === 'DISLIKE') {
+      // Đổi từ Dislike sang Like
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        likes: p.likes + 1,
+        dislikes: Math.max(0, p.dislikes - 1),
+        hasLiked: true,
+        hasDisliked: false,
+        myReaction: 'LIKE'
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, 'LIKE');
+      try {
+        await diaryService.likeDiary(postId, 'LIKE');
+      } catch (e) {
+        console.warn("Could not register like on server:", e);
+      }
       return;
     }
 
-    // Optimistic UI update
+    // Normal LIKE
     setPosts(posts.map(p => {
       if (p.id === postId) {
         return {
@@ -361,8 +424,39 @@ export default function CommunityFeed() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
-    if (post.myReaction || storedReaction) {
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId) || post.myReaction;
+
+    if (storedReaction === 'DISLIKE') {
+      // Bấm lần nữa để hủy Dislike
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        dislikes: Math.max(0, p.dislikes - 1),
+        hasDisliked: false,
+        myReaction: null
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, null);
+      try {
+        await diaryService.likeDiary(postId, 'DISLIKE');
+      } catch (e) {
+        console.warn("Could not cancel dislike on server:", e);
+      }
+      return;
+    } else if (storedReaction === 'LIKE') {
+      // Đổi từ Like sang Dislike
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        dislikes: p.dislikes + 1,
+        likes: Math.max(0, p.likes - 1),
+        hasDisliked: true,
+        hasLiked: false,
+        myReaction: 'DISLIKE'
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, 'DISLIKE');
+      try {
+        await diaryService.likeDiary(postId, 'DISLIKE');
+      } catch (e) {
+        console.warn("Could not register dislike on server:", e);
+      }
       return;
     }
 
@@ -457,18 +551,13 @@ export default function CommunityFeed() {
       return;
     }
 
+    setIsPosting(true);
+
     try {
-      const itinerary = completedItineraries.find(it => it.id === Number(selectedItineraryId));
-      let categoryVal = 'healing';
-      if (itinerary && itinerary.travelStyle) {
-        const styleLower = itinerary.travelStyle.toLowerCase();
-        if (styleLower.includes('chill') || styleLower.includes('thư giãn')) {
-          categoryVal = 'healing';
-        } else if (styleLower.includes('ảo') || styleLower.includes('scenic') || styleLower.includes('sống ảo')) {
-          categoryVal = 'scenic';
-        } else if (styleLower.includes('trải nghiệm') || styleLower.includes('experience') || styleLower.includes('local')) {
-          categoryVal = 'adventure';
-        }
+      let categoryVal = 'Khác';
+      const selectedSpotObj = spotsForSelectedItinerary.find(s => s.id === Number(postLinkedSpot));
+      if (selectedSpotObj && selectedSpotObj.style) {
+        categoryVal = selectedSpotObj.style;
       }
 
       const formData = new FormData();
@@ -482,8 +571,8 @@ export default function CommunityFeed() {
       if (selectedItineraryId) {
         formData.append('itineraryId', selectedItineraryId.toString());
       }
-      if (selectedImage) {
-        formData.append('image', selectedImage);
+      if (selectedImages && selectedImages.length > 0) {
+        selectedImages.forEach(img => formData.append('images', img));
       }
 
       const response = await diaryService.createDiary(formData);
@@ -492,8 +581,13 @@ export default function CommunityFeed() {
         const newDiary = mapBackendDiaryToFrontend(response.data);
         setPosts([newDiary, ...posts]);
         setNewPostText('');
-        setSelectedImage(null);
-        setImagePreview('');
+        setSelectedImages([]);
+        setImagePreviews([]);
+        
+        // Clear file input so same files can be re-selected later without reload
+        const fileInput = document.getElementById('post-image-upload');
+        if (fileInput) fileInput.value = '';
+
         // Cập nhật lại danh sách địa điểm đã đánh giá
         setPostedSpotIds([...postedSpotIds, postLinkedSpot]);
         setPostLinkedSpot(null);
@@ -503,6 +597,8 @@ export default function CommunityFeed() {
     } catch (err) {
       console.error("Error creating post:", err);
       alert(language === 'vi' ? 'Lỗi khi đăng bài viết' : 'Error posting diary');
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -731,6 +827,105 @@ export default function CommunityFeed() {
 
 
 
+  const renderPhotoGrid = (images) => {
+    if (!images || images.length === 0) return null;
+
+    const count = images.length;
+
+    if (count === 1) {
+      return (
+        <div 
+          className="w-full rounded-xl overflow-hidden flex justify-center relative cursor-pointer group"
+          onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}
+        >
+          <img src={images[0]} alt="Post Attach" className="w-full h-auto max-h-[600px] object-cover group-hover:opacity-95 transition-opacity" />
+        </div>
+      );
+    }
+
+    if (count === 2) {
+      return (
+        <div className="w-full aspect-square sm:aspect-video flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+            <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+          </div>
+        </div>
+      );
+    }
+
+    if (count === 3) {
+      return (
+        <div className="w-full aspect-square sm:aspect-video flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-1/2 h-full flex flex-col gap-1">
+            <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+              <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+            </div>
+            <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+              <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (count === 4) {
+      return (
+        <div className="w-full aspect-square sm:aspect-[4/3] flex flex-col gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-full h-2/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+             <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-full h-1/3 flex gap-1">
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+               <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+             </div>
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+               <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+             </div>
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 3 })}>
+               <img src={images[3]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 4" />
+             </div>
+          </div>
+        </div>
+      );
+    }
+
+    // count >= 5
+    return (
+      <div className="w-full aspect-square sm:aspect-[4/3] flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+        <div className="w-1/2 h-full flex flex-col gap-1">
+          <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+            <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+          </div>
+        </div>
+        <div className="w-1/2 h-full flex flex-col gap-1">
+          <div className="w-full h-1/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+            <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+          </div>
+          <div className="w-full h-1/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 3 })}>
+            <img src={images[3]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 4" />
+          </div>
+          <div className="w-full h-1/3 relative group" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 4 })}>
+            <img src={images[4]} className="w-full h-full object-cover group-hover:opacity-90 transition-opacity" alt="Post Attach 5" />
+            {count > 5 && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-white text-3xl font-medium tracking-wider">+{count - 5}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col gap-8">
 
@@ -843,28 +1038,56 @@ export default function CommunityFeed() {
       <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
         <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {[
-            { id: 'all', label: t('all'), icon: Compass },
-            { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
-            { id: 'healing', label: t('tagHealing'), icon: Sparkles },
-            { id: 'scenic', label: t('tagScenic'), icon: MapPin }
-          ].map((tag) => {
-            const TagIcon = tag.icon;
-            const isActive = activeTag === tag.id;
-            return (
+          <button
+            onClick={() => setActiveTag('all')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
+              activeTag === 'all'
+                ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+            }`}
+          >
+            <Compass className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">{t('all')}</span>
+          </button>
+          
+          {dbStyles.length > 0 ? (
+            [...dbStyles, 'Khác'].map((styleStr) => (
               <button
-                key={tag.id}
-                onClick={() => setActiveTag(tag.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
-                  ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                  }`}
+                key={styleStr}
+                onClick={() => setActiveTag(styleStr)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
+                  activeTag === styleStr
+                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                }`}
               >
-                <TagIcon className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">{tag.label}</span>
+                <MapPin className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{styleStr}</span>
               </button>
-            );
-          })}
+            ))
+          ) : (
+            [
+              { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
+              { id: 'healing', label: t('tagHealing'), icon: Sparkles },
+              { id: 'scenic', label: t('tagScenic'), icon: MapPin }
+            ].map((tag) => {
+              const TagIcon = tag.icon;
+              const isActive = activeTag === tag.id;
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => setActiveTag(tag.id)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
+                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                    }`}
+                >
+                  <TagIcon className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">{tag.label}</span>
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -946,17 +1169,21 @@ export default function CommunityFeed() {
             </div>
 
 
-            {/* Selected Image Preview with close trigger */}
-            {imagePreview && (
-              <div className="relative w-32 h-20 border border-gray-150 rounded-xl overflow-hidden shadow-inner group z-10 animate-scale-up">
-                <img src={imagePreview} alt={language === 'vi' ? 'Ảnh xem trước bài viết' : 'Post preview'} className="w-full h-full object-cover animate-fade-in" />
-                <button
-                  type="button"
-                  onClick={() => { setSelectedImage(null); setImagePreview(''); }}
-                  className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black transition-all cursor-pointer border-none flex items-center justify-center"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+            {/* Selected Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="flex gap-2 flex-wrap relative z-10">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative w-32 h-20 border border-gray-150 rounded-xl overflow-hidden shadow-inner group animate-scale-up">
+                    <img src={preview} alt={language === 'vi' ? 'Ảnh xem trước bài viết' : 'Post preview'} className="w-full h-full object-cover animate-fade-in" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black transition-all cursor-pointer border-none flex items-center justify-center"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -965,10 +1192,13 @@ export default function CommunityFeed() {
                 <label className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none flex items-center justify-center select-none">
                   <ImageIcon className="w-5 h-5 text-ricefield-green" />
                   <input
+                    id="post-image-upload"
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleImageChange}
                     className="hidden"
+                    disabled={isPosting}
                   />
                 </label>
                 <button type="button" className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none">
@@ -978,10 +1208,11 @@ export default function CommunityFeed() {
 
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-none shadow-md shadow-heritage-amber/10 hover:scale-[1.02] active:scale-95 w-full sm:w-auto"
+                disabled={isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot}
+                className={`px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all border-none shadow-md shadow-heritage-amber/10 w-full sm:w-auto ${isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-95'}`}
               >
-                <Send className="w-3.5 h-3.5" />
-                {t('postButton')}
+                {isPosting ? (language === 'vi' ? 'Đang đăng...' : 'Posting...') : (language === 'vi' ? 'Đăng bài' : 'Post')}
+                <Send className={`w-3.5 h-3.5 ${isPosting ? 'animate-pulse' : ''}`} />
               </button>
             </div>
           </form>
@@ -1022,22 +1253,10 @@ export default function CommunityFeed() {
 
                     {/* Visual Category Badge pill */}
                     <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
-                      <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${post.category === 'food'
-                        ? 'bg-blue-50 text-blue-600 border-blue-200'
-                        : post.category === 'adventure'
-                          ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                          : post.category === 'scenic'
-                            ? 'bg-sky-50 text-sky-600 border-sky-200'
-                            : 'bg-green-50 text-ricefield-green border-ricefield-green/20'
-                        }`}>
-                        {post.category === 'food'
-                          ? t('tagFood')
-                          : post.category === 'adventure'
-                            ? t('tagAdventure')
-                            : post.category === 'scenic'
-                              ? t('tagScenic')
-                              : t('tagHealing')
-                        }
+                      <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${
+                        post.category === 'Khác' ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-heritage-amber/10 text-heritage-amber border-heritage-amber/20'
+                      }`}>
+                        {post.category || 'Khác'}
                       </span>
                     </div>
                   </div>
@@ -1099,15 +1318,9 @@ export default function CommunityFeed() {
 
 
                   {/* Images attachments */}
-                  {post.images && post.images.length > 0 && (
-                    <div className="w-full h-64 overflow-hidden rounded-xl border border-gray-200 relative bg-gray-50 z-10">
-                      <img
-                        src={post.images[0]}
-                        alt="Post Attach"
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                      />
-                    </div>
-                  )}
+                  <div className="w-full relative z-10 mt-3">
+                    {renderPhotoGrid(post.images)}
+                  </div>
 
                   {/* Bottom Action indicators */}
                   <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 relative z-10 w-full">
@@ -1118,8 +1331,7 @@ export default function CommunityFeed() {
                         {/* Like */}
                         <button
                           onClick={() => handleLike(post.id)}
-                          disabled={Boolean(post.myReaction)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
                         >
                           <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
                           <span>{post.likes}</span>
@@ -1128,8 +1340,7 @@ export default function CommunityFeed() {
                         {/* Dislike */}
                         <button
                           onClick={() => handleDislike(post.id)}
-                          disabled={Boolean(post.myReaction)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'} ${post.myReaction ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
                         >
                           <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
                           <span>{post.dislikes}</span>
@@ -1576,6 +1787,69 @@ export default function CommunityFeed() {
             )}
 
           </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxData.isOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setLightboxData({...lightboxData, isOpen: false})}
+        >
+          {/* close button */}
+          <button 
+            onClick={() => setLightboxData({...lightboxData, isOpen: false})} 
+            className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full transition-colors border-none bg-transparent cursor-pointer z-50"
+          >
+            <X className="w-8 h-8"/>
+          </button>
+          
+          {/* prev button */}
+          {lightboxData.images.length > 1 && (
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setLightboxData({
+                  ...lightboxData, 
+                  currentIndex: (lightboxData.currentIndex - 1 + lightboxData.images.length) % lightboxData.images.length
+                }); 
+              }} 
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors border-none cursor-pointer z-50"
+            >
+              <ChevronLeft className="w-8 h-8"/>
+            </button>
+          )}
+
+          {/* next button */}
+          {lightboxData.images.length > 1 && (
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setLightboxData({
+                  ...lightboxData, 
+                  currentIndex: (lightboxData.currentIndex + 1) % lightboxData.images.length
+                }); 
+              }} 
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors border-none cursor-pointer z-50"
+            >
+              <ChevronRight className="w-8 h-8"/>
+            </button>
+          )}
+
+          <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={lightboxData.images[lightboxData.currentIndex]} 
+              className="max-w-full max-h-full w-auto h-auto object-contain select-none animate-fade-in drop-shadow-2xl" 
+              alt="Lightbox view" 
+            />
+          </div>
+          
+          {/* Image counter */}
+          {lightboxData.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 font-medium bg-black/50 px-4 py-1.5 rounded-full z-50">
+              {lightboxData.currentIndex + 1} / {lightboxData.images.length}
+            </div>
+          )}
         </div>
       )}
 

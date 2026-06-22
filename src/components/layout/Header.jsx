@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera } from 'lucide-react';
+import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera, Activity } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import authService from '../../services/authService';
 import logoImg from '../../assets/logo.jpg';
@@ -43,8 +43,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
     { id: 'home', label: t('home'), icon: null },
     { id: 'about', label: t('about'), icon: Info },
     { id: 'planner', label: t('aiPlanner'), icon: Sparkles },
-    { id: 'social', label: t('community'), icon: Grid },
-    ...(currentUser?.role === 'ADMIN' ? [{ id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: ShieldAlert }] : [])
+    ...(currentUser?.role === 'ADMIN' ? [
+      { id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: ShieldAlert },
+      { id: 'analytics', label: language === 'vi' ? 'Công cụ theo dõi' : 'Analytics', icon: Activity }
+    ] : [])
   ];
 
   return (

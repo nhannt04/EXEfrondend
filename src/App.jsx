@@ -4,6 +4,7 @@ import LandingPage from './features/trip-planner/components/LandingPage';
 import TripPlannerStudio from './features/trip-planner/components/TripPlannerStudio';
 import CommunityFeed from './features/social/components/CommunityFeed';
 import AdminDashboard from './features/admin/components/AdminDashboard';
+import AnalyticsDashboard from './features/admin/components/AnalyticsDashboard';
 import ChatbotWidget from './features/chatbot/components/ChatbotWidget';
 import Footer from './components/layout/Footer';
 import AboutUs from './components/AboutUs';
@@ -11,6 +12,7 @@ import UserProfile from './components/profile/UserProfile';
 import { LanguageProvider } from './context/LanguageContext';
 import authService from './services/authService';
 import AuthModal from './components/layout/AuthModal';
+import axiosClient from "./services/axiosClient";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('home');
@@ -38,6 +40,21 @@ function AppContent() {
     };
   }, []);
 
+  // Track Page Views
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        await axiosClient.post('/analytics/track', {
+          eventType: 'PAGE_VIEW',
+          targetId: activeTab
+        });
+      } catch (e) {
+        console.error("Failed to track page view", e);
+      }
+    };
+    trackPageView();
+  }, [activeTab]);
+
   // Router dispatcher
   const renderContent = () => {
     switch (activeTab) {
@@ -54,6 +71,8 @@ function AppContent() {
         return <CommunityFeed />;
       case 'admin':
         return <AdminDashboard />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       case 'about':
         return <AboutUs />;
       case 'profile':

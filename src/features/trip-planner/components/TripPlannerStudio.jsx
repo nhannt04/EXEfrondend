@@ -650,10 +650,31 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
   const { language, t } = useLanguage();
   const [days, setDays] = useState(1);
   const [budget, setBudget] = useState(5000000); // 5 Million default
-  const [style, setStyle] = useState('Chill & Thư giãn');
+  const [selectedDishes, setSelectedDishes] = useState([]);
+  const [selectedStayCategories, setSelectedStayCategories] = useState([]);
+  const [selectedEntCategories, setSelectedEntCategories] = useState([]);
+
+  const [dbDishes, setDbDishes] = useState([]);
+  const [dbStayTypes, setDbStayTypes] = useState([]);
+  const [dbEntTypes, setDbEntTypes] = useState([]);
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(1);
-  const [interests, setInterests] = useState('Ăn cao lầu, uống cà phê sữa đá, đi dạo phố cổ Hội An');
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const response = await axiosClient.get('/trips/metadata');
+        if (response && response.success && response.data) {
+          setDbDishes(response.data.dishes || []);
+          setDbStayTypes(response.data.stayTypes || []);
+          setDbEntTypes(response.data.entertainmentTypes || []);
+        }
+      } catch (err) {
+        console.error("Failed to load metadata from DB:", err);
+      }
+    };
+    fetchMetadata();
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [loadingFactIndex, setLoadingFactIndex] = useState(0);
@@ -791,7 +812,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         title: tripTitle || (language === 'vi' ? 'Lịch trình Hội An' : 'Hoi An Itinerary'),
         totalDays: days,
         totalBudget: budget,
-        travelStyle: style,
+        travelStyle: Array.isArray(style) ? style.join(', ') : style,
         groupType: 'couple',
         tripData: JSON.stringify(itinerary)
       });
@@ -839,7 +860,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       setItinerary(parsedData);
       setDays(savedTrip.totalDays);
       setBudget(savedTrip.totalBudget);
-      setStyle(savedTrip.travelStyle);
+      setStyle(savedTrip.travelStyle ? savedTrip.travelStyle.split(', ') : []);
       setActiveDay(1);
       setSlotPage(1);
       if (parsedData.length > 0) {
@@ -1457,13 +1478,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
     return () => clearInterval(interval);
   }, [loading, facts]);
 
-  const toggleInterest = (interest) => {
-    if (interests.includes(interest)) {
-      setInterests(interests.filter((i) => i !== interest));
-    } else {
-      setInterests([...interests, interest]);
-    }
-  };
+  // Toggle functions removed as we handle them inline
 
   const mapBackendSpotToFrontend = (backendSpot) => {
     if (!backendSpot) return null;
@@ -1526,10 +1541,11 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       const response = await tripService.generateTrip({
         days: days,
         budget: budget,
-        style: style,
         people: adults + children,
         groupType: 'couple',
-        interests: [interests],
+        selectedDishes: selectedDishes,
+        selectedStayCategories: selectedStayCategories,
+        selectedEntCategories: selectedEntCategories,
         currentLat: userLocation.lat || 15.8771,
         currentLng: userLocation.lng || 108.3267
       });
@@ -2869,18 +2885,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('travelStyle')}</label>
-                <select
-                  value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
-                >
-                  <option value="Chill & Thư giãn">{language === 'vi' ? 'Chill & Thư giãn' : 'Chill & Relax'}</option>
-                  <option value="Sống ảo">{language === 'vi' ? 'Sống ảo' : 'Instagrammable / Aesthetic'}</option>
-                  <option value="Trải nghiệm">{language === 'vi' ? 'Trải nghiệm local' : 'Experience'}</option>
-                </select>
-              </div>
+
             </div>
 
             {/* Budget Setting */}
@@ -2926,18 +2931,81 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               </div>
             </div>
 
-            {/* Interests Custom Text Input */}
-            <div className="flex flex-col gap-2 relative z-10 border-t border-gray-150 pt-5">
-              <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('interests')}</label>
-              <textarea
-                rows={4}
-                value={interests}
-                onChange={(e) => setInterests(e.target.value)}
-                placeholder={language === 'vi'
-                  ? 'Hãy viết sở thích cá nhân của bạn (Ví dụ: Muốn ăn cao lầu Bà Bé, uống cà phê sữa đá ven sông, đi dạo ngắm đèn lồng Phố Cổ và ngắm hoàng hôn biển An Bàng...)'
-                  : 'Write your personalized travel preferences...'}
-                className="w-full bg-white border border-gray-200 text-gray-850 px-4 py-3.5 rounded-2xl text-xs focus:outline-none focus:border-heritage-amber resize-none font-bold leading-relaxed hover:border-gray-300 focus:ring-4 focus:ring-heritage-amber/10 transition-all duration-300 shadow-sm"
-              />
+            {/* Preferences / Checkboxes */}
+            <div className="flex flex-col gap-4 relative z-10 border-t border-gray-150 pt-5">
+              
+              {/* Dishes */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                  {language === 'vi' ? 'Tên món ăn muốn thử' : 'Dishes to try'}
+                </label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {dbDishes.map(s => {
+                    const isSelected = selectedDishes.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedDishes(isSelected ? selectedDishes.filter(i => i !== s) : [...selectedDishes, s])}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Stay Categories */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                  {language === 'vi' ? 'Phân loại chỗ ở' : 'Accommodation type'}
+                </label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {dbStayTypes.map(s => {
+                    const isSelected = selectedStayCategories.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedStayCategories(isSelected ? selectedStayCategories.filter(i => i !== s) : [...selectedStayCategories, s])}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ent Categories */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                  {language === 'vi' ? 'Phân loại khu vui chơi' : 'Entertainment type'}
+                </label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {dbEntTypes.map(s => {
+                    const isSelected = selectedEntCategories.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedEntCategories(isSelected ? selectedEntCategories.filter(i => i !== s) : [...selectedEntCategories, s])}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
 
             {/* CTA Generate button */}
