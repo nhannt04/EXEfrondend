@@ -847,7 +847,7 @@ export default function CommunityFeed() {
       {/* Category Filter Tabs */}
       <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
         <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-2 pb-1">
           {[
             { id: 'all', label: t('all'), icon: Compass },
             { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
@@ -861,7 +861,7 @@ export default function CommunityFeed() {
               <button
                 key={tag.id}
                 onClick={() => setActiveTag(tag.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer hover:-translate-y-0.5 shimmer-trigger ${isActive
                   ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
                   : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
                   }`}

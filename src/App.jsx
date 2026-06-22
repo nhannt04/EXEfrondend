@@ -87,7 +87,7 @@ function AppContent() {
       />
       
       {/* Dynamic Content Panel */}
-      <main className="  flex-grow w-full ">
+      <main className="container mx-auto px-4 sm:px-6 flex-grow w-full">
         {renderContent()}
       </main>
 

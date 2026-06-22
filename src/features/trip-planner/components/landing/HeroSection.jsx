@@ -3,7 +3,10 @@ import { Sparkles } from 'lucide-react';
 
 export default function HeroSection({ language, handleQuickStart }) {
   return (
-    <section className="relative w-full overflow-hidden border-b border-dark-border min-h-[480px] sm:min-h-[550px] lg:min-h-[620px] flex items-center pt-12 sm:pt-14 lg:pt-16">
+    <section 
+      className="relative overflow-hidden border-b border-dark-border min-h-[480px] sm:min-h-[550px] lg:min-h-[620px] flex items-center pt-12 sm:pt-14 lg:pt-16"
+      style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', maxWidth: '100vw' }}
+    >
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
@@ -16,7 +19,7 @@ export default function HeroSection({ language, handleQuickStart }) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-[95%] mx-auto px-4 sm:px-8 lg:px-12 w-full">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 w-full">
         <div className="flex flex-col items-start gap-6 text-left animate-fade-in-up max-w-2xl">
           <div className="inline-flex items-center gap-1.5 bg-heritage-amber/40 text-white border border-heritage-amber/80 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider animate-float shadow-lg shadow-heritage-amber/50 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5 text-white animate-spin-slow" />

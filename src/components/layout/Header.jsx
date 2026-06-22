@@ -50,13 +50,14 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-dark-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full border-b border-dark-border transition-all duration-300 ${
         scrolled
           ? 'bg-white/98 backdrop-blur-md shadow-md shadow-black/5'
           : 'bg-white/90 backdrop-blur-sm border-b border-gray-100/80'
       }`}
       style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}
     >
+      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between">
       {/* Logo */}
       <div
         className="flex items-center gap-2.5 cursor-pointer group"
@@ -194,6 +195,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
         >
           {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
+      </div>
       </div>
 
       {/* Mobile Navigation Dropdown */}
