@@ -2840,7 +2840,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       {activePlannerTab === 'studio' && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:p-8 items-start">
           {/* Left Side - Input Panel - Apple Shimmer */}
-          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-3 md:p-6 sm:p-7 rounded-3xl flex flex-col gap-3 md:p-6 shadow-xl relative overflow-hidden shimmer-trigger h-[50vh] lg:h-auto">
+          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-3 md:p-6 sm:p-7 rounded-3xl flex flex-col gap-3 md:p-6 shadow-xl relative shimmer-trigger h-[40vh] lg:h-auto overflow-hidden">
             {/* Absolute decorative glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -2849,8 +2849,9 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               {t('tripParams')}
             </h3>
 
-            {/* Fixed Form Content */}
-            <div className="flex-1 flex flex-col gap-1.5 sm:gap-4 relative z-10 overflow-hidden justify-between">
+            {/* Scrollable Form Content */}
+            <div className="flex-1 min-h-0 flex flex-col gap-4 relative z-10 overflow-y-auto pr-2 overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:block [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-heritage-amber/50 hover:[&::-webkit-scrollbar-thumb]:bg-heritage-amber [&>*]:flex-shrink-0 pb-4">
+
 
               {/* Destination & Days */}
               <div className="grid grid-cols-2 gap-2 sm:gap-4 relative z-10">
