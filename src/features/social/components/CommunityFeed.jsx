@@ -494,10 +494,22 @@ export default function CommunityFeed() {
     setActiveDropdownPostId(null);
   };
 
-  const handleDeletePost = (postId) => {
+  const handleDeletePost = async (postId) => {
     if (window.confirm(language === 'vi' ? 'Bạn có chắc chắn muốn xóa bài viết này?' : 'Are you sure you want to delete this post?')) {
+      const backupPosts = [...posts];
       setPosts(posts.filter(p => p.id !== postId));
       setActiveDropdownPostId(null);
+      try {
+        const response = await diaryService.deleteDiary(postId);
+        if (!response || !response.success) {
+          setPosts(backupPosts);
+          alert(language === 'vi' ? 'Xóa bài viết thất bại!' : 'Failed to delete post!');
+        }
+      } catch (e) {
+        console.error("Failed to delete post:", e);
+        setPosts(backupPosts);
+        alert(language === 'vi' ? 'Xóa bài viết thất bại!' : 'Failed to delete post!');
+      }
     }
   };
 
@@ -927,30 +939,30 @@ export default function CommunityFeed() {
   };
 
   return (
-    <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col gap-8">
+    <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col gap-4 md:gap-8">
 
       {/* Visual Title Header */}
       <div className="text-center flex flex-col items-center gap-2">
-        <div className="inline-flex items-center gap-1.5 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-1.5 rounded-full text-xs font-semibold animate-float">
+        <div className="inline-flex items-center gap-1.5 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-1.5 rounded-full text-[9px] md:text-[10px]s font-semibold animate-float">
           <Sparkles className="w-4 h-4 animate-spin-slow text-heritage-gold" />
           Hội An Memory Diaries
         </div>
-        <h2 className="font-outfit text-3xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
+        <h2 className="font-outfit text-3xl sm:text-[9px] md:text-[10px]xl font-extrabold text-gray-900 leading-tight">
           {t('socialTitle')}
         </h2>
-        <p className="text-gray-500 text-xs sm:text-sm max-w-xl">
+        <p className="text-gray-500 text-[9px] md:text-[10px]s sm:text-sm max-w-xl">
           {t('socialDesc')}
         </p>
       </div>
 
       {postIdFromUrl && (
         <div className="bg-heritage-amber/10 border border-heritage-amber p-4 rounded-xl flex justify-between items-center animate-fade-in relative z-10">
-          <span className="text-xs font-bold text-gray-700">
+          <span className="text-[9px] md:text-[10px]s font-bold text-gray-700">
             {language === 'vi' ? '📌 Bạn đang xem một bài viết được chia sẻ từ liên kết.' : '📌 You are viewing a shared post from link.'}
           </span>
           <button
             onClick={() => setPostIdFromUrl(null)}
-            className="px-3 py-1.5 bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-extrabold rounded-lg cursor-pointer transition-colors border-none"
+            className="px-3 py-1.5 bg-heritage-amber hover:bg-heritage-gold text-white text-[9px] md:text-[10px]s font-extrabold rounded-lg cursor-pointer transition-colors border-none"
           >
             {language === 'vi' ? 'Xem tất cả' : 'View all'}
           </button>
@@ -959,14 +971,14 @@ export default function CommunityFeed() {
 
       {activeHashtagFilter && (
         <div className="bg-ricefield-green/10 border border-ricefield-green p-4 rounded-xl flex justify-between items-center animate-fade-in relative z-10">
-          <span className="text-xs font-bold text-gray-700">
+          <span className="text-[9px] md:text-[10px]s font-bold text-gray-700">
             {language === 'vi' 
               ? `📌 Đang lọc theo chủ đề hashtag: ${activeHashtagFilter}` 
               : `📌 Filtering by hashtag: ${activeHashtagFilter}`}
           </span>
           <button
             onClick={() => setActiveHashtagFilter(null)}
-            className="px-3 py-1.5 bg-ricefield-green hover:bg-ricefield-light text-white text-xs font-extrabold rounded-lg cursor-pointer transition-colors border-none"
+            className="px-3 py-1.5 bg-ricefield-green hover:bg-ricefield-light text-white text-[9px] md:text-[10px]s font-extrabold rounded-lg cursor-pointer transition-colors border-none"
           >
             {language === 'vi' ? 'Xem tất cả' : 'View all'}
           </button>
@@ -976,11 +988,11 @@ export default function CommunityFeed() {
 
 
       {/* Feed View Mode Filter */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/90 border border-heritage-gold/25 p-4 rounded-2xl relative z-20 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start items-stretch md:items-center gap-4 bg-white/90 border border-heritage-gold/25 p-4 rounded-2xl relative z-20 shadow-sm">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => { setFeedViewMode('all'); setMyPostsSubFilter('all'); }}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
+            className={`px-4 py-2 rounded-xl text-[9px] md:text-[10px]s font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
               feedViewMode === 'all'
                 ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15'
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
@@ -992,7 +1004,7 @@ export default function CommunityFeed() {
           {currentUser && (
             <button
               onClick={() => { setFeedViewMode('my_posts'); setMyPostsSubFilter('all'); }}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-[9px] md:text-[10px]s font-extrabold border transition-all duration-350 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 ${
                 feedViewMode === 'my_posts'
                   ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15'
                   : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
@@ -1005,8 +1017,8 @@ export default function CommunityFeed() {
 
         {/* Sub-filters under My Posts */}
         {feedViewMode === 'my_posts' && (
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 w-full sm:w-auto animate-fade-in">
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase whitespace-nowrap">
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 w-full md:w-auto animate-fade-in">
+            <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 font-extrabold uppercase whitespace-nowrap">
               {language === 'vi' ? 'Trạng thái bài viết:' : 'Post status:'}
             </span>
             <div className="flex gap-1.5">
@@ -1020,7 +1032,7 @@ export default function CommunityFeed() {
                 <button
                   key={sub.id}
                   onClick={() => setMyPostsSubFilter(sub.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-300 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px]s md:text-sm font-bold border transition-all duration-300 cursor-pointer ${
                     myPostsSubFilter === sub.id
                       ? 'bg-ricefield-green border-ricefield-green text-white shadow-sm'
                       : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
@@ -1036,11 +1048,11 @@ export default function CommunityFeed() {
 
       {/* Category Filter Tabs */}
       <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
-        <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
+        <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTag('all')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] md:text-[10px]s font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
               activeTag === 'all'
                 ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
@@ -1055,7 +1067,7 @@ export default function CommunityFeed() {
               <button
                 key={styleStr}
                 onClick={() => setActiveTag(styleStr)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] md:text-[10px]s font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
                   activeTag === styleStr
                     ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
                     : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
@@ -1077,7 +1089,7 @@ export default function CommunityFeed() {
                 <button
                   key={tag.id}
                   onClick={() => setActiveTag(tag.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] md:text-[10px]s font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
                     ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
                     : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
                     }`}
@@ -1092,15 +1104,15 @@ export default function CommunityFeed() {
       </div>
 
       {/* Split Layout: Posts Column (8) vs Local Guide Sidebar (4) */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:p-6 lg:gap-4 md:gap-8 items-start">
 
         {/* Main social posts Column */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-3 md:p-6">
 
           {/* Advanced Local Diary Composer */}
           <form
             onSubmit={handleCreatePost}
-            className="bg-gradient-to-tr from-white to-blue-50/40 border border-heritage-gold/20 p-4 sm:p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
+            className="bg-gradient-to-tr from-white to-blue-50/40 border border-heritage-gold/20 p-4 sm:p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
           >
             {/* Subtle light overlay */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl" />
@@ -1120,9 +1132,9 @@ export default function CommunityFeed() {
             </div>
 
             {/* Custom tagging parameters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/60 border border-gray-150 p-3 rounded-xl relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4 bg-white/60 border border-gray-150 p-3 rounded-xl relative z-10">
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Lịch trình đã hoàn thành' : 'Completed Itinerary'}
                 </label>
                 <select
@@ -1131,7 +1143,7 @@ export default function CommunityFeed() {
                     setSelectedItineraryId(e.target.value ? Number(e.target.value) : null);
                     setPostLinkedSpot(null);
                   }}
-                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
+                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-[9px] md:text-[10px]s font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
                   required
                 >
                   <option value="">{language === 'vi' ? '-- Chọn lịch trình --' : '-- Select itinerary --'}</option>
@@ -1144,13 +1156,13 @@ export default function CommunityFeed() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Chọn Địa điểm đã đi' : 'Select Visited Spot'}
                 </label>
                 <select
                   value={postLinkedSpot || ''}
                   onChange={(e) => setPostLinkedSpot(e.target.value ? Number(e.target.value) : null)}
-                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
+                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-[9px] md:text-[10px]s font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
                   disabled={!selectedItineraryId}
                   required
                 >
@@ -1187,7 +1199,7 @@ export default function CommunityFeed() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-t border-gray-100 pt-3 relative z-10">
+            <div className="flex flex-col md:flex-row md:justify-between items-stretch md:items-center gap-3 border-t border-gray-100 pt-3 relative z-10">
               <div className="flex gap-2 flex-wrap">
                 <label className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none flex items-center justify-center select-none">
                   <ImageIcon className="w-5 h-5 text-ricefield-green" />
@@ -1209,7 +1221,7 @@ export default function CommunityFeed() {
               <button
                 type="submit"
                 disabled={isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot}
-                className={`px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all border-none shadow-md shadow-heritage-amber/10 w-full sm:w-auto ${isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-95'}`}
+                className={`px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-[9px] md:text-[10px]s rounded-xl flex items-center justify-center gap-1.5 transition-all border-none shadow-md shadow-heritage-amber/10 w-full md:w-auto ${isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-95'}`}
               >
                 {isPosting ? (language === 'vi' ? 'Đang đăng...' : 'Posting...') : (language === 'vi' ? 'Đăng bài' : 'Post')}
                 <Send className={`w-3.5 h-3.5 ${isPosting ? 'animate-pulse' : ''}`} />
@@ -1218,22 +1230,22 @@ export default function CommunityFeed() {
           </form>
 
           {/* Social feed list items */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3 md:p-6">
             {filteredPosts.length === 0 ? (
-              <div className="bg-white border border-dashed border-gray-200 p-12 rounded-2xl text-center text-gray-400 animate-scale-up">
+              <div className="bg-white border border-dashed border-gray-200 p-3 md:p-6 md:p-12 rounded-2xl text-center text-gray-400 animate-scale-up">
                 <Compass className="w-8 h-8 mx-auto mb-2 opacity-50 animate-float" />
-                <p className="text-xs font-semibold">{language === 'vi' ? 'Không tìm thấy nhật ký du lịch phù hợp.' : 'No matching diaries found.'}</p>
+                <p className="text-[9px] md:text-[10px]s font-semibold">{language === 'vi' ? 'Không tìm thấy nhật ký du lịch phù hợp.' : 'No matching diaries found.'}</p>
               </div>
             ) : (
               filteredPosts.map((post, idx) => (
                 <article
                   key={post.id}
-                  className={`bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col p-4 sm:p-5 gap-4 shadow-sm hover:shadow-md hover:border-heritage-gold/30 transition-all duration-300 group shimmer-trigger animate-fade-in-up`}
+                  className={`bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col p-4 sm:p-3 md:p-5 gap-4 shadow-sm hover:shadow-md hover:border-heritage-gold/30 transition-all duration-300 group shimmer-trigger animate-fade-in-up`}
                   style={{ animationDelay: `${(idx + 1) * 150}ms` }}
                 >
 
                   {/* Post Header */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 relative z-10">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 relative z-10">
                     <div className="flex gap-3">
                       <img
                         src={post.user.avatar}
@@ -1243,17 +1255,17 @@ export default function CommunityFeed() {
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-outfit text-sm font-bold text-gray-900 group-hover:text-heritage-amber transition-colors">{post.user.name}</span>
-                          <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green font-extrabold px-2 py-0.5 rounded-full border border-ricefield-green/20">
+                          <span className="text-[10px] md:text-[9px] md:text-[10px]s bg-ricefield-green/10 text-ricefield-green font-extrabold px-2 py-0.5 rounded-full border border-ricefield-green/20">
                             {post.user.badge[language]}
                           </span>
                         </div>
-                        <span className="text-[10px] text-gray-400">{post.date[language]}</span>
+                        <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400">{post.date[language]}</span>
                       </div>
                     </div>
 
                     {/* Visual Category Badge pill */}
-                    <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
-                      <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${
+                    <div className="flex items-center gap-1.5 flex-wrap justify-start md:justify-end">
+                      <span className={`text-[10px] md:text-[9px] md:text-[10px]s font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${
                         post.category === 'Khác' ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-heritage-amber/10 text-heritage-amber border-heritage-amber/20'
                       }`}>
                         {post.category || 'Khác'}
@@ -1262,33 +1274,33 @@ export default function CommunityFeed() {
                   </div>
 
                   {post.reported && (
-                    <div className="bg-red-50 border border-red-250 text-red-600 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 animate-pulse relative z-10 select-none">
+                    <div className="bg-red-50 border border-red-250 text-red-600 px-3.5 py-2 rounded-xl text-[9px] md:text-[10px]s font-bold flex items-center gap-2 animate-pulse relative z-10 select-none">
                       <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                       <span>{language === 'vi' ? 'Bài viết này đã bị báo cáo đến admin!' : 'This post has been reported to admin!'}</span>
                     </div>
                   )}
 
                   {post.status === 'hidden' && (
-                    <div className="bg-gray-50 border border-gray-200 text-gray-500 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 relative z-10 select-none">
+                    <div className="bg-gray-50 border border-gray-200 text-gray-500 px-3.5 py-2 rounded-xl text-[9px] md:text-[10px]s font-bold flex items-center gap-2 relative z-10 select-none">
                       <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
                       <span>{language === 'vi' ? 'Bài viết này đang bị ẩn đối với cộng đồng.' : 'This post is currently hidden from the community.'}</span>
                     </div>
                   )}
 
                   {/* Content body text */}
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium relative z-10">
+                  <p className="text-[9px] md:text-[10px]s sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium relative z-10">
                     {post.content[language]}
                   </p>
 
                   {/* Optional Linked Spot Details */}
                   {post.spot && (
-                    <div className="flex flex-col gap-1.5 bg-gradient-to-r from-gray-50 to-blue-50/20 border border-gray-150 p-3 rounded-xl text-[11.5px] font-bold text-gray-700 shadow-sm relative z-10 select-none">
+                    <div className="flex flex-col gap-1.5 bg-gradient-to-r from-gray-50 to-blue-50/20 border border-gray-150 p-3 rounded-xl text-[9px] md:text-[10px]s md:text-sm font-bold text-gray-700 shadow-sm relative z-10 select-none">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-heritage-amber animate-pulse" />
                         <span className="text-gray-400">{language === 'vi' ? 'Địa điểm' : 'Place'}:</span>
                         <span className="text-heritage-amber font-extrabold">{post.spot.name}</span>
                       </div>
-                      <div className="text-[10px] text-gray-500 pl-5 font-semibold">
+                      <div className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-500 pl-5 font-semibold">
                         📍 {post.spot.address}
                       </div>
                     </div>
@@ -1304,7 +1316,7 @@ export default function CommunityFeed() {
                             e.stopPropagation();
                             setActiveHashtagFilter(tag);
                           }}
-                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                          className={`text-[10px] md:text-[9px] md:text-[10px]s font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
                             activeHashtagFilter === tag
                               ? 'bg-heritage-amber text-white border-heritage-amber shadow-sm shadow-heritage-amber/20 scale-105'
                               : 'bg-white text-heritage-amber border-heritage-amber/35 hover:border-heritage-amber'
@@ -1323,9 +1335,9 @@ export default function CommunityFeed() {
                   </div>
 
                   {/* Bottom Action indicators */}
-                  <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 relative z-10 w-full">
+                  <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-[9px] md:text-[10px]s text-gray-500 relative z-10 w-full">
                     
-                    <div className="flex items-center gap-3 sm:gap-5">
+                    <div className="flex items-center gap-3 sm:gap-3 md:p-5">
                       {/* Likes & Dislikes */}
                       <div className="flex items-center gap-2 sm:gap-3">
                         {/* Like */}
@@ -1380,7 +1392,7 @@ export default function CommunityFeed() {
                               {post.likes === 0 && post.comments.length === 0 ? (
                                 <button
                                   onClick={() => handleDeletePost(post.id)}
-                                  className="w-full text-left px-4 py-2 text-xs font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                  className="w-full text-left px-4 py-2 text-[9px] md:text-[10px]s font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4 text-red-500" />
                                   <span>{language === 'vi' ? 'Xóa bài viết' : 'Delete Post'}</span>
@@ -1390,7 +1402,7 @@ export default function CommunityFeed() {
                                 post.status === 'hidden' ? (
                                   <button
                                     onClick={() => handleToggleHidePost(post.id, 'public')}
-                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                    className="w-full text-left px-4 py-2 text-[9px] md:text-[10px]s font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
                                   >
                                     <Eye className="w-4 h-4 text-ricefield-green" />
                                     <span>{language === 'vi' ? 'Hiển thị bài viết' : 'Show Post'}</span>
@@ -1398,7 +1410,7 @@ export default function CommunityFeed() {
                                 ) : (
                                   <button
                                     onClick={() => handleToggleHidePost(post.id, 'hidden')}
-                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                    className="w-full text-left px-4 py-2 text-[9px] md:text-[10px]s font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
                                   >
                                     <EyeOff className="w-4 h-4 text-gray-400" />
                                     <span>{language === 'vi' ? 'Ẩn bài viết' : 'Hide Post'}</span>
@@ -1410,7 +1422,7 @@ export default function CommunityFeed() {
                             /* Case B: NOT the Owner of the post */
                             <button
                               onClick={() => handleReportPost(post.id)}
-                              className="w-full text-left px-4 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                              className="w-full text-left px-4 py-2 text-[9px] md:text-[10px]s font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
                             >
                               <AlertTriangle className="w-4 h-4 text-blue-500 animate-pulse" />
                               <span>{language === 'vi' ? 'Báo cáo vi phạm' : 'Report Post'}</span>
@@ -1424,7 +1436,7 @@ export default function CommunityFeed() {
                               handleShareLink(post.id);
                               setActiveDropdownPostId(null);
                             }}
-                            className={`w-full text-left px-4 py-2 text-xs font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
+                            className={`w-full text-left px-4 py-2 text-[9px] md:text-[10px]s font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
                               sharedPostId === post.id ? 'text-green-600 hover:bg-green-50' : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
@@ -1444,12 +1456,12 @@ export default function CommunityFeed() {
                   {/* Comment Thread */}
                   {openCommentsPostId === post.id && (
                     <div className="border-t border-gray-100 mt-2 pt-4 flex flex-col gap-4 bg-gray-50 p-4 rounded-xl relative z-10 animate-fade-in">
-                      <h4 className="font-outfit text-xs font-bold text-gray-900 tracking-wide uppercase">{t('commentTitle')}</h4>
+                      <h4 className="font-outfit text-[9px] md:text-[10px]s font-bold text-gray-900 tracking-wide uppercase">{t('commentTitle')}</h4>
 
                       {/* Top Level Comments List */}
                       <div className="flex flex-col gap-4">
                         {post.comments.length === 0 ? (
-                          <span className="text-[11px] text-gray-400 font-semibold">{t('noComments')}</span>
+                          <span className="text-[9px] md:text-[10px]s md:text-sm text-gray-400 font-semibold">{t('noComments')}</span>
                         ) : (
                           post.comments.map((comment) => (
                             <div key={comment.id} className="flex flex-col gap-2 bg-white border border-gray-200/80 p-3 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
@@ -1463,14 +1475,14 @@ export default function CommunityFeed() {
                                   />
                                   <div className="flex flex-col">
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
+                                      <span className="text-[9px] md:text-[10px]s md:text-sm font-bold text-gray-900 leading-none">{comment.userName}</span>
                                       {post.authorId && comment.userId && post.authorId === comment.userId && (
                                         <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
                                           {language === 'vi' ? 'Tác giả' : 'Author'}
                                         </span>
                                       )}
                                     </div>
-                                    <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
+                                    <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
                                   </div>
                                 </div>
                                 {currentUser && currentUser.id === comment.userId && (
@@ -1486,7 +1498,7 @@ export default function CommunityFeed() {
 
 
                               {/* Comment content */}
-                              <p className="text-[12px] text-gray-700 leading-relaxed pl-9">
+                              <p className="text-sm md:text-base text-gray-700 leading-relaxed pl-9">
                                 {comment.content[language]}
                               </p>
 
@@ -1504,7 +1516,7 @@ export default function CommunityFeed() {
                                       <div className="flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full">
                                           <div className="flex items-center gap-1.5">
-                                            <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
+                                            <span className="text-[10px] md:text-[9px] md:text-[10px]s font-bold text-gray-900 leading-none">{reply.userName}</span>
                                             {post.authorId && reply.userId && post.authorId === reply.userId && (
                                               <span className="text-[7.5px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
                                                 {language === 'vi' ? 'Tác giả' : 'Author'}
@@ -1521,7 +1533,7 @@ export default function CommunityFeed() {
                                             </button>
                                           )}
                                         </div>
-                                        <p className="text-[11px] text-gray-600 mt-1 leading-normal">
+                                        <p className="text-[9px] md:text-[10px]s md:text-sm text-gray-600 mt-1 leading-normal">
                                           {reply.content[language]}
                                         </p>
                                       </div>
@@ -1534,17 +1546,17 @@ export default function CommunityFeed() {
                               {/* Reply trigger input */}
                               <div className="pl-9 mt-2">
                                 {activeReplyBoxId === comment.id ? (
-                                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center animate-fade-in">
+                                  <div className="flex flex-col md:flex-row gap-2 items-stretch items-stretch md:items-center animate-fade-in">
                                     <input
                                       type="text"
                                       value={replyInputs[comment.id] || ''}
                                       onChange={(e) => setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })}
                                       placeholder={t('replyPlaceholder')}
-                                      className="flex-grow bg-white border border-gray-200 text-xs text-gray-800 rounded-lg px-2.5 py-1 focus:outline-none focus:border-heritage-amber"
+                                      className="flex-grow bg-white border border-gray-200 text-[9px] md:text-[10px]s text-gray-800 rounded-lg px-2.5 py-1 focus:outline-none focus:border-heritage-amber"
                                     />
                                     <button
                                       onClick={() => handleAddReply(post.id, comment.id)}
-                                      className="px-3 py-2 sm:py-1 bg-ricefield-green hover:bg-ricefield-light text-white font-bold text-[10px] rounded-lg cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
+                                      className="px-3 py-2 sm:py-1 bg-ricefield-green hover:bg-ricefield-light text-white font-bold text-[10px] md:text-[9px] md:text-[10px]s rounded-lg cursor-pointer border-none shadow-sm transition-colors w-full md:w-auto"
                                     >
                                       {t('replyButton')}
                                     </button>
@@ -1552,7 +1564,7 @@ export default function CommunityFeed() {
                                 ) : (
                                   <button
                                     onClick={() => setActiveReplyBoxId(comment.id)}
-                                    className="text-[10px] text-gray-400 hover:text-heritage-amber font-bold cursor-pointer bg-transparent border-none"
+                                    className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 hover:text-heritage-amber font-bold cursor-pointer bg-transparent border-none"
                                   >
                                     {t('replyTrigger')}
                                   </button>
@@ -1565,17 +1577,17 @@ export default function CommunityFeed() {
                       </div>
 
                       {/* Create top-level comment Input */}
-                      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center border-t border-gray-200 pt-3">
+                      <div className="flex flex-col md:flex-row gap-2 items-stretch items-stretch md:items-center border-t border-gray-200 pt-3">
                         <input
                           type="text"
                           value={commentInputs[post.id] || ''}
                           onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
                           placeholder={t('commentPlaceholder')}
-                          className="flex-grow bg-white border border-gray-200 text-xs text-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-heritage-amber placeholder-gray-400 shadow-inner"
+                          className="flex-grow bg-white border border-gray-200 text-[9px] md:text-[10px]s text-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-heritage-amber placeholder-gray-400 shadow-inner"
                         />
                         <button
                           onClick={() => handleAddComment(post.id)}
-                          className="p-2.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-xl flex items-center justify-center cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
+                          className="p-2.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-xl flex items-center justify-center cursor-pointer border-none shadow-sm transition-colors w-full md:w-auto"
                         >
                           <Send className="w-3.5 h-3.5" />
                         </button>
@@ -1592,10 +1604,10 @@ export default function CommunityFeed() {
         </div>
 
         {/* Local Expert Sidebar Column */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:col-span-4 flex flex-col gap-3 md:p-6">
 
           {/* Daily Cultural Quest Card with Shimmer trigger */}
-          <div className="bg-gradient-to-tr from-blue-500 to-heritage-amber text-white p-5 rounded-3xl shadow-lg shadow-heritage-amber/10 flex flex-col gap-4 relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:200ms]">
+          <div className="bg-gradient-to-tr from-blue-500 to-heritage-amber text-white p-3 md:p-5 rounded-3xl shadow-lg shadow-heritage-amber/10 flex flex-col gap-4 relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:200ms]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
 
             <div className="flex items-center gap-2 border-b border-white/20 pb-2.5 relative z-10">
@@ -1608,18 +1620,18 @@ export default function CommunityFeed() {
             </div>
 
             <div className="flex flex-col gap-2 relative z-10">
-              <p className="text-[12px] text-white/95 leading-relaxed font-semibold">
+              <p className="text-sm md:text-base text-white/95 leading-relaxed font-semibold">
                 "{t('challengeQuest')}"
               </p>
               <div className="bg-white/15 border border-white/10 p-3 rounded-2xl mt-1 flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
+                <span className="text-[10px] md:text-[9px] md:text-[10px]s uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
                 <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
               </div>
             </div>
 
             <button
               onClick={() => setShowQuestSuccess(true)}
-              className="w-full py-2.5 bg-white hover:bg-gray-50 text-heritage-amber font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer border-none relative z-10"
+              className="w-full py-2.5 bg-white hover:bg-gray-50 text-heritage-amber font-extrabold text-[9px] md:text-[10px]s rounded-xl flex items-center justify-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer border-none relative z-10"
             >
               <Award className="w-4 h-4 animate-bounce" />
               {t('participate')}
@@ -1627,7 +1639,7 @@ export default function CommunityFeed() {
           </div>
 
           {/* Featured Local Experts Spotlight - Apple Shimmer */}
-          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:300ms]">
+          <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:300ms]">
             <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
               <UserCheck className="w-4 h-4 text-heritage-amber" />
               {t('localExperts')}
@@ -1647,8 +1659,8 @@ export default function CommunityFeed() {
                     )}
                   </div>
                   <div className="flex-grow min-w-0">
-                    <h4 className="text-xs font-bold text-gray-800 truncate leading-tight">{expert.name}</h4>
-                     <span className="text-[9px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
+                    <h4 className="text-[9px] md:text-[10px]s font-bold text-gray-800 truncate leading-tight">{expert.name}</h4>
+                     <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
                   </div>
                   <button
                     onClick={() => handleOpenExpertChat(expert)}
@@ -1663,7 +1675,7 @@ export default function CommunityFeed() {
           </div>
 
           {/* Hot Trending Hashtags */}
-          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]">
+          <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]">
             <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
               <Flame className="w-4 h-4 text-blue-500" />
               {t('trendingHashtags')}
@@ -1674,19 +1686,19 @@ export default function CommunityFeed() {
                 <div 
                   key={idx} 
                   onClick={() => setActiveHashtagFilter(item.tag)}
-                  className="flex justify-between items-center text-xs group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
+                  className="flex justify-between items-center text-[9px] md:text-[10px]s group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
                 >
                   <div className="flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
                     <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
+                    <span className="text-[10px] md:text-[9px] md:text-[10px]s text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
                     {idx === 0 && (
-                      <span className="text-[9px] bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
+                      <span className="text-[10px] md:text-[9px] md:text-[10px]s bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
                     )}
                     {idx > 0 && idx < 3 && (
-                      <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
+                      <span className="text-[10px] md:text-[9px] md:text-[10px]s bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
                     )}
                   </div>
                 </div>
@@ -1702,13 +1714,13 @@ export default function CommunityFeed() {
       {/* CULTURAL QUEST ACCEPTED MODAL */}
       {showQuestSuccess && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-gray-200 p-6 rounded-3xl max-w-sm w-full flex flex-col items-center text-center gap-4 shadow-2xl animate-scale-up">
+          <div className="bg-white border border-gray-200 p-3 md:p-6 rounded-3xl max-w-sm w-full flex flex-col items-center text-center gap-4 shadow-2xl animate-scale-up">
             <div className="p-3 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber rounded-full animate-float">
               <Trophy className="w-8 h-8" />
             </div>
             <div>
               <h3 className="font-outfit text-base font-extrabold text-gray-900">{language === 'vi' ? 'Quest Đã Nhận!' : 'Quest Accepted!'}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed mt-1.5 font-semibold">
+              <p className="text-[9px] md:text-[10px]s text-gray-500 leading-relaxed mt-1.5 font-semibold">
                 {language === 'vi'
                   ? 'Hãy ghé thăm Chùa Cầu vào sáng sớm mai, chụp một bức ảnh đẹp và tải lên bài viết (chọn tag Góc chụp ảnh đẹp) để nhận Voucher Đèn Lồng 50k nhé!'
                   : 'Visit the Covered Bridge tomorrow morning, take a beautiful photo, and publish a post (select Scenic tag) to claim your 50k Voucher!'}
@@ -1716,7 +1728,7 @@ export default function CommunityFeed() {
             </div>
             <button
               onClick={() => setShowQuestSuccess(false)}
-              className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
+              className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-[9px] md:text-[10px]s rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
             >
               {language === 'vi' ? 'Tôi đã hiểu!' : 'Got it!'}
             </button>
@@ -1727,7 +1739,7 @@ export default function CommunityFeed() {
       {/* QUICK EXPERT CHAT DIALOG */}
       {showChatModal && activeExpert && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-gray-200 p-5 rounded-3xl max-w-md w-full flex flex-col gap-4 shadow-2xl animate-scale-up">
+          <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-3xl max-w-md w-full flex flex-col gap-4 shadow-2xl animate-scale-up">
             <div className="flex justify-between items-center border-b border-gray-150 pb-3">
               <div className="flex gap-2.5 items-center">
                 <img
@@ -1736,8 +1748,8 @@ export default function CommunityFeed() {
                   className="w-8 h-8 rounded-full object-cover border border-gray-200"
                 />
                 <div>
-                  <h4 className="text-xs font-extrabold text-gray-800 leading-tight">{activeExpert.name}</h4>
-                  <span className="text-[9px] text-green-500 font-bold tracking-wide uppercase flex items-center gap-0.5">
+                  <h4 className="text-[9px] md:text-[10px]s font-extrabold text-gray-800 leading-tight">{activeExpert.name}</h4>
+                  <span className="text-[10px] md:text-[9px] md:text-[10px]s text-green-500 font-bold tracking-wide uppercase flex items-center gap-0.5">
                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse" />
                     Online
                   </span>
@@ -1752,11 +1764,11 @@ export default function CommunityFeed() {
             </div>
 
             {messageSuccess ? (
-              <div className="flex flex-col items-center text-center p-6 gap-3 animate-fade-in">
+              <div className="flex flex-col items-center text-center p-3 md:p-6 gap-3 animate-fade-in">
                 <CheckCircle className="w-10 h-10 text-ricefield-green" />
                 <div>
-                  <h4 className="text-xs font-extrabold text-gray-800">{language === 'vi' ? 'Đã gửi câu hỏi!' : 'Question Sent!'}</h4>
-                  <p className="text-[11px] text-gray-400 mt-1 leading-normal">
+                  <h4 className="text-[9px] md:text-[10px]s font-extrabold text-gray-800">{language === 'vi' ? 'Đã gửi câu hỏi!' : 'Question Sent!'}</h4>
+                  <p className="text-[9px] md:text-[10px]s md:text-sm text-gray-400 mt-1 leading-normal">
                     {language === 'vi'
                       ? 'Chuyên gia bản địa sẽ phản hồi tin nhắn của bạn trong vòng ít phút thông qua hộp thư đến.'
                       : 'The local guide will respond to your query shortly via your inbox.'}
@@ -1765,7 +1777,7 @@ export default function CommunityFeed() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                <p className="text-[11px] text-gray-500 leading-relaxed italic bg-gray-50 p-3 rounded-xl border border-gray-150">
+                <p className="text-[9px] md:text-[10px]s md:text-sm text-gray-500 leading-relaxed italic bg-gray-50 p-3 rounded-xl border border-gray-150">
                   {language === 'vi'
                     ? `Chào bạn! Mình có thể tư vấn tất cả kinh nghiệm local về các dịch vụ di chuyển, ẩm thực hay nghề thủ công truyền thống ở Hội An. Hãy để lại câu hỏi bên dưới nhé!`
                     : `Hello! I can advise on all local guides regarding dining, transport, or traditional craft workshops in Hoi An. Leave your question below!`
@@ -1775,11 +1787,11 @@ export default function CommunityFeed() {
                   value={expertMessageText}
                   onChange={(e) => setExpertMessageText(e.target.value)}
                   placeholder={language === 'vi' ? 'Nhập câu hỏi của bạn tại đây...' : 'Type your question here...'}
-                  className="bg-white border border-gray-200 text-xs text-gray-800 rounded-xl p-3 h-24 resize-none focus:outline-none focus:border-heritage-amber placeholder-gray-450 shadow-inner"
+                  className="bg-white border border-gray-200 text-[9px] md:text-[10px]s text-gray-800 rounded-xl p-3 h-24 resize-none focus:outline-none focus:border-heritage-amber placeholder-gray-450 shadow-inner"
                 />
                 <button
                   onClick={handleSendExpertMessage}
-                  className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
+                  className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-[9px] md:text-[10px]s rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
                 >
                   {language === 'vi' ? 'Gửi Câu Hỏi' : 'Submit Question'}
                 </button>

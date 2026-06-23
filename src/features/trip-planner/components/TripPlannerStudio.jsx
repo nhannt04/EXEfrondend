@@ -332,7 +332,7 @@ const LeafletMap = ({
         marker.bindTooltip(orderPrefix + (s.name?.[language] || ''), {
           permanent: isSelected,
           direction: 'top',
-          className: 'leaflet-custom-tooltip font-outfit font-extrabold text-[10.5px] border-none shadow-sm rounded-lg bg-gray-900 text-white px-2 py-1'
+          className: 'leaflet-custom-tooltip font-outfit font-extrabold text-sm lg:text-base border-none shadow-sm rounded-lg bg-gray-900 text-white px-2 py-1'
         });
 
         markersRef.current.push(marker);
@@ -364,7 +364,7 @@ const LeafletMap = ({
             </div>
             
             <!-- Google Maps style bottom street tag: White background with blue text -->
-            <div class="mt-1.5 px-3 py-1 bg-white border-2 border-blue-500/35 shadow-lg rounded-full text-[10.5px] font-black text-blue-600 leading-none whitespace-nowrap text-center tracking-wide relative z-20">
+            <div class="mt-1.5 px-3 py-1 bg-white border-2 border-blue-500/35 shadow-lg rounded-full text-sm lg:text-base font-black text-blue-600 leading-none whitespace-nowrap text-center tracking-wide relative z-20">
               ${activeStreetName || (language === 'vi' ? 'Đang xác định...' : 'Determining...')}
             </div>
           </div>
@@ -508,7 +508,7 @@ const LeafletMap = ({
           marker.bindTooltip(orderPrefix + (s.name?.[language] || ''), {
             permanent: isSelected,
             direction: 'top',
-            className: 'leaflet-custom-tooltip font-outfit font-extrabold text-[10.5px] border-none shadow-sm rounded-lg bg-gray-900 text-white px-2 py-1'
+            className: 'leaflet-custom-tooltip font-outfit font-extrabold text-sm lg:text-base border-none shadow-sm rounded-lg bg-gray-900 text-white px-2 py-1'
           });
         }
       });
@@ -756,6 +756,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
   const [rentalPage, setRentalPage] = useState(1);
   const [isSavedItinerary, setIsSavedItinerary] = useState(false);
   const [swapDropdown, setSwapDropdown] = useState(null);
+  const [isMapVisible, setIsMapVisible] = useState(false);
   const [activeItineraryId, setActiveItineraryId] = useState(null);
   const [activeItineraryStatus, setActiveItineraryStatus] = useState('NOT_STARTED');
   const [savedFilter, setSavedFilter] = useState('ALL');
@@ -812,7 +813,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         title: tripTitle || (language === 'vi' ? 'Lịch trình Hội An' : 'Hoi An Itinerary'),
         totalDays: days,
         totalBudget: budget,
-        travelStyle: Array.isArray(style) ? style.join(', ') : style,
+        travelStyle: '', // Style has been removed
         groupType: 'couple',
         tripData: JSON.stringify(itinerary)
       });
@@ -860,7 +861,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       setItinerary(parsedData);
       setDays(savedTrip.totalDays);
       setBudget(savedTrip.totalBudget);
-      setStyle(savedTrip.travelStyle ? savedTrip.travelStyle.split(', ') : []);
+      // setStyle has been removed
       setActiveDay(1);
       setSlotPage(1);
       if (parsedData.length > 0) {
@@ -1870,9 +1871,9 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
     if (!itinerary) {
       if (selectedSpot) {
         return (
-          <div className="w-full flex flex-col gap-6 animate-fade-in">
+          <div className="w-full flex flex-col gap-3 md:p-6 animate-fade-in">
             {/* Simple banner explaining stand-alone spot map directions */}
-            <div className="w-full p-4 bg-blue-50 text-blue-700 rounded-xl text-xs flex items-center justify-between border border-blue-200 shadow-sm animate-scale-up">
+            <div className="w-full p-4 bg-blue-50 text-blue-700 rounded-xl text-xs md:text-sm lg:text-base flex items-center justify-between border border-blue-200 shadow-sm animate-scale-up">
               <span className="font-semibold">
                 📍 {language === 'vi' ? `Chỉ đường tới: ${selectedSpot.name[language]}` : `Directions to: ${selectedSpot.name[language]}`}
               </span>
@@ -1881,13 +1882,13 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   setSelectedSpot(null);
                   setActivePlannerTab('studio');
                 }}
-                className="text-[10px] text-blue-700 hover:text-blue-900 bg-transparent border-none font-bold cursor-pointer underline"
+                className="text-sm lg:text-base text-blue-700 hover:text-blue-900 bg-transparent border-none font-bold cursor-pointer underline"
               >
                 {language === 'vi' ? 'Quay lại Studio' : 'Back to Studio'}
               </button>
             </div>
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="w-full grid grid-cols-1 grid-cols-1 md:grid-cols-12 gap-3 md:p-6">
               {/* Map Column */}
               <div className="md:col-span-7 flex flex-col gap-4">
                 <div className="w-full h-[450px] rounded-2xl overflow-hidden border border-gray-200/80 shadow-inner relative bg-gray-50 z-10">
@@ -1914,24 +1915,24 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               {/* Directions details Sidebar Column */}
               <div className="md:col-span-5 flex flex-col gap-4 animate-fade-in-up">
                 {/* Distance and Estimated Duration Card */}
-                <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm">
-                  <h3 className="font-outfit text-sm font-bold text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-3">
+                <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm">
+                  <h3 className="font-outfit text-sm lg:text-base font-bold text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-3">
                     <Navigation className="w-4 h-4 text-heritage-amber" />
                     {language === 'vi' ? 'Thông tin tuyến đường' : 'Route Details'}
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-150 text-center">
+                  <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-150 text-center">
                     <div className="flex flex-col">
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Quãng đường' : 'Distance'}</span>
-                      <span className="text-xs font-black text-gray-800 mt-1">{simDistance} km</span>
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Quãng đường' : 'Distance'}</span>
+                      <span className="text-xs md:text-sm lg:text-base font-black text-gray-800 mt-1">{simDistance} km</span>
                     </div>
                     <div className="flex flex-col border-l border-gray-200">
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Thời gian di chuyển' : 'Travel Duration'}</span>
-                      <span className="text-xs font-black text-heritage-amber mt-1">~{simDuration} phút</span>
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Thời gian di chuyển' : 'Travel Duration'}</span>
+                      <span className="text-xs md:text-sm lg:text-base font-black text-heritage-amber mt-1">~{simDuration} phút</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px] text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center text-sm lg:text-base text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
                     <span className="font-semibold">{language === 'vi' ? 'Tuyến đường chính:' : 'Primary Corridor:'}</span>
                     <span className="font-extrabold text-gray-800 flex items-center gap-1">
                       <Footprints className="w-3 h-3 text-ricefield-green animate-pulse" />
@@ -1941,7 +1942,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                   {/* Travel Mode Selector pills */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Phương tiện:' : 'Mode:'}</span>
+                    <span className="text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider">{language === 'vi' ? 'Phương tiện:' : 'Mode:'}</span>
                     <div className="flex gap-1.5">
                       {[
                         { mode: 'foot', icon: Footprints, label: 'Bộ' },
@@ -1971,7 +1972,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                   <button
                     onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
-                    className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''}`}
+                    className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs md:text-sm lg:text-base rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''}`}
                   >
                     <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
                     {isNavigating ? t('mapStopNav') : t('mapStartNav')}
@@ -1985,18 +1986,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       return null;
     }
     return (
-      <div className="w-full flex flex-col gap-6 animate-fade-in">
+      <div className="w-full flex flex-col gap-3 md:p-6 animate-fade-in">
 
         {/* Optimizing State indicator */}
         {optimizing && (
-          <div className="w-full p-4 bg-[#FFFBEB] text-heritage-amber rounded-xl text-xs flex items-center gap-3 border border-amber-200 animate-pulse shadow-sm">
+          <div className="w-full p-4 bg-[#FFFBEB] text-heritage-amber rounded-xl text-xs md:text-sm lg:text-base flex items-center gap-3 border border-amber-200 animate-pulse shadow-sm">
             <RefreshCw className="w-4 h-4 animate-spin flex-shrink-0" />
             <span>{t('optMessage')}</span>
           </div>
         )}
 
         {hasOptimized && !optimizing && (
-          <div className="w-full p-4 bg-green-50 text-ricefield-green rounded-xl text-xs flex items-center gap-3 border border-green-200 shadow-sm animate-scale-up">
+          <div className="w-full p-4 bg-green-50 text-ricefield-green rounded-xl text-xs md:text-sm lg:text-base flex items-center gap-3 border border-green-200 shadow-sm animate-scale-up">
             <Check className="w-4 h-4 flex-shrink-0 text-ricefield-green" />
             <span>{t('optSuccess')}</span>
           </div>
@@ -2004,7 +2005,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
         {/* Day selection tabs & Route Switcher */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3 overflow-x-auto select-none">
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 w-full">
             {itinerary.map((d) => (
               <button
                 key={d.day}
@@ -2013,7 +2014,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   setSlotPage(1);
                   setSelectedSpot(d.accommodation);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 cursor-pointer ${activeDay === d.day
+                className={`px-4 py-2 rounded-xl text-xs md:text-sm lg:text-base font-extrabold transition-all duration-300 cursor-pointer ${activeDay === d.day
                   ? 'bg-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
                   : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-400'
                   }`}
@@ -2023,11 +2024,11 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide pb-2 w-full">
             <button
               type="button"
               onClick={() => setShowTravelRoute(!showTravelRoute)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-1.5 border shadow-sm ${showTravelRoute
+              className={`px-4 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all duration-300 cursor-pointer flex items-center gap-1.5 border shadow-sm ${showTravelRoute
                 ? 'bg-gradient-to-tr from-heritage-amber to-heritage-gold text-white border-transparent shadow-md scale-[1.02]'
                 : 'bg-white border-gray-200 text-gray-600 hover:text-heritage-amber hover:border-gray-300'
                 }`}
@@ -2041,7 +2042,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 type="button"
                 disabled={activeItineraryStatus === 'COMPLETED'}
                 onClick={handleCompleteItinerary}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 flex items-center gap-1.5 border shadow-sm ${activeItineraryStatus === 'COMPLETED'
+                className={`px-4 py-2 rounded-xl text-xs md:text-sm lg:text-base font-extrabold transition-all duration-300 flex items-center gap-1.5 border shadow-sm ${activeItineraryStatus === 'COMPLETED'
                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
                   : 'bg-gradient-to-tr from-ricefield-green to-emerald-600 text-white border-transparent hover:scale-[1.02] shadow-md cursor-pointer'
                   }`}
@@ -2056,7 +2057,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         </div>
 
         {/* Layout for Timeline vs Cost Breakdown & Dynamic GPS Maps */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="w-full grid grid-cols-1 grid-cols-1 md:grid-cols-12 gap-3 md:p-6">
 
           {/* Timeline Column */}
           <div className="md:col-span-7 flex flex-col gap-4 order-2 md:order-1">
@@ -2085,14 +2086,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
                     <div className="flex-grow relative z-10">
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
+                        <span className="text-xs md:text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
                       </div>
-                      <h4 className="font-outfit text-sm font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
-                      <p className="text-[10.5px] text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
+                      <h4 className="font-outfit text-sm lg:text-base font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
+                      <p className="text-sm lg:text-base text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
                     </div>
                     <div className="text-right flex-shrink-0 relative z-10">
-                      <span className="text-[10px] text-gray-400 block">{t('estimatedNight')}</span>
-                      <span className="text-xs font-extrabold text-heritage-amber">
+                      <span className="text-sm lg:text-base text-gray-400 block">{t('estimatedNight')}</span>
+                      <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber">
                         {formatPriceRange(
                           itinerary[activeDay - 1].accommodation.minCost || 0,
                           itinerary[activeDay - 1].accommodation.maxCost || 0,
@@ -2105,13 +2106,13 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                 {/* Standard bottom quick action bar */}
                 <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-100 relative z-10">
-                  <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
+                  <span className="text-sm lg:text-base text-gray-400 font-semibold">{t('quickActions')}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSwapSpot(activeDay - 1, 'STAY');
                     }}
-                    className="text-[10px] hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
+                    className="text-sm lg:text-base hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
                   >
                     <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
                     {language === 'vi' ? 'Đổi địa điểm' : 'Swap Place'}
@@ -2207,28 +2208,28 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                   className="w-full sm:w-28 h-40 sm:h-28 rounded-xl object-cover bg-gray-50 border border-gray-100 relative z-10"
                                 />
                                 {item.images && item.images.length > 0 && (
-                                  <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold z-20">📸 {item.images.length}</span>
+                                  <span className="absolute bottom-1 right-1 text-xs md:text-sm lg:text-base bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold z-20">📸 {item.images.length}</span>
                                 )}
                               </div>
                             )}
                             <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
                               <div className="flex-grow relative z-10">
-                                <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                <div className="flex justify-between items-center text-xs md:text-sm lg:text-base font-bold text-gray-400 uppercase tracking-widest">
                                   <span>{label}</span>
-                                  <span className="text-[10px] text-gray-500 font-semibold">{timeStr}</span>
+                                  <span className="text-sm lg:text-base text-gray-500 font-semibold">{timeStr}</span>
                                 </div>
-                                <h4 className={`font-outfit text-sm font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
+                                <h4 className={`font-outfit text-sm lg:text-base font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
                                   }`}>
                                   {item.name?.[language] || 'Địa điểm tham quan'}
                                 </h4>
-                                <p className="text-[10.5px] text-gray-500 leading-normal mt-1 flex items-start gap-1">
+                                <p className="text-sm lg:text-base text-gray-500 leading-normal mt-1 flex items-start gap-1">
                                   <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
                                   <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
                                 </p>
                               </div>
                               <div className="text-right flex-shrink-0 relative z-10">
-                                <span className="text-[10px] text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
-                                <span className="text-xs font-extrabold text-heritage-amber">
+                                <span className="text-sm lg:text-base text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
+                                <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber">
                                   {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
                                 </span>
                               </div>
@@ -2237,13 +2238,13 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                           {/* Interchange actions */}
                           <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                            <span className="text-[10px] text-gray-400 font-semibold">{t('quickActions')}</span>
+                            <span className="text-sm lg:text-base text-gray-400 font-semibold">{t('quickActions')}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSwapSpot(activeDay - 1, s.slot);
                               }}
-                              className="text-[10px] hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
+                              className="text-sm lg:text-base hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
                             >
                               <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
                               {t('swapSpot')}
@@ -2278,7 +2279,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                               key={pageNum}
                               type="button; cursor-pointer"
                               onClick={() => setSlotPage(pageNum)}
-                              className={`w-8 h-8 rounded-xl text-xs font-extrabold flex items-center justify-center transition-all duration-200 border cursor-pointer ${isActive
+                              className={`w-12 md:w-8 h-12 md:h-8 rounded-xl text-xs md:text-sm lg:text-base font-extrabold flex items-center justify-center transition-all duration-200 border cursor-pointer ${isActive
                                 ? 'bg-heritage-amber text-white border-transparent shadow-md shadow-heritage-amber/15 scale-[1.05]'
                                 : 'bg-white text-gray-500 border-gray-200 hover:text-gray-900 hover:border-gray-350 hover:bg-gray-50'
                                 }`}
@@ -2315,7 +2316,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               <button
                 type="button"
                 onClick={() => setSidebarPage(1)}
-                className={`flex-1 py-2 text-center text-xs font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 1
+                className={`flex-1 py-2 text-center text-xs md:text-sm lg:text-base font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 1
                   ? 'bg-white text-heritage-amber shadow-md shadow-gray-250/20 scale-[1.02]'
                   : 'text-gray-500 hover:text-gray-900 bg-transparent'
                   }`}
@@ -2326,7 +2327,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               <button
                 type="button"
                 onClick={() => setSidebarPage(2)}
-                className={`flex-1 py-2 text-center text-xs font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 2
+                className={`flex-1 py-2 text-center text-xs md:text-sm lg:text-base font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 2
                   ? 'bg-white text-heritage-amber shadow-md shadow-gray-250/20 scale-[1.02]'
                   : 'text-gray-500 hover:text-gray-900 bg-transparent'
                   }`}
@@ -2337,7 +2338,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               <button
                 type="button"
                 onClick={() => setSidebarPage(3)}
-                className={`flex-1 py-2 text-center text-xs font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 3
+                className={`flex-1 py-2 text-center text-xs md:text-sm lg:text-base font-extrabold rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-1.5 ${sidebarPage === 3
                   ? 'bg-white text-heritage-amber shadow-md shadow-gray-250/20 scale-[1.02]'
                   : 'text-gray-500 hover:text-gray-900 bg-transparent'
                   }`}
@@ -2349,15 +2350,15 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
             {/* Dynamic Google Map Routing Card - Apple Shimmer */}
             {sidebarPage === 1 && (
-              <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger">
+              <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3 relative z-10">
-                  <h3 className="font-outfit text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                  <h3 className="font-outfit text-sm lg:text-base font-bold text-gray-900 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-heritage-amber animate-float" />
                     {t('mapTitle')}
                   </h3>
                   <div className="flex items-center gap-1.5">
                     {isLocating && (
-                      <span className="text-[9px] bg-amber-50 text-heritage-amber border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+                      <span className="text-xs md:text-sm lg:text-base bg-amber-50 text-heritage-amber border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                         <Compass className="w-3 h-3 animate-spin-slow" />
                         GPS
                       </span>
@@ -2367,7 +2368,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                 {/* Geolocation Warning alert */}
                 {isFarAway && (
-                  <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl text-[10px] text-amber-700 leading-normal flex items-start gap-2 relative z-10 animate-fade-in">
+                  <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl text-sm lg:text-base text-amber-700 leading-normal flex items-start gap-2 relative z-10 animate-fade-in">
                     <Info className="w-4 h-4 text-heritage-amber flex-shrink-0 mt-0.5 animate-bounce" />
                     <span>{t('mapFarAwayWarning')}</span>
                   </div>
@@ -2382,22 +2383,22 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                         </span>
-                        <span className="text-[11px] font-extrabold text-blue-900">{t('mapNavigating')}</span>
+                        <span className="text-sm lg:text-base font-extrabold text-blue-900">{t('mapNavigating')}</span>
                       </div>
-                      <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-black">GPS HIGH ACCURACY</span>
+                      <span className="text-xs md:text-sm lg:text-base bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-black">GPS HIGH ACCURACY</span>
                     </div>
 
                     {/* Speedometer & Compass Details */}
-                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-blue-100 shadow-inner">
+                    <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-blue-100 shadow-inner">
                       <div className="flex flex-col items-center justify-center border-r border-blue-100 py-1">
-                        <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Tốc độ hiện tại' : 'Current Speed'}</span>
+                        <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Tốc độ hiện tại' : 'Current Speed'}</span>
                         <div className="flex items-baseline gap-0.5 mt-1">
                           <span className="text-xl font-black font-outfit text-blue-600 tracking-tight">{userSpeed}</span>
-                          <span className="text-[9px] text-gray-500 font-bold">km/h</span>
+                          <span className="text-xs md:text-sm lg:text-base text-gray-500 font-bold">km/h</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-center justify-center py-1">
-                        <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Hướng di chuyển' : 'Heading'}</span>
+                        <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Hướng di chuyển' : 'Heading'}</span>
                         <div className="flex items-center gap-1 mt-1">
                           {userHeading !== null ? (
                             <>
@@ -2405,10 +2406,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                 className="w-4 h-4 text-indigo-600 transition-transform duration-300"
                                 style={{ transform: `rotate(${userHeading}deg)` }}
                               />
-                              <span className="text-xs font-black font-outfit text-indigo-900">{Math.round(userHeading)}°</span>
+                              <span className="text-xs md:text-sm lg:text-base font-black font-outfit text-indigo-900">{Math.round(userHeading)}°</span>
                             </>
                           ) : (
-                            <span className="text-[10px] text-gray-400 font-bold italic">{language === 'vi' ? 'Đang đứng yên' : 'Stationary'}</span>
+                            <span className="text-sm lg:text-base text-gray-400 font-bold italic">{language === 'vi' ? 'Đang đứng yên' : 'Stationary'}</span>
                           )}
                         </div>
                       </div>
@@ -2452,32 +2453,32 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                           className="w-full h-60 object-contain"
                         />
                         {selectedSpot.images && selectedSpot.images.length > 0 && (
-                          <span className="absolute bottom-1 right-1 text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {selectedSpot.images.length}</span>
+                          <span className="absolute bottom-1 right-1 text-xs md:text-sm lg:text-base bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {selectedSpot.images.length}</span>
                         )}
                       </div>
                     )}
 
-                    <span className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">{t('mapRouteTo')}:</span>
-                    <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                    <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-extrabold tracking-wider">{t('mapRouteTo')}:</span>
+                    <span className="text-xs md:text-sm lg:text-base font-bold text-gray-900 flex items-center gap-1">
                       <Navigation className="w-3.5 h-3.5 text-ricefield-green animate-pulse" />
                       {selectedSpot.name[language]}
                     </span>
 
                     {/* Dynamic travel distances & durations */}
-                    <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                       <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                        <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDistance')}</span>
-                        <span className="text-sm font-extrabold text-heritage-amber">{activeDistance} km</span>
+                        <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold">{t('mapDistance')}</span>
+                        <span className="text-sm lg:text-base font-extrabold text-heritage-amber">{activeDistance} km</span>
                       </div>
                       <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                        <span className="text-[9px] text-gray-400 uppercase font-bold">{t('mapDuration')}</span>
-                        <span className="text-sm font-extrabold text-ricefield-green">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
+                        <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold">{t('mapDuration')}</span>
+                        <span className="text-sm lg:text-base font-extrabold text-ricefield-green">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
                       </div>
                     </div>
 
                     {/* Transport mode selectors */}
                     <div className="flex gap-1.5 justify-between items-center mt-2 border-t border-gray-150 pt-2.5">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold">{language === 'vi' ? 'Phương tiện' : 'Transport'}:</span>
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold">{language === 'vi' ? 'Phương tiện' : 'Transport'}:</span>
                       <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
                         {[
                           { mode: 'foot', icon: Footprints, label: t('mapFoot') },
@@ -2507,7 +2508,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                       /* Live Navigation Button */
                       <button
                         onClick={isNavigating ? handleStopNavigation : handleStartNavigation}
-                        className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
+                        className={`w-full mt-1.5 py-3 bg-gradient-to-tr from-blue-500 to-indigo-650 hover:from-blue-600 hover:to-indigo-700 disabled:bg-gray-300 text-white font-extrabold text-xs md:text-sm lg:text-base rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none ${isNavigating ? 'bg-red-500 hover:bg-red-650 animate-pulse' : ''
                           }`}
                       >
                         <Navigation className={`w-4 h-4 ${isNavigating ? 'animate-spin' : ''}`} />
@@ -2525,7 +2526,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                           setTripTitle(language === 'vi' ? `Chuyến đi Hội An ${days} Ngày` : `Hoi An ${days}-Day Journey`);
                           setShowSaveModal(true);
                         }}
-                        className="w-full mt-1.5 py-3 bg-ricefield-green hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
+                        className="w-full mt-1.5 py-3 bg-ricefield-green hover:bg-emerald-600 text-white font-extrabold text-xs md:text-sm lg:text-base rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
                         {language === 'vi' ? 'LƯU LỊCH TRÌNH' : 'SAVE ITINERARY'}
@@ -2538,7 +2539,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
             {/* Financial analysis - Apple Shimmer */}
             {sidebarPage === 2 && (
-              <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-5 h-fit shadow-sm shimmer-trigger animate-fade-in-up">
+              <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-3 md:p-5 h-fit shadow-sm shimmer-trigger animate-fade-in-up">
                 <h3 className="font-outfit text-base font-bold text-gray-900 border-b border-gray-100 pb-2 relative z-10">
                   {t('financialAnalysis')}
                 </h3>
@@ -2551,9 +2552,9 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   const pTrans = (costs.transport / total) * 100;
 
                   return (
-                    <div className="flex flex-col gap-5 relative z-10">
+                    <div className="flex flex-col gap-3 md:p-5 relative z-10">
                       {/* Donut Pie Chart & Legend Row */}
-                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                      <div className="flex flex-col sm:flex-row items-center gap-3 md:p-6">
                         {/* Circular Donut Chart */}
                         <div
                           className="relative w-36 h-36 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
@@ -2568,10 +2569,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         >
                           {/* Inner white cutout for donut chart */}
                           <div className="absolute w-24 h-24 bg-white rounded-full shadow-inner flex flex-col items-center justify-center p-2 text-center">
-                            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
+                            <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                               {language === 'vi' ? 'Ước tính' : 'Estimated'}
                             </span>
-                            <span className="text-[11px] font-black text-gray-900 mt-0.5 truncate max-w-full">
+                            <span className="text-sm lg:text-base font-black text-gray-900 mt-0.5 truncate max-w-full">
                               {(costs.totalMax).toLocaleString()}đ
                             </span>
                           </div>
@@ -2585,7 +2586,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                             { name: t('costsActivities'), pct: pAct, color: 'bg-ricefield-green', val: costs.activitiesMax },
                             { name: t('costsTransport'), pct: pTrans, color: 'bg-gray-400', val: costs.transport }
                           ].map((cat) => (
-                            <div key={cat.name} className="flex items-center justify-between text-[11px] font-bold text-gray-700">
+                            <div key={cat.name} className="flex items-center justify-between text-sm lg:text-base font-bold text-gray-700">
                               <div className="flex items-center gap-2">
                                 <span className={`w-2.5 h-2.5 rounded-full ${cat.color} flex-shrink-0`} />
                                 <span className="truncate max-w-[120px]">{cat.name}</span>
@@ -2602,10 +2603,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                       {/* Budget Status Badge */}
                       <div className="flex items-center justify-between bg-gray-50 border border-gray-150 p-3.5 rounded-xl text-xs">
                         <div className="flex flex-col">
-                          <span className="text-[9px] text-gray-400 font-extrabold uppercase">{language === 'vi' ? 'Ngân sách đề ra' : 'Target Budget'}</span>
+                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase">{language === 'vi' ? 'Ngân sách đề ra' : 'Target Budget'}</span>
                           <span className="font-black text-gray-800 mt-0.5">{(budget).toLocaleString()}đ</span>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border shadow-sm ${
+                        <div className={`px-3 py-3 md:py-1.5 rounded-xl text-sm lg:text-base font-black uppercase tracking-wider border shadow-sm ${
                           isOverBudget
                             ? 'bg-red-50 text-red-600 border-red-200'
                             : 'bg-green-50 text-green-600 border-green-200'
@@ -2621,8 +2622,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 })()}
 
                 <div className="border-t border-gray-100 pt-4 flex flex-col gap-2 relative z-10">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('advisorTitle')}</span>
-                  <p className="text-xs text-gray-600 leading-relaxed italic bg-gray-50 border border-gray-200 p-3.5 rounded-xl">
+                  <span className="text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider block">{t('advisorTitle')}</span>
+                  <p className="text-xs md:text-sm lg:text-base text-gray-600 leading-relaxed italic bg-gray-50 border border-gray-200 p-3.5 rounded-xl">
                     {isOverBudget
                       ? t('advisorOver')
                       : t('advisorUnder')
@@ -2634,8 +2635,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
             {/* Premium Local Service Suggestions Frame */}
             {sidebarPage === 3 && (
-              <div className="bg-gradient-to-tr from-white to-orange-50/20 border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm animate-fade-in-up">
-                <h3 className="font-outfit text-sm font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
+              <div className="bg-gradient-to-tr from-white to-orange-50/20 border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm animate-fade-in-up">
+                <h3 className="font-outfit text-sm lg:text-base font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
                   <Sparkles className="w-4 h-4 text-heritage-amber animate-spin-slow" />
                   {language === 'vi' ? 'Gợi Ý Dịch Vụ Bản Địa' : 'Local Service Suggestions'}
                 </h3>
@@ -2666,14 +2667,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                       rental.name?.[language]?.toLowerCase().includes('ảnh') || rental.name?.[language]?.toLowerCase().includes('camera') ? '📸' : '📦'}
                               </span>
                               <div className="flex flex-col flex-grow">
-                                <strong className="text-xs text-gray-800">{rental.name?.[language] || rental.name?.vi}</strong>
-                                <span className="text-[10px] text-gray-400">
+                                <strong className="text-xs md:text-sm lg:text-base text-gray-800">{rental.name?.[language] || rental.name?.vi}</strong>
+                                <span className="text-sm lg:text-base text-gray-400">
                                   {rental.cost ? `Từ ${rental.cost.toLocaleString('vi-VN')}đ` : 'Giá ưu đãi'} • {rental.reason?.[language] || rental.reason?.vi || (language === 'vi' ? 'Tiệm thuê uy tín gần bạn' : 'Highly-rated shop near you')}
                                 </span>
                               </div>
                               <button
                                 onClick={() => setSelectedSpot(rental)}
-                                className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer hover:bg-heritage-amber/20 transition-all whitespace-nowrap"
+                                className="text-sm lg:text-base bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer hover:bg-heritage-amber/20 transition-all whitespace-nowrap"
                               >
                                 {language === 'vi' ? 'Xem bản đồ' : 'View on map'}
                               </button>
@@ -2682,7 +2683,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                           {totalPages > 1 && (
                             <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100 w-full">
-                              <span className="text-[10px] text-gray-400 font-bold tracking-wider">
+                              <span className="text-sm lg:text-base text-gray-400 font-bold tracking-wider">
                                 {language === 'vi' ? `Trang ${activePage} / ${totalPages}` : `Page ${activePage} of ${totalPages}`}
                               </span>
                               <div className="flex gap-1.5">
@@ -2725,18 +2726,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">🏡</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Homestay Làng Rau Trà Quế</strong>
-                            <span className="text-[10px] text-gray-400">Từ 350.000đ/đêm • 4.8★</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Homestay Làng Rau Trà Quế</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Từ 350.000đ/đêm • 4.8★</span>
                           </div>
-                          <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Đặt phòng</button>
+                          <button className="text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Đặt phòng</button>
                         </div>
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">🚲</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Cho thuê xe đạp sinh thái</strong>
-                            <span className="text-[10px] text-gray-400">Từ 50.000đ/ngày • Thân thiện môi trường</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Cho thuê xe đạp sinh thái</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Từ 50.000đ/ngày • Thân thiện môi trường</span>
                           </div>
-                          <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                          <button className="text-sm lg:text-base bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
                         </div>
                       </>
                     ) : style === 'Sống ảo' ? (
@@ -2744,18 +2745,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">👘</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Cho thuê Áo Dài cổ trang Hội An</strong>
-                            <span className="text-[10px] text-gray-400">Từ 120.000đ/bộ • Nhiều mẫu cực đẹp</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Cho thuê Áo Dài cổ trang Hội An</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Từ 120.000đ/bộ • Nhiều mẫu cực đẹp</span>
                           </div>
-                          <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                          <button className="text-sm lg:text-base bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
                         </div>
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">📸</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Thuê máy ảnh film & Thợ chụp</strong>
-                            <span className="text-[10px] text-gray-400">Từ 400.000đ/buổi • Lưu giữ khoảnh khắc</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Thuê máy ảnh film & Thợ chụp</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Từ 400.000đ/buổi • Lưu giữ khoảnh khắc</span>
                           </div>
-                          <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Liên hệ</button>
+                          <button className="text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Liên hệ</button>
                         </div>
                       </>
                     ) : (
@@ -2763,18 +2764,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">🛵</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Cho thuê xe máy Hội An Tây</strong>
-                            <span className="text-[10px] text-gray-400">Từ 100.000đ/ngày • Giao xe tận nơi</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Cho thuê xe máy Hội An Tây</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Từ 100.000đ/ngày • Giao xe tận nơi</span>
                           </div>
-                          <button className="text-[10px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
+                          <button className="text-sm lg:text-base bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Thuê ngay</button>
                         </div>
                         <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-gray-150 hover:shadow-md transition-all">
                           <span className="text-xl">🏺</span>
                           <div className="flex flex-col flex-grow">
-                            <strong className="text-xs text-gray-800">Vé học làm Gốm Thanh Hà</strong>
-                            <span className="text-[10px] text-gray-400">Chỉ 35.000đ/vé • Tự làm sản phẩm</span>
+                            <strong className="text-xs md:text-sm lg:text-base text-gray-800">Vé học làm Gốm Thanh Hà</strong>
+                            <span className="text-sm lg:text-base text-gray-400">Chỉ 35.000đ/vé • Tự làm sản phẩm</span>
                           </div>
-                          <button className="text-[10px] bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Mua vé</button>
+                          <button className="text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 px-4 md:px-2.5 py-1 rounded-lg font-bold border-none cursor-pointer">Mua vé</button>
                         </div>
                       </>
                     );
@@ -2794,14 +2795,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
     <div className="max-w-[95%] w-full mx-auto px-6 py-10 flex flex-col items-center gap-10">
       {/* Page Title */}
       <div className="text-center flex flex-col items-center gap-2">
-        <div className="inline-flex items-center gap-2 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-1.5 rounded-full text-xs font-semibold animate-float">
+        <div className="inline-flex items-center gap-2 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-3 md:py-1.5 rounded-full text-xs md:text-sm lg:text-base font-semibold animate-float">
           <Sparkles className="w-4 h-4 text-heritage-gold animate-spin-slow" />
           Travelist Trip Planner Studio
         </div>
         <h2 className="font-outfit text-3xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
           {t('plannerTitle')}
         </h2>
-        <p className="text-gray-500 text-sm sm:text-base max-w-xl">
+        <p className="text-gray-500 text-sm lg:text-base sm:text-base max-w-xl">
           {t('plannerDesc')}
         </p>
       </div>
@@ -2810,7 +2811,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       <div className="flex bg-gray-100 p-1 rounded-xl shadow-inner border border-gray-200 relative z-20">
         <button
           onClick={() => setActivePlannerTab('studio')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'studio'
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'studio'
             ? 'bg-white text-heritage-amber shadow-sm'
             : 'text-gray-500 hover:text-gray-900 bg-transparent'
             }`}
@@ -2821,7 +2822,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         {(itinerary || selectedSpot) && (
           <button
             onClick={() => setActivePlannerTab('viewer')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'viewer'
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'viewer'
               ? 'bg-white text-heritage-amber shadow-sm'
               : 'text-gray-500 hover:text-gray-900 bg-transparent'
               }`}
@@ -2835,7 +2836,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             setActivePlannerTab('saved');
             fetchSavedItineraries();
           }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'saved'
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'saved'
             ? 'bg-white text-heritage-amber shadow-sm'
             : 'text-gray-500 hover:text-gray-900 bg-transparent'
             }`}
@@ -2846,9 +2847,9 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       </div>
 
       {activePlannerTab === 'studio' && (
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:p-8 items-start">
           {/* Left Side - Input Panel - Apple Shimmer */}
-          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-6 sm:p-7 rounded-3xl flex flex-col gap-6 shadow-xl relative overflow-hidden shimmer-trigger">
+          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-3 md:p-6 sm:p-7 rounded-3xl flex flex-col gap-3 md:p-6 shadow-xl relative overflow-hidden shimmer-trigger">
             {/* Absolute decorative glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -2859,23 +2860,23 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
             {/* Destination */}
             <div className="flex flex-col gap-1.5 relative z-10">
-              <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('destination')}</label>
+              <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('destination')}</label>
               <input
                 type="text"
                 value={language === 'vi' ? 'Hội An, Quảng Nam' : 'Hoi An, Quang Nam'}
                 disabled
-                className="bg-gray-50/80 border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl text-sm font-bold shadow-inner"
+                className="bg-gray-50/80 border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl text-sm lg:text-base font-bold shadow-inner"
               />
             </div>
 
             {/* Days & Style */}
-            <div className="grid grid-cols-2 gap-4 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('daysCount')}</label>
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('daysCount')}</label>
                 <select
                   value={days}
                   onChange={(e) => setDays(Number(e.target.value))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs md:text-sm lg:text-base font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
                 >
                   <option value={1}>{language === 'vi' ? '1 Ngày' : '1 Day'}</option>
                   <option value={2}>{language === 'vi' ? '2 Ngày' : '2 Days'}</option>
@@ -2891,7 +2892,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             {/* Budget Setting */}
             <div className="flex flex-col gap-2.5 relative z-10">
               <div className="flex justify-between items-center text-xs">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
                 <span className="text-heritage-amber font-black text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
               </div>
               <input
@@ -2906,27 +2907,27 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             </div>
 
             {/* Group size */}
-            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-5 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-5 relative z-10">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('adults')}</label>
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('adults')}</label>
                 <input
                   type="number"
                   min={1}
                   max={10}
                   value={adults}
                   onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('children')}</label>
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('children')}</label>
                 <input
                   type="number"
                   min={0}
                   max={10}
                   value={children}
                   onChange={(e) => setChildren(Math.max(0, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
+                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
                 />
               </div>
             </div>
@@ -2936,7 +2937,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               
               {/* Dishes */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Tên món ăn muốn thử' : 'Dishes to try'}
                 </label>
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -2947,7 +2948,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         key={s}
                         type="button"
                         onClick={() => setSelectedDishes(isSelected ? selectedDishes.filter(i => i !== s) : [...selectedDishes, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
                           isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
                         }`}
                       >
@@ -2960,7 +2961,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
               {/* Stay Categories */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Phân loại chỗ ở' : 'Accommodation type'}
                 </label>
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -2971,7 +2972,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         key={s}
                         type="button"
                         onClick={() => setSelectedStayCategories(isSelected ? selectedStayCategories.filter(i => i !== s) : [...selectedStayCategories, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
                           isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
                         }`}
                       >
@@ -2984,7 +2985,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
               {/* Ent Categories */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                   {language === 'vi' ? 'Phân loại khu vui chơi' : 'Entertainment type'}
                 </label>
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -2995,7 +2996,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         key={s}
                         type="button"
                         onClick={() => setSelectedEntCategories(isSelected ? selectedEntCategories.filter(i => i !== s) : [...selectedEntCategories, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
                           isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
                         }`}
                       >
@@ -3012,7 +3013,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full mt-2 py-4 bg-gradient-to-tr from-heritage-amber to-heritage-gold hover:from-heritage-gold hover:to-heritage-amber disabled:bg-gray-300 text-white font-black text-xs rounded-2xl flex items-center justify-center gap-2 tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-heritage-amber/25 hover:shadow-heritage-amber/35 cursor-pointer border-none z-10 uppercase"
+              className="w-full mt-2 py-4 bg-gradient-to-tr from-heritage-amber to-heritage-gold hover:from-heritage-gold hover:to-heritage-amber disabled:bg-gray-300 text-white font-black text-xs md:text-sm lg:text-base rounded-2xl flex items-center justify-center gap-2 tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-heritage-amber/25 hover:shadow-heritage-amber/35 cursor-pointer border-none z-10 uppercase"
             >
               <Sparkles className="w-4 h-4 animate-spin-slow" />
               {loading ? t('generating') : t('generateButton')}
@@ -3020,14 +3021,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
           </div>
 
           {/* Right Side - Output Timeline & Map Analysis */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
+          <div className="lg:col-span-8 flex flex-col gap-3 md:p-6">
             {/* Loading Animation */}
             {loading && (
-              <div className="w-full h-[550px] bg-gradient-to-br from-white to-gray-50/50 border border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 gap-6 shadow-xl animate-scale-up">
+              <div className="w-full h-[550px] bg-gradient-to-br from-white to-gray-50/50 border border-gray-200 rounded-3xl flex flex-col items-center justify-center p-4 md:p-8 gap-3 md:p-6 shadow-xl animate-scale-up">
                 <div className="relative w-16 h-16 border-4 border-heritage-amber/20 border-t-heritage-amber rounded-full animate-spin flex items-center justify-center" />
                 <div className="text-center flex flex-col gap-2 max-w-sm">
-                  <span className="text-heritage-amber font-outfit text-sm font-black tracking-widest uppercase">{t('generating')}</span>
-                  <p className="text-xs text-gray-550 font-semibold italic leading-relaxed">
+                  <span className="text-heritage-amber font-outfit text-sm lg:text-base font-black tracking-widest uppercase">{t('generating')}</span>
+                  <p className="text-xs md:text-sm lg:text-base text-gray-550 font-semibold italic leading-relaxed">
                     "{t('loadingFact')} {facts[loadingFactIndex]}"
                   </p>
                 </div>
@@ -3036,14 +3037,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
             {/* Placeholder state */}
             {!loading && !itinerary && (
-              <div className="w-full h-[550px] border border-dashed border-gray-250 bg-gradient-to-br from-white to-gray-50/30 rounded-3xl flex flex-col items-center justify-center text-center p-8 gap-5 animate-fade-in relative overflow-hidden shadow-inner">
+              <div className="w-full h-[550px] border border-dashed border-gray-250 bg-gradient-to-br from-white to-gray-50/30 rounded-3xl flex flex-col items-center justify-center text-center p-4 md:p-8 gap-3 md:p-5 animate-fade-in relative overflow-hidden shadow-inner">
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px]" />
                 <div className="bg-white border border-gray-250/60 p-4.5 rounded-full text-heritage-amber shadow-md animate-float relative z-10">
-                  <Calendar className="w-8 h-8" />
+                  <Calendar className="w-12 md:w-8 h-12 md:h-8" />
                 </div>
                 <div className="relative z-10">
                   <h3 className="font-outfit text-lg font-black text-gray-800 mb-1.5">{t('noItinerary')}</h3>
-                  <p className="text-xs text-gray-400 max-w-xs leading-relaxed font-bold">
+                  <p className="text-xs md:text-sm lg:text-base text-gray-400 max-w-xs leading-relaxed font-bold">
                     {t('noItineraryDesc')}
                   </p>
                 </div>
@@ -3063,7 +3064,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       )}
 
       {activePlannerTab === 'saved' && (
-        <div className="w-full bg-white border border-gray-200 rounded-3xl p-8 flex flex-col gap-6 shadow-sm">
+        <div className="w-full bg-white border border-gray-200 rounded-3xl p-4 md:p-8 flex flex-col gap-3 md:p-6 shadow-sm">
           <h3 className="font-outfit text-xl font-bold text-gray-900 border-b border-gray-100 pb-4">
             {language === 'vi' ? 'Lịch trình bạn đã lưu' : 'Your Saved Itineraries'}
           </h3>
@@ -3071,7 +3072,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
           {!currentUser && (
             <div className="text-center py-10 flex flex-col items-center gap-3">
               <span className="text-4xl">🔑</span>
-              <p className="text-sm font-semibold text-gray-500">
+              <p className="text-sm lg:text-base font-semibold text-gray-500">
                 {language === 'vi' ? 'Vui lòng đăng nhập để xem lịch trình đã lưu của bạn!' : 'Please login to view your saved itineraries!'}
               </p>
             </div>
@@ -3079,18 +3080,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
           {currentUser && savedItineraries.length === 0 && (
             <div className="text-center py-12 flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl">
-              <Calendar className="w-8 h-8 text-gray-300 animate-float" />
+              <Calendar className="w-12 md:w-8 h-12 md:h-8 text-gray-300 animate-float" />
               <div>
-                <p className="text-sm font-bold text-gray-800">
+                <p className="text-sm lg:text-base font-bold text-gray-800">
                   {language === 'vi' ? 'Chưa có lịch trình nào được lưu!' : 'No itineraries saved yet!'}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs md:text-sm lg:text-base text-gray-400 mt-1">
                   {language === 'vi' ? 'Hãy dùng tính năng Sinh Lịch Trình và bấm Lưu để lưu giữ kỷ niệm.' : 'Generate a trip and save it to cloud.'}
                 </p>
               </div>
               <button
                 onClick={() => setActivePlannerTab('studio')}
-                className="mt-2 px-4 py-2 bg-heritage-amber text-white rounded-xl text-xs font-bold border-none hover:bg-heritage-gold cursor-pointer transition-colors"
+                className="mt-2 px-4 py-2 bg-heritage-amber text-white rounded-xl text-xs md:text-sm lg:text-base font-bold border-none hover:bg-heritage-gold cursor-pointer transition-colors"
               >
                 {language === 'vi' ? 'Trải nghiệm sinh ngay' : 'Try Planner'}
               </button>
@@ -3108,7 +3109,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 <button
                   key={btn.filter}
                   onClick={() => setSavedFilter(btn.filter)}
-                  className={`px-3 py-1.5 rounded-lg text-[10.5px] font-black transition-all border-none cursor-pointer ${savedFilter === btn.filter
+                  className={`px-3 py-3 md:py-1.5 rounded-lg text-sm lg:text-base font-black transition-all border-none cursor-pointer ${savedFilter === btn.filter
                     ? 'bg-white text-heritage-amber shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 bg-transparent'
                     }`}
@@ -3128,8 +3129,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               if (filtered.length === 0) {
                 return (
                   <div className="text-center py-12 flex flex-col items-center gap-3 border-2 border-dashed border-gray-205 rounded-2xl w-full">
-                    <Calendar className="w-8 h-8 text-gray-300 animate-float" />
-                    <p className="text-xs font-bold text-gray-550 leading-relaxed">
+                    <Calendar className="w-12 md:w-8 h-12 md:h-8 text-gray-300 animate-float" />
+                    <p className="text-xs md:text-sm lg:text-base font-bold text-gray-550 leading-relaxed">
                       {language === 'vi' ? 'Không tìm thấy lịch trình nào ở trạng thái này!' : 'No itineraries found in this status!'}
                     </p>
                   </div>
@@ -3137,12 +3138,12 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               }
 
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 md:grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                   {filtered.map((saved) => (
                     <div
                       key={saved.id}
                       onClick={() => handleLoadSaved(saved)}
-                      className="group border border-gray-200 hover:border-heritage-amber hover:shadow-md bg-white p-5 rounded-2xl flex flex-col gap-4 transition-all duration-300 cursor-pointer relative animate-scale-up"
+                      className="group border border-gray-200 hover:border-heritage-amber hover:shadow-md bg-white p-3 md:p-5 rounded-2xl flex flex-col gap-4 transition-all duration-300 cursor-pointer relative animate-scale-up"
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -3154,26 +3155,26 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                               const status = saved.status || 'NOT_STARTED';
                               if (status === 'COMPLETED') {
                                 return (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 uppercase tracking-wide leading-none whitespace-nowrap">
+                                  <span className="px-2 py-0.5 rounded-full text-xs md:text-sm lg:text-base font-black bg-emerald-50 text-emerald-600 border border-emerald-200 uppercase tracking-wide leading-none whitespace-nowrap">
                                     {language === 'vi' ? 'Hoàn thành' : 'Completed'}
                                   </span>
                                 );
                               }
                               if (status === 'IN_PROGRESS') {
                                 return (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-50 text-blue-600 border border-blue-200 animate-pulse uppercase tracking-wide leading-none whitespace-nowrap">
+                                  <span className="px-2 py-0.5 rounded-full text-xs md:text-sm lg:text-base font-black bg-blue-50 text-blue-600 border border-blue-200 animate-pulse uppercase tracking-wide leading-none whitespace-nowrap">
                                     {language === 'vi' ? 'Đang thực hiện' : 'In Progress'}
                                   </span>
                                 );
                               }
                               return (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-gray-50 text-gray-500 border border-gray-200 uppercase tracking-wide leading-none whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-full text-xs md:text-sm lg:text-base font-black bg-gray-50 text-gray-500 border border-gray-200 uppercase tracking-wide leading-none whitespace-nowrap">
                                   {language === 'vi' ? 'Chưa bắt đầu' : 'Not Started'}
                                 </span>
                               );
                             })()}
                           </div>
-                          <span className="text-[10px] text-gray-400 font-bold block mt-1">
+                          <span className="text-sm lg:text-base text-gray-400 font-bold block mt-1">
                             📅 {language === 'vi' ? 'Ngày lưu:' : 'Saved at:'} {new Date(saved.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
                           </span>
                         </div>
@@ -3186,23 +3187,23 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
+                      <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
                         <div className="flex flex-col">
-                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
-                          <span className="text-xs font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
+                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
+                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
                         </div>
                         <div className="flex flex-col border-x border-gray-200">
-                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
-                          <span className="text-xs font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
+                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
+                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[9px] text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
-                          <span className="text-xs font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
+                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
+                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-end mt-1 pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                        <div className="flex items-center gap-1.5 text-sm lg:text-base font-bold text-heritage-amber uppercase tracking-wider group-hover:translate-x-1 transition-transform">
                           <span>{language === 'vi' ? 'Mở chi tiết' : 'Open Details'}</span>
                           <span>➔</span>
                         </div>
@@ -3219,7 +3220,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       {/* Save Title Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-gray-200 w-full max-w-md rounded-3xl p-6 flex flex-col gap-5 shadow-2xl animate-scale-up">
+          <div className="bg-white border border-gray-200 w-full max-w-md rounded-3xl p-3 md:p-6 flex flex-col gap-3 md:p-5 shadow-2xl animate-scale-up">
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h4 className="font-outfit text-base font-extrabold text-gray-900 flex items-center gap-2">
                 💾 {language === 'vi' ? 'Đặt tên lịch trình' : 'Name Your Itinerary'}
@@ -3233,7 +3234,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+              <label className="text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider">
                 {language === 'vi' ? 'Tên chuyến đi của bạn' : 'Your Journey Name'}
               </label>
               <input
@@ -3241,21 +3242,21 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 value={tripTitle}
                 onChange={(e) => setTripTitle(e.target.value)}
                 placeholder={language === 'vi' ? 'Ví dụ: Kỷ niệm Hội An 3 Ngày Chữa Lành' : 'e.g. Beautiful Hoi An healing days'}
-                className="w-full border border-gray-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-heritage-amber font-semibold text-gray-800"
+                className="w-full border border-gray-200 px-4 py-2.5 rounded-xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber font-semibold text-gray-800"
               />
             </div>
 
             <div className="flex gap-3 justify-end mt-2">
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-650 font-bold text-xs rounded-xl border-none cursor-pointer transition-colors"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-650 font-bold text-xs md:text-sm lg:text-base rounded-xl border-none cursor-pointer transition-colors"
               >
                 {language === 'vi' ? 'Hủy' : 'Cancel'}
               </button>
               <button
                 onClick={handleSaveItinerary}
                 disabled={isSaving}
-                className="px-4 py-2 bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-extrabold text-xs rounded-xl border-none cursor-pointer transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-extrabold text-xs md:text-sm lg:text-base rounded-xl border-none cursor-pointer transition-colors flex items-center gap-1.5"
               >
                 {isSaving ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -3271,7 +3272,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
       {/* FULLSCREEN IN-APP MAP MODAL VIEWER OVERLAY */}
       {isMapMaximized && itinerary && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-4 sm:p-6 animate-fade-in">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-4 sm:p-3 md:p-6 animate-fade-in">
           <div className={`border w-full h-full md:w-full md:max-w-5xl md:h-[85vh] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-up transition-colors duration-500 ${isDarkMode ? 'bg-slate-950 border-slate-900 shadow-slate-950/80' : 'bg-white border-gray-200'}`}>
 
             {/* Modal Header - Hidden if navigating to maximize immersive dashboard view */}
@@ -3282,10 +3283,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-outfit text-sm sm:text-base font-extrabold tracking-tight">
+                    <h4 className="font-outfit text-sm lg:text-base sm:text-base font-extrabold tracking-tight">
                       {language === 'vi' ? 'Bản Đồ Chỉ Dẫn Chi Tiết' : 'Navigation Studio'}
                     </h4>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider leading-none opacity-80">
+                    <span className="block text-sm lg:text-base font-bold uppercase tracking-wider leading-none opacity-80">
                       {selectedSpot ? selectedSpot.name[language] : ''}
                     </span>
                   </div>
@@ -3296,7 +3297,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   <button
                     type="button"
                     onClick={() => setActiveModalView('map')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none ${activeModalView === 'map'
+                    className={`px-4 py-3 md:py-1.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all border-none ${activeModalView === 'map'
                       ? (isDarkMode ? 'bg-slate-800 text-heritage-gold shadow-sm' : 'bg-white text-heritage-amber shadow-sm')
                       : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/40 bg-transparent' : 'text-white hover:bg-white/5 bg-transparent')
                       }`}
@@ -3306,7 +3307,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   <button
                     type="button"
                     onClick={() => setActiveModalView('details')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none ${activeModalView === 'details'
+                    className={`px-4 py-3 md:py-1.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all border-none ${activeModalView === 'details'
                       ? (isDarkMode ? 'bg-slate-800 text-heritage-gold shadow-sm' : 'bg-white text-heritage-amber shadow-sm')
                       : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/40 bg-transparent' : 'text-white hover:bg-white/5 bg-transparent')
                       }`}
@@ -3360,7 +3361,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                           value={searchQuery}
                           onChange={(e) => handleSearchLocation(e.target.value)}
                           placeholder={language === 'vi' ? 'Tìm địa điểm, tên đường hoặc tọa độ...' : 'Search spot, street name, coords...'}
-                          className="w-full bg-transparent border-none text-xs font-semibold text-gray-800 dark:text-slate-100 focus:outline-none placeholder-gray-400 dark:placeholder-slate-500"
+                          className="w-full bg-transparent border-none text-xs md:text-sm lg:text-base font-semibold text-gray-800 dark:text-slate-100 focus:outline-none placeholder-gray-400 dark:placeholder-slate-500"
                         />
                         {searchQuery && (
                           <button
@@ -3389,8 +3390,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                               }}
                               className="w-full text-left px-4 py-2.5 hover:bg-heritage-amber/5 dark:hover:bg-slate-850 flex flex-col border-none bg-transparent cursor-pointer transition-colors border-b border-gray-50 dark:border-slate-800/80 last:border-b-0"
                             >
-                              <strong className="text-xs text-gray-850 dark:text-slate-200 font-extrabold">{result.name[language]}</strong>
-                              <span className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-tight truncate">{result.reason[language]}</span>
+                              <strong className="text-xs md:text-sm lg:text-base text-gray-850 dark:text-slate-200 font-extrabold">{result.name[language]}</strong>
+                              <span className="text-sm lg:text-base text-gray-400 dark:text-slate-500 mt-0.5 leading-tight truncate">{result.reason[language]}</span>
                             </button>
                           ))}
                         </div>
@@ -3443,7 +3444,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                         {/* Turn Instruction Text & Current Street name */}
                         <div className="flex-grow">
-                          <h4 className="text-xs sm:text-sm font-black tracking-tight leading-tight">
+                          <h4 className="text-xs md:text-sm lg:text-base sm:text-sm lg:text-base font-black tracking-tight leading-tight">
                             {(() => {
                               const step = activeManeuvers?.[activeStepIndex];
                               if (step) {
@@ -3460,15 +3461,15 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                           {/* Current Street Tag */}
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[9px] bg-white/20 text-white font-extrabold uppercase px-1.5 py-0.5 rounded leading-none">Street</span>
-                            <span className="text-[11px] font-bold text-emerald-100">{simActiveStreet || (language === 'vi' ? 'Đang xác định...' : 'Determining...')}</span>
+                            <span className="text-xs md:text-sm lg:text-base bg-white/20 text-white font-extrabold uppercase px-1.5 py-0.5 rounded leading-none">Street</span>
+                            <span className="text-sm lg:text-base font-bold text-emerald-100">{simActiveStreet || (language === 'vi' ? 'Đang xác định...' : 'Determining...')}</span>
                           </div>
                         </div>
 
                         {/* Distance to turn count */}
                         <div className="text-right flex-shrink-0 pl-2 border-l border-white/10">
-                          <span className="text-[9px] text-emerald-200 block font-extrabold uppercase tracking-wider">Trong</span>
-                          <span className="text-sm font-black font-outfit text-white leading-none">
+                          <span className="text-xs md:text-sm lg:text-base text-emerald-200 block font-extrabold uppercase tracking-wider">Trong</span>
+                          <span className="text-sm lg:text-base font-black font-outfit text-white leading-none">
                             {(() => {
                               const step = activeManeuvers?.[activeStepIndex];
                               if (step && step.location && Array.isArray(step.location) && step.location.length >= 2 && userLocation) {
@@ -3490,10 +3491,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                             <ShieldAlert className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <h5 className="font-outfit text-[10px] font-black uppercase tracking-wider text-amber-100 leading-none">
+                            <h5 className="font-outfit text-sm lg:text-base font-black uppercase tracking-wider text-amber-100 leading-none">
                               {language === 'vi' ? 'CẢNH BÁO RẼ CHUẨN BỊ' : 'MANEUVER ALERT'}
                             </h5>
-                            <p className="text-xs font-extrabold mt-1.5 leading-relaxed">{turnAlert}</p>
+                            <p className="text-xs md:text-sm lg:text-base font-extrabold mt-1.5 leading-relaxed">{turnAlert}</p>
                           </div>
                         </div>
                       </div>
@@ -3515,21 +3516,21 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         </span>
                         <div className="flex items-baseline gap-0.5">
                           <span className="text-3xl font-black font-outfit text-white tracking-tighter leading-none animate-pulse">{userSpeed}</span>
-                          <span className="text-[9px] font-bold text-slate-400 font-outfit leading-none">km/h</span>
+                          <span className="text-xs md:text-sm lg:text-base font-bold text-slate-400 font-outfit leading-none">km/h</span>
                         </div>
                       </button>
                     </div>
 
                     {/* Bottom Charcoal Navigation Pull-Up HUD Sheet */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[40] w-[calc(100%-2rem)] max-w-xl animate-slide-in-up">
-                      <div className="bg-slate-950/95 backdrop-blur-md text-white border border-slate-800 p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-2xl flex items-center justify-between gap-3 sm:gap-6 shadow-slate-950/60">
-                        <div className="flex items-center gap-3 sm:gap-5">
+                      <div className="bg-slate-950/95 backdrop-blur-md text-white border border-slate-800 p-4 sm:p-3 md:p-5 rounded-2xl sm:rounded-3xl shadow-2xl flex items-center justify-between gap-3 sm:gap-3 md:p-6 shadow-slate-950/60">
+                        <div className="flex items-center gap-3 sm:gap-3 md:p-5">
                           <div className="flex flex-col">
                             <div className="flex items-baseline gap-0.5 sm:gap-1">
                               <span className="text-2xl sm:text-3xl font-black font-outfit text-emerald-500 leading-none">{simDuration}</span>
-                              <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase leading-none">{language === 'vi' ? 'phút' : 'min'}</span>
+                              <span className="text-sm lg:text-base sm:text-xs md:text-sm lg:text-base font-bold text-emerald-400 uppercase leading-none">{language === 'vi' ? 'phút' : 'min'}</span>
                             </div>
-                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
+                            <span className="text-xs md:text-sm lg:text-base sm:text-sm lg:text-base text-slate-400 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
                               {language === 'vi'
                                 ? `Đến: ${(() => {
                                   const date = new Date();
@@ -3544,11 +3545,11 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                             </span>
                           </div>
 
-                          <div className="w-[1px] h-8 sm:h-10 bg-slate-800" />
+                          <div className="w-[1px] h-12 md:h-8 sm:h-10 bg-slate-800" />
 
                           <div className="flex flex-col">
-                            <span className="text-sm sm:text-lg font-extrabold text-slate-200 font-outfit leading-none">{simDistance} km</span>
-                            <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
+                            <span className="text-sm lg:text-base sm:text-lg font-extrabold text-slate-200 font-outfit leading-none">{simDistance} km</span>
+                            <span className="text-xs md:text-sm lg:text-base sm:text-sm lg:text-base text-slate-500 font-bold uppercase tracking-wider mt-1 sm:mt-1.5">
                               {language === 'vi' ? 'THỐT' : 'STOP'}
                             </span>
                           </div>
@@ -3556,7 +3557,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                         <button
                           onClick={handleStopNavigation}
-                          className="px-3.5 py-2.5 sm:px-5 sm:py-3 bg-red-650 hover:bg-red-700 text-white font-extrabold text-[10px] sm:text-xs tracking-wider rounded-xl sm:rounded-2xl shadow-lg shadow-red-650/20 border-none cursor-pointer hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center gap-1 sm:gap-1.5 animate-pulse"
+                          className="px-3.5 py-2.5 sm:px-5 sm:py-3 bg-red-650 hover:bg-red-700 text-white font-extrabold text-sm lg:text-base sm:text-xs md:text-sm lg:text-base tracking-wider rounded-xl sm:rounded-2xl shadow-lg shadow-red-650/20 border-none cursor-pointer hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center gap-1 sm:gap-1.5 animate-pulse"
                         >
                           <X className="w-3.5 h-3.5" />
                           {language === 'vi' ? 'THOÁT' : 'STOP'}
@@ -3574,28 +3575,28 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
               {/* Details Side Navigation panel - Shown on mobile if 'details' is active, always shown on md+ (Hidden when actively navigating) */}
               {!isNavigating && (
-                <div className={`w-full md:w-80 border-t md:border-t-0 md:border-l border-gray-200 dark:border-slate-850 flex flex-col bg-white dark:bg-slate-950 overflow-y-auto p-5 gap-5 animate-slide-in-right ${activeModalView === 'details' ? 'flex' : 'hidden md:flex'}`}>
+                <div className={`w-full md:w-12 md:w-80 border-t md:border-t-0 md:border-l border-gray-200 dark:border-slate-850 flex flex-col bg-white dark:bg-slate-950 overflow-y-auto p-3 md:p-5 gap-3 md:p-5 animate-slide-in-right ${activeModalView === 'details' ? 'flex' : 'hidden md:flex'}`}>
                   <div className="flex flex-col gap-1 pb-3 border-b border-gray-100 dark:border-slate-850">
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{t('mapRouteTo')}:</span>
+                    <span className="text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{t('mapRouteTo')}:</span>
                     <h3 className="font-outfit text-base font-bold text-gray-900 dark:text-slate-100">{selectedSpot ? selectedSpot.name[language] : ''}</h3>
                   </div>
 
                   {/* Metrics */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
-                      <span className="text-[9px] text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDistance')}</span>
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDistance')}</span>
                       <span className="text-base font-extrabold text-heritage-amber dark:text-heritage-gold mt-1">{activeDistance} km</span>
                     </div>
                     <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
-                      <span className="text-[9px] text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDuration')}</span>
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDuration')}</span>
                       <span className="text-base font-extrabold text-ricefield-green dark:text-emerald-450 mt-1">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
                     </div>
                   </div>
 
                   {/* Select Transport */}
                   <div className="flex flex-col gap-2">
-                    <span className="text-[9px] text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Phương tiện di chuyển' : 'Select Transport'}:</span>
-                    <div className="grid grid-cols-4 gap-1.5 bg-gray-100 dark:bg-slate-900 p-1 rounded-xl border border-gray-200 dark:border-slate-800">
+                    <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Phương tiện di chuyển' : 'Select Transport'}:</span>
+                    <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 bg-gray-100 dark:bg-slate-900 p-1 rounded-xl border border-gray-200 dark:border-slate-800">
                       {[
                         { mode: 'foot', icon: Footprints, label: t('mapFoot') },
                         { mode: 'bike', icon: Bike, label: t('mapBike') },
@@ -3624,7 +3625,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   <div className="flex flex-col gap-2.5">
                     <button
                       onClick={handleStartNavigation}
-                      className="w-full py-3.5 bg-gradient-to-tr from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs tracking-wider rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
+                      className="w-full py-3.5 bg-gradient-to-tr from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs md:text-sm lg:text-base tracking-wider rounded-xl flex items-center justify-center gap-2 text-center cursor-pointer shadow-md transition-all duration-300 hover:scale-[1.02] border-none"
                     >
                       <Navigation className="w-4 h-4 animate-pulse" />
                       {language === 'vi' ? 'BẮT ĐẦU DẪN ĐƯỜNG' : 'START NAVIGATION'}
@@ -3633,8 +3634,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                   {/* Detailed route steps list */}
                   <div className="flex flex-col gap-3 border-t border-gray-100 dark:border-slate-850 pt-4">
-                    <span className="text-[9px] text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{t('mapStepsTitle')} (OSRM):</span>
-                    <div className="flex flex-col gap-3 text-xs text-gray-655 max-h-[220px] overflow-y-auto pr-1">
+                    <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">{t('mapStepsTitle')} (OSRM):</span>
+                    <div className="flex flex-col gap-3 text-xs md:text-sm lg:text-base text-gray-655 max-h-[220px] overflow-y-auto pr-1">
                       {showTravelRoute ? (
                         // Daily schedule stops sequence
                         activeDaySpots.map((spot, idx) => {
@@ -3671,28 +3672,28 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                 }`}
                             >
                               {segmentMetrics && (
-                                <div className="flex items-center gap-1.5 pl-6 pb-2 text-[10px] text-gray-400 dark:text-slate-500 font-bold border-l-2 border-dashed border-gray-300 dark:border-slate-700 ml-2.5">
+                                <div className="flex items-center gap-1.5 pl-6 pb-2 text-sm lg:text-base text-gray-400 dark:text-slate-500 font-bold border-l-2 border-dashed border-gray-300 dark:border-slate-700 ml-2.5">
                                   <span>↓</span>
                                   <span>{segmentMetrics.dist} km ({segmentMetrics.mins} {language === 'vi' ? `phút ${modeLabel}` : `${modeLabel} mins`})</span>
                                 </div>
                               )}
                               <div className="flex gap-2.5 items-start">
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] flex-shrink-0 mt-0.5 ${isAcc
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs md:text-sm lg:text-base flex-shrink-0 mt-0.5 ${isAcc
                                   ? 'bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/30'
                                   : (isDarkMode ? 'bg-slate-800 text-heritage-gold border border-slate-700' : 'bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/30')
                                   }`}>
                                   {isAcc ? '🏨' : idx}
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="text-[10px] font-extrabold text-gray-805 dark:text-slate-400 flex items-center gap-1">
+                                  <span className="text-sm lg:text-base font-extrabold text-gray-805 dark:text-slate-400 flex items-center gap-1">
                                     {isAcc
                                       ? (language === 'vi' ? 'Khởi hành từ nơi nghỉ' : 'Depart from accommodation')
                                       : (language === 'vi' ? `Chặng ${idx}` : `Segment ${idx}`)}
                                   </span>
-                                  <strong className={`text-[11px] mt-0.5 transition-colors ${isFocus ? (isDarkMode ? 'text-heritage-gold font-extrabold' : 'text-heritage-amber font-extrabold') : 'text-gray-900 dark:text-slate-200'}`}>
+                                  <strong className={`text-sm lg:text-base mt-0.5 transition-colors ${isFocus ? (isDarkMode ? 'text-heritage-gold font-extrabold' : 'text-heritage-amber font-extrabold') : 'text-gray-900 dark:text-slate-200'}`}>
                                     {spot.name?.[language] || ''}
                                   </strong>
-                                  <span className="text-[10px] text-gray-500 dark:text-slate-450 leading-normal mt-0.5 font-semibold">
+                                  <span className="text-sm lg:text-base text-gray-500 dark:text-slate-450 leading-normal mt-0.5 font-semibold">
                                     {spot.reason?.[language] || ''}
                                   </span>
                                 </div>
@@ -3765,10 +3766,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                             return steps.map((step, idx) => (
                               <div key={`nav-step-${idx}`} className="flex gap-2.5 items-start bg-gray-50/50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-gray-150 dark:border-slate-800/80 transition-all duration-300 hover:border-gray-200">
-                                <div className="w-5 h-5 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-indigo-400 border border-blue-100 dark:border-slate-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">{step.icon}</div>
+                                <div className="w-5 h-5 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-indigo-400 border border-blue-100 dark:border-slate-700 flex items-center justify-center font-bold text-sm lg:text-base flex-shrink-0 mt-0.5">{step.icon}</div>
                                 <div className="flex flex-col">
-                                  <span className="text-[10px] font-extrabold text-gray-800 dark:text-slate-350">{step.title}</span>
-                                  <span className="text-[10.5px] text-gray-500 dark:text-slate-450 leading-normal mt-0.5 font-semibold">
+                                  <span className="text-sm lg:text-base font-extrabold text-gray-800 dark:text-slate-350">{step.title}</span>
+                                  <span className="text-sm lg:text-base text-gray-500 dark:text-slate-450 leading-normal mt-0.5 font-semibold">
                                     {step.desc}
                                   </span>
                                 </div>
@@ -3782,8 +3783,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
 
                   {/* Local guide tips */}
                   <div className="mt-auto p-4 bg-green-50/50 dark:bg-emerald-950/20 border border-green-200 dark:border-emerald-900/50 rounded-2xl flex flex-col gap-1.5 animate-pulse">
-                    <span className="text-[9px] text-ricefield-green dark:text-emerald-450 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Mẹo Bản Địa' : 'Local Tip'}</span>
-                    <p className="text-[11px] text-gray-655 dark:text-slate-350 leading-normal italic font-semibold">
+                    <span className="text-xs md:text-sm lg:text-base text-ricefield-green dark:text-emerald-450 font-extrabold uppercase tracking-wider">{language === 'vi' ? 'Mẹo Bản Địa' : 'Local Tip'}</span>
+                    <p className="text-sm lg:text-base text-gray-655 dark:text-slate-350 leading-normal italic font-semibold">
                       {t('mapStepTip')}
                     </p>
                   </div>
@@ -3797,22 +3798,30 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       )}
 
       {/* Premium Dynamic Spot Swapper Dropdown Dialog */}
+      {/* Mobile FAB to open Map */}
+      <button 
+        onClick={() => setIsMapVisible(true)}
+        className="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-2 font-bold min-h-[50px] animate-bounce"
+      >
+        🗺️ Xem Bản Đồ
+      </button>
+
       {swapDropdown && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[999] flex items-center justify-center animate-fade-in" onClick={() => setSwapDropdown(null)}>
           <div
-            className="bg-white/95 border border-gray-200 p-5 rounded-2xl w-[90%] max-w-[380px] shadow-2xl flex flex-col gap-4 animate-scale-up backdrop-blur-md"
+            className="bg-white/95 border border-gray-200 p-3 md:p-5 rounded-2xl w-[90%] max-w-[380px] shadow-2xl flex flex-col gap-4 animate-scale-up backdrop-blur-md"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
               <div className="flex flex-col">
-                <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Thay thế địa điểm</span>
-                <strong className="text-xs text-gray-800">
+                <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">Thay thế địa điểm</span>
+                <strong className="text-xs md:text-sm lg:text-base text-gray-800">
                   {swapDropdown.currentSpot.name?.[language] || swapDropdown.currentSpot.name?.vi}
                 </strong>
               </div>
               <button
                 onClick={() => setSwapDropdown(null)}
-                className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-sm font-extrabold"
+                className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-sm lg:text-base font-extrabold"
               >
                 ✕
               </button>
@@ -3832,18 +3841,18 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                       className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                     />
                     <div className="flex flex-col flex-grow min-w-0">
-                      <strong className="text-xs text-gray-800 truncate group-hover:text-heritage-amber transition-colors">
+                      <strong className="text-xs md:text-sm lg:text-base text-gray-800 truncate group-hover:text-heritage-amber transition-colors">
                         {candidate.name?.[language] || candidate.name?.vi}
                       </strong>
-                      <span className="text-[9px] text-gray-400 truncate">
+                      <span className="text-xs md:text-sm lg:text-base text-gray-400 truncate">
                         {candidate.cost ? `${candidate.cost.toLocaleString()}đ` : 'Giá tham khảo'} • {candidate.reason?.[language] || candidate.reason?.vi || 'Điểm thay thế hấp dẫn'}
                       </span>
                     </div>
-                    <span className="text-xs text-heritage-amber opacity-0 group-hover:opacity-100 transition-opacity font-bold"> Chọn </span>
+                    <span className="text-xs md:text-sm lg:text-base text-heritage-amber opacity-0 group-hover:opacity-100 transition-opacity font-bold"> Chọn </span>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-gray-500 text-center py-4">Không tìm thấy địa điểm thay thế tương tự.</p>
+                <p className="text-xs md:text-sm lg:text-base text-gray-500 text-center py-4">Không tìm thấy địa điểm thay thế tương tự.</p>
               )}
             </div>
           </div>

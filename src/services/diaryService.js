@@ -33,6 +33,10 @@ const diaryService = {
     return await axiosClient.put(`/diaries/${id}/status?status=${status}`);
   },
 
+  deleteDiary: async (id) => {
+    return await axiosClient.delete(`/diaries/${id}`);
+  },
+
   deleteComment: async (diaryId, commentId) => {
     return await axiosClient.delete(`/diaries/${diaryId}/comments/${commentId}`);
   }
