@@ -45,7 +45,10 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
     { id: 'about', label: t('about'), icon: Info },
     { id: 'planner', label: t('aiPlanner'), icon: Sparkles },
     { id: 'social', label: t('community'), icon: Grid },
-    ...(currentUser?.role === 'ADMIN' ? [{ id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: ShieldAlert }] : [])
+    ...(currentUser?.role === 'ADMIN' ? [
+      { id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: ShieldAlert },
+      { id: 'analytics', label: language === 'vi' ? 'Công cụ theo dõi' : 'Analytics', icon: Activity }
+    ] : [])
   ];
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { useLanguage } from '@/context/LanguageContext';
 import diaryService from '@/services/diaryService';
@@ -7,6 +7,7 @@ import expertService from '@/services/expertService';
 import spotService from '@/services/spotService';
 import authService from '@/services/authService';
 import tripService from '@/services/tripService';
+import axiosClient from '../../../services/axiosClient';
 
 import PostComposer from './PostComposer';
 import PostCard from './PostCard';
@@ -53,6 +54,22 @@ export default function CommunityFeed() {
     return () => window.removeEventListener('auth-state-changed', handleSyncUser);
   }, []);
 
+  const [dbStyles, setDbStyles] = useState([]);
+
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        const response = await axiosClient.get('/cafes/styles');
+        if (response && response.success && response.data) {
+          setDbStyles(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to load styles from DB:", err);
+      }
+    };
+    fetchStyles();
+  }, []);
+
   // Danh sách chuyên gia lấy từ Backend
   const [experts, setExperts] = useState([]);
 
@@ -93,15 +110,21 @@ export default function CommunityFeed() {
   };
 
 
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setSelectedImages((prev) => [...prev, ...files]);
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
     }
+  };
+
+  const removeImage = (index) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const [openCommentsPostId, setOpenCommentsPostId] = useState(null);
@@ -110,6 +133,12 @@ export default function CommunityFeed() {
   const [activeReplyBoxId, setActiveReplyBoxId] = useState(null);
 
   const [sharedPostId, setSharedPostId] = useState(null);
+
+  const [lightboxData, setLightboxData] = useState({
+    isOpen: false,
+    images: [],
+    currentIndex: 0
+  });
 
   const handleShareLink = (postId) => {
     const shareUrl = `${window.location.origin}/social?post=${postId}`;
@@ -142,6 +171,7 @@ export default function CommunityFeed() {
   const [activeExpert, setActiveExpert] = useState(null);
   const [expertMessageText, setExpertMessageText] = useState('');
   const [messageSuccess, setMessageSuccess] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   // Ánh xạ đối tượng Nhật ký du ký từ Spring Boot sang kết cấu React Frontend
   const mapBackendDiaryToFrontend = (d) => {
@@ -328,12 +358,43 @@ export default function CommunityFeed() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
-    if (post.myReaction || storedReaction) {
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId) || post.myReaction;
+
+    if (storedReaction === 'LIKE') {
+      // Bấm lần nữa để hủy Like
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        likes: Math.max(0, p.likes - 1),
+        hasLiked: false,
+        myReaction: null
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, null);
+      try {
+        await diaryService.likeDiary(postId, 'LIKE');
+      } catch (e) {
+        console.warn("Could not cancel like on server:", e);
+      }
+      return;
+    } else if (storedReaction === 'DISLIKE') {
+      // Đổi từ Dislike sang Like
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        likes: p.likes + 1,
+        dislikes: Math.max(0, p.dislikes - 1),
+        hasLiked: true,
+        hasDisliked: false,
+        myReaction: 'LIKE'
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, 'LIKE');
+      try {
+        await diaryService.likeDiary(postId, 'LIKE');
+      } catch (e) {
+        console.warn("Could not register like on server:", e);
+      }
       return;
     }
 
-    // Optimistic UI update
+    // Normal LIKE
     setPosts(posts.map(p => {
       if (p.id === postId) {
         return {
@@ -366,8 +427,39 @@ export default function CommunityFeed() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const storedReaction = getStoredReactionForPost(currentUser.id, postId);
-    if (post.myReaction || storedReaction) {
+    const storedReaction = getStoredReactionForPost(currentUser.id, postId) || post.myReaction;
+
+    if (storedReaction === 'DISLIKE') {
+      // Bấm lần nữa để hủy Dislike
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        dislikes: Math.max(0, p.dislikes - 1),
+        hasDisliked: false,
+        myReaction: null
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, null);
+      try {
+        await diaryService.likeDiary(postId, 'DISLIKE');
+      } catch (e) {
+        console.warn("Could not cancel dislike on server:", e);
+      }
+      return;
+    } else if (storedReaction === 'LIKE') {
+      // Đổi từ Like sang Dislike
+      setPosts(posts.map(p => p.id === postId ? {
+        ...p,
+        dislikes: p.dislikes + 1,
+        likes: Math.max(0, p.likes - 1),
+        hasDisliked: true,
+        hasLiked: false,
+        myReaction: 'DISLIKE'
+      } : p));
+      setStoredReactionForPost(currentUser.id, postId, 'DISLIKE');
+      try {
+        await diaryService.likeDiary(postId, 'DISLIKE');
+      } catch (e) {
+        console.warn("Could not register dislike on server:", e);
+      }
       return;
     }
 
@@ -462,18 +554,13 @@ export default function CommunityFeed() {
       return;
     }
 
+    setIsPosting(true);
+
     try {
-      const itinerary = completedItineraries.find(it => it.id === Number(selectedItineraryId));
-      let categoryVal = 'healing';
-      if (itinerary && itinerary.travelStyle) {
-        const styleLower = itinerary.travelStyle.toLowerCase();
-        if (styleLower.includes('chill') || styleLower.includes('thư giãn')) {
-          categoryVal = 'healing';
-        } else if (styleLower.includes('ảo') || styleLower.includes('scenic') || styleLower.includes('sống ảo')) {
-          categoryVal = 'scenic';
-        } else if (styleLower.includes('trải nghiệm') || styleLower.includes('experience') || styleLower.includes('local')) {
-          categoryVal = 'adventure';
-        }
+      let categoryVal = 'Khác';
+      const selectedSpotObj = spotsForSelectedItinerary.find(s => s.id === Number(postLinkedSpot));
+      if (selectedSpotObj && selectedSpotObj.style) {
+        categoryVal = selectedSpotObj.style;
       }
 
       const formData = new FormData();
@@ -487,8 +574,8 @@ export default function CommunityFeed() {
       if (selectedItineraryId) {
         formData.append('itineraryId', selectedItineraryId.toString());
       }
-      if (selectedImage) {
-        formData.append('image', selectedImage);
+      if (selectedImages && selectedImages.length > 0) {
+        selectedImages.forEach(img => formData.append('images', img));
       }
 
       const response = await diaryService.createDiary(formData);
@@ -497,8 +584,13 @@ export default function CommunityFeed() {
         const newDiary = mapBackendDiaryToFrontend(response.data);
         setPosts([newDiary, ...posts]);
         setNewPostText('');
-        setSelectedImage(null);
-        setImagePreview('');
+        setSelectedImages([]);
+        setImagePreviews([]);
+
+        // Clear file input so same files can be re-selected later without reload
+        const fileInput = document.getElementById('post-image-upload');
+        if (fileInput) fileInput.value = '';
+
         // Cập nhật lại danh sách địa điểm đã đánh giá
         setPostedSpotIds([...postedSpotIds, postLinkedSpot]);
         setPostLinkedSpot(null);
@@ -735,6 +827,105 @@ export default function CommunityFeed() {
   });
 
 
+
+  const renderPhotoGrid = (images) => {
+    if (!images || images.length === 0) return null;
+
+    const count = images.length;
+
+    if (count === 1) {
+      return (
+        <div
+          className="w-full rounded-xl overflow-hidden flex justify-center relative cursor-pointer group"
+          onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}
+        >
+          <img src={images[0]} alt="Post Attach" className="w-full h-auto max-h-[600px] object-cover group-hover:opacity-95 transition-opacity" />
+        </div>
+      );
+    }
+
+    if (count === 2) {
+      return (
+        <div className="w-full aspect-square sm:aspect-video flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+            <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+          </div>
+        </div>
+      );
+    }
+
+    if (count === 3) {
+      return (
+        <div className="w-full aspect-square sm:aspect-video flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-1/2 h-full flex flex-col gap-1">
+            <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+              <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+            </div>
+            <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+              <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (count === 4) {
+      return (
+        <div className="w-full aspect-square sm:aspect-[4/3] flex flex-col gap-1 rounded-xl overflow-hidden cursor-pointer">
+          <div className="w-full h-2/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+             <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-full h-1/3 flex gap-1">
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+               <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+             </div>
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+               <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+             </div>
+             <div className="w-1/3 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 3 })}>
+               <img src={images[3]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 4" />
+             </div>
+          </div>
+        </div>
+      );
+    }
+
+    // count >= 5
+    return (
+      <div className="w-full aspect-square sm:aspect-[4/3] flex gap-1 rounded-xl overflow-hidden cursor-pointer">
+        <div className="w-1/2 h-full flex flex-col gap-1">
+          <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+          </div>
+          <div className="w-full h-1/2" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+            <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+          </div>
+        </div>
+        <div className="w-1/2 h-full flex flex-col gap-1">
+          <div className="w-full h-1/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 2 })}>
+            <img src={images[2]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 3" />
+          </div>
+          <div className="w-full h-1/3" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 3 })}>
+            <img src={images[3]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 4" />
+          </div>
+          <div className="w-full h-1/3 relative group" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 4 })}>
+            <img src={images[4]} className="w-full h-full object-cover group-hover:opacity-90 transition-opacity" alt="Post Attach 5" />
+            {count > 5 && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-white text-3xl font-medium tracking-wider">+{count - 5}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-full w-full px-4 sm:px-8 lg:px-16 py-8 sm:py-10 flex flex-col gap-8">
