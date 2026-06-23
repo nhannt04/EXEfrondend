@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera, Activity } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
-import authService from '../../services/authService';
-import logoImg from '../../assets/logo.jpg';
+import { Compass, Sparkles, Grid, Globe, Menu, X, LogIn, LogOut, User as UserIcon, ShieldAlert, Info, Camera } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import authService from '@/services/authService';
+import logoImg from '@/assets/logo.jpg';
+import Button from '@/components/ui/Button/Button';
 
 export default function Header({ activeTab, setActiveTab, currentUser, onOpenAuth }) {
   const { language, setLanguage, t } = useLanguage();
@@ -52,13 +53,14 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b border-dark-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full border-b border-dark-border transition-all duration-300 ${
         scrolled
           ? 'bg-white/98 backdrop-blur-md shadow-md shadow-black/5'
           : 'bg-white/90 backdrop-blur-sm border-b border-gray-100/80'
       }`}
       style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}
     >
+      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between">
       {/* Logo */}
       <div
         className="flex items-center gap-2.5 cursor-pointer group"
@@ -178,13 +180,15 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
             </div>
           </div>
         ) : (
-          <button
+          <Button
             onClick={onOpenAuth}
-            className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white text-xs font-extrabold transition-all duration-300 shadow-md shadow-heritage-amber/15 cursor-pointer border-none scale-95 hover:scale-100"
+            variant="primary"
+            size="sm"
+            iconLeft={LogIn}
+            className="rounded-full scale-95 hover:scale-100"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>{language === 'vi' ? 'Đăng nhập' : 'Log in'}</span>
-          </button>
+            {language === 'vi' ? 'Đăng nhập' : 'Log in'}
+          </Button>
         )}
 
         {/* Mobile hamburger */}
@@ -194,6 +198,7 @@ export default function Header({ activeTab, setActiveTab, currentUser, onOpenAut
         >
           {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
+      </div>
       </div>
 
       {/* Mobile Navigation Dropdown */}

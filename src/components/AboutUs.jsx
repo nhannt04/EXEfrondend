@@ -98,7 +98,7 @@ export default function AboutUs() {
             </p>
           </div>
 
-          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide snap-x snap-mandatory sm:snap-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
 
               {
@@ -150,7 +150,7 @@ export default function AboutUs() {
                 target="_blank"
                 rel="noopener noreferrer"
                 key={i} 
-                className="flex-shrink-0 snap-center w-[260px] sm:w-full glass-panel p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-heritage-amber/10 transition-all duration-300 no-underline cursor-pointer group"
+                className="w-full glass-panel p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-heritage-amber/10 transition-all duration-300 no-underline cursor-pointer group"
               >
                 <img
                   src={member.avatar}

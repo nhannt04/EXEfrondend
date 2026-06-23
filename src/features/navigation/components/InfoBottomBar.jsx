@@ -26,7 +26,7 @@ export default function InfoBottomBar({
 
   return (
     <div className="absolute bottom-5 left-4 right-4 md:left-6 md:right-6 max-w-2xl mx-auto z-10 animate-fade-in-up">
-      <div className={`rounded-3xl p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4.5 ${glassStyle} transition-colors duration-500`}>
+      <div className={`rounded-3xl p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-5 ${glassStyle} transition-colors duration-500`}>
         
         {/* Left Side: Stats */}
         <div className="flex items-center justify-around sm:justify-start gap-5 w-full sm:w-auto">

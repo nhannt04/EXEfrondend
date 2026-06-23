@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Share2, Send, CornerDownRight, Image as ImageIcon, Smile, MapPin, Award, Compass, Hash, Sparkles, Trophy, CheckCircle, Flame, UserCheck, X, ThumbsUp, ThumbsDown, MoreHorizontal, AlertTriangle, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { useLanguage } from '../../../context/LanguageContext';
-import diaryService from '../../../services/diaryService';
-import expertService from '../../../services/expertService';
-import spotService from '../../../services/spotService';
-import authService from '../../../services/authService';
-import tripService from '../../../services/tripService';
+import { useLanguage } from '@/context/LanguageContext';
+import diaryService from '@/services/diaryService';
+import expertService from '@/services/expertService';
+import spotService from '@/services/spotService';
+import authService from '@/services/authService';
+import tripService from '@/services/tripService';
 import axiosClient from '../../../services/axiosClient';
 
+import PostComposer from './PostComposer';
+import PostCard from './PostCard';
+import LocalExpertSidebar from './LocalExpertSidebar';
+import ExpertChatModal from './ExpertChatModal';
+import QuestSuccessModal from './QuestSuccessModal';
 
 export default function CommunityFeed() {
   const { language, t } = useLanguage();
@@ -128,7 +133,7 @@ export default function CommunityFeed() {
   const [activeReplyBoxId, setActiveReplyBoxId] = useState(null);
 
   const [sharedPostId, setSharedPostId] = useState(null);
-  
+
   const [lightboxData, setLightboxData] = useState({
     isOpen: false,
     images: [],
@@ -234,9 +239,7 @@ export default function CommunityFeed() {
         vi: d.contentVi,
         en: d.contentEn
       },
-      images: d.images && d.images.length > 0 
-        ? d.images.map(img => img.imageUrl) 
-        : (d.imageUrl ? [d.imageUrl] : []),
+      images: d.imageUrl ? [d.imageUrl] : [],
       likes: d.likesCount || 0,
       dislikes: d.dislikesCount || 0,
       myReaction: reaction || null,
@@ -583,7 +586,7 @@ export default function CommunityFeed() {
         setNewPostText('');
         setSelectedImages([]);
         setImagePreviews([]);
-        
+
         // Clear file input so same files can be re-selected later without reload
         const fileInput = document.getElementById('post-image-upload');
         if (fileInput) fileInput.value = '';
@@ -597,8 +600,6 @@ export default function CommunityFeed() {
     } catch (err) {
       console.error("Error creating post:", err);
       alert(language === 'vi' ? 'Lỗi khi đăng bài viết' : 'Error posting diary');
-    } finally {
-      setIsPosting(false);
     }
   };
 
@@ -834,7 +835,7 @@ export default function CommunityFeed() {
 
     if (count === 1) {
       return (
-        <div 
+        <div
           className="w-full rounded-xl overflow-hidden flex justify-center relative cursor-pointer group"
           onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}
         >
@@ -1037,57 +1038,30 @@ export default function CommunityFeed() {
       {/* Category Filter Tabs */}
       <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
         <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setActiveTag('all')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
-              activeTag === 'all'
-                ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-            }`}
-          >
-            <Compass className="w-4 h-4 relative z-10" />
-            <span className="relative z-10">{t('all')}</span>
-          </button>
-          
-          {dbStyles.length > 0 ? (
-            [...dbStyles, 'Khác'].map((styleStr) => (
+        <div className="flex flex-wrap gap-2 pb-1">
+          {[
+            { id: 'all', label: t('all'), icon: Compass },
+            { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
+            { id: 'healing', label: t('tagHealing'), icon: Sparkles },
+            { id: 'scenic', label: t('tagScenic'), icon: MapPin },
+            { id: 'food', label: t('tagFood'), icon: Flame }
+          ].map((tag) => {
+            const TagIcon = tag.icon;
+            const isActive = activeTag === tag.id;
+            return (
               <button
-                key={styleStr}
-                onClick={() => setActiveTag(styleStr)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
-                  activeTag === styleStr
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                }`}
+                key={tag.id}
+                onClick={() => setActiveTag(tag.id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer hover:-translate-y-0.5 shimmer-trigger ${isActive
+                  ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                  }`}
               >
-                <MapPin className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">{styleStr}</span>
+                <TagIcon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{tag.label}</span>
               </button>
-            ))
-          ) : (
-            [
-              { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
-              { id: 'healing', label: t('tagHealing'), icon: Sparkles },
-              { id: 'scenic', label: t('tagScenic'), icon: MapPin }
-            ].map((tag) => {
-              const TagIcon = tag.icon;
-              const isActive = activeTag === tag.id;
-              return (
-                <button
-                  key={tag.id}
-                  onClick={() => setActiveTag(tag.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                    }`}
-                >
-                  <TagIcon className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10">{tag.label}</span>
-                </button>
-              );
-            })
-          )}
+            );
+          })}
         </div>
       </div>
 
@@ -1098,124 +1072,26 @@ export default function CommunityFeed() {
         <div className="lg:col-span-8 flex flex-col gap-6">
 
           {/* Advanced Local Diary Composer */}
-          <form
-            onSubmit={handleCreatePost}
-            className="bg-gradient-to-tr from-white to-blue-50/40 border border-heritage-gold/20 p-4 sm:p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
-          >
-            {/* Subtle light overlay */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl" />
-
-            <div className="flex gap-3 relative z-10">
-              <img
-                src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"}
-                alt="My Avatar"
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-heritage-amber"
-              />
-              <textarea
-                value={newPostText}
-                onChange={(e) => setNewPostText(e.target.value)}
-                placeholder={t('postPlaceholder')}
-                className="flex-grow bg-white/80 border border-gray-200 text-gray-800 rounded-xl p-3 text-sm focus:outline-none focus:border-heritage-amber resize-none h-20 placeholder-gray-400 shadow-inner"
-              />
-            </div>
-
-            {/* Custom tagging parameters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/60 border border-gray-150 p-3 rounded-xl relative z-10">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
-                  {language === 'vi' ? 'Lịch trình đã hoàn thành' : 'Completed Itinerary'}
-                </label>
-                <select
-                  value={selectedItineraryId || ''}
-                  onChange={(e) => {
-                    setSelectedItineraryId(e.target.value ? Number(e.target.value) : null);
-                    setPostLinkedSpot(null);
-                  }}
-                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
-                  required
-                >
-                  <option value="">{language === 'vi' ? '-- Chọn lịch trình --' : '-- Select itinerary --'}</option>
-                  {completedItineraries.map((it) => (
-                    <option key={it.id} value={it.id}>
-                      📍 {it.title} ({it.destination})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">
-                  {language === 'vi' ? 'Chọn Địa điểm đã đi' : 'Select Visited Spot'}
-                </label>
-                <select
-                  value={postLinkedSpot || ''}
-                  onChange={(e) => setPostLinkedSpot(e.target.value ? Number(e.target.value) : null)}
-                  className="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:border-heritage-amber cursor-pointer"
-                  disabled={!selectedItineraryId}
-                  required
-                >
-                  <option value="">{language === 'vi' ? '-- Chọn địa điểm --' : '-- Select spot --'}</option>
-                  {spotsForSelectedItinerary.map((s) => {
-                    const isPosted = postedSpotIds.includes(s.id);
-                    const name = s.name?.[language] || s.nameVi || s.nameEn || s.name;
-                    return (
-                      <option key={s.id} value={s.id} disabled={isPosted}>
-                        {name} {isPosted ? `(${language === 'vi' ? 'Đã đánh giá' : 'Reviewed'})` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            </div>
-
-
-            {/* Selected Image Previews */}
-            {imagePreviews.length > 0 && (
-              <div className="flex gap-2 flex-wrap relative z-10">
-                {imagePreviews.map((preview, index) => (
-                  <div key={index} className="relative w-32 h-20 border border-gray-150 rounded-xl overflow-hidden shadow-inner group animate-scale-up">
-                    <img src={preview} alt={language === 'vi' ? 'Ảnh xem trước bài viết' : 'Post preview'} className="w-full h-full object-cover animate-fade-in" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black transition-all cursor-pointer border-none flex items-center justify-center"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-t border-gray-100 pt-3 relative z-10">
-              <div className="flex gap-2 flex-wrap">
-                <label className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none flex items-center justify-center select-none">
-                  <ImageIcon className="w-5 h-5 text-ricefield-green" />
-                  <input
-                    id="post-image-upload"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                    disabled={isPosting}
-                  />
-                </label>
-                <button type="button" className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer bg-white border-none">
-                  <Smile className="w-5 h-5 text-heritage-amber" />
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot}
-                className={`px-5 py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all border-none shadow-md shadow-heritage-amber/10 w-full sm:w-auto ${isPosting || !newPostText.trim() || !selectedItineraryId || !postLinkedSpot ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-95'}`}
-              >
-                {isPosting ? (language === 'vi' ? 'Đang đăng...' : 'Posting...') : (language === 'vi' ? 'Đăng bài' : 'Post')}
-                <Send className={`w-3.5 h-3.5 ${isPosting ? 'animate-pulse' : ''}`} />
-              </button>
-            </div>
-          </form>
+          <PostComposer
+            currentUser={currentUser}
+            language={language}
+            t={t}
+            completedItineraries={completedItineraries}
+            selectedItineraryId={selectedItineraryId}
+            setSelectedItineraryId={setSelectedItineraryId}
+            spotsForSelectedItinerary={spotsForSelectedItinerary}
+            postLinkedSpot={postLinkedSpot}
+            setPostLinkedSpot={setPostLinkedSpot}
+            postedSpotIds={postedSpotIds}
+            newPostText={newPostText}
+            setNewPostText={setNewPostText}
+            selectedImage={selectedImage}
+            setSelectedImage={setSelectedImage}
+            imagePreview={imagePreview}
+            setImagePreview={setImagePreview}
+            handleImageChange={handleImageChange}
+            handleCreatePost={handleCreatePost}
+          />
 
           {/* Social feed list items */}
           <div className="flex flex-col gap-6">
@@ -1226,365 +1102,36 @@ export default function CommunityFeed() {
               </div>
             ) : (
               filteredPosts.map((post, idx) => (
-                <article
+                <PostCard
                   key={post.id}
-                  className={`bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col p-4 sm:p-5 gap-4 shadow-sm hover:shadow-md hover:border-heritage-gold/30 transition-all duration-300 group shimmer-trigger animate-fade-in-up`}
-                  style={{ animationDelay: `${(idx + 1) * 150}ms` }}
-                >
-
-                  {/* Post Header */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 relative z-10">
-                    <div className="flex gap-3">
-                      <img
-                        src={post.user.avatar}
-                        alt={post.user.name}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-100 group-hover:scale-105 transition-transform"
-                      />
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-outfit text-sm font-bold text-gray-900 group-hover:text-heritage-amber transition-colors">{post.user.name}</span>
-                          <span className="text-[9px] bg-ricefield-green/10 text-ricefield-green font-extrabold px-2 py-0.5 rounded-full border border-ricefield-green/20">
-                            {post.user.badge[language]}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-gray-400">{post.date[language]}</span>
-                      </div>
-                    </div>
-
-                    {/* Visual Category Badge pill */}
-                    <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
-                      <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${
-                        post.category === 'Khác' ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-heritage-amber/10 text-heritage-amber border-heritage-amber/20'
-                      }`}>
-                        {post.category || 'Khác'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {post.reported && (
-                    <div className="bg-red-50 border border-red-250 text-red-600 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 animate-pulse relative z-10 select-none">
-                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                      <span>{language === 'vi' ? 'Bài viết này đã bị báo cáo đến admin!' : 'This post has been reported to admin!'}</span>
-                    </div>
-                  )}
-
-                  {post.status === 'hidden' && (
-                    <div className="bg-gray-50 border border-gray-200 text-gray-500 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 relative z-10 select-none">
-                      <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span>{language === 'vi' ? 'Bài viết này đang bị ẩn đối với cộng đồng.' : 'This post is currently hidden from the community.'}</span>
-                    </div>
-                  )}
-
-                  {/* Content body text */}
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium relative z-10">
-                    {post.content[language]}
-                  </p>
-
-                  {/* Optional Linked Spot Details */}
-                  {post.spot && (
-                    <div className="flex flex-col gap-1.5 bg-gradient-to-r from-gray-50 to-blue-50/20 border border-gray-150 p-3 rounded-xl text-[11.5px] font-bold text-gray-700 shadow-sm relative z-10 select-none">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-heritage-amber animate-pulse" />
-                        <span className="text-gray-400">{language === 'vi' ? 'Địa điểm' : 'Place'}:</span>
-                        <span className="text-heritage-amber font-extrabold">{post.spot.name}</span>
-                      </div>
-                      <div className="text-[10px] text-gray-500 pl-5 font-semibold">
-                        📍 {post.spot.address}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Clickable Hashtags */}
-                  {post.hashtags && post.hashtags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 relative z-10 select-none">
-                      {post.hashtags.map((tag, tIdx) => (
-                        <button
-                          key={tIdx}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveHashtagFilter(tag);
-                          }}
-                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
-                            activeHashtagFilter === tag
-                              ? 'bg-heritage-amber text-white border-heritage-amber shadow-sm shadow-heritage-amber/20 scale-105'
-                              : 'bg-white text-heritage-amber border-heritage-amber/35 hover:border-heritage-amber'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-
-                  {/* Images attachments */}
-                  <div className="w-full relative z-10 mt-3">
-                    {renderPhotoGrid(post.images)}
-                  </div>
-
-                  {/* Bottom Action indicators */}
-                  <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 relative z-10 w-full">
-                    
-                    <div className="flex items-center gap-3 sm:gap-5">
-                      {/* Likes & Dislikes */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Like */}
-                        <button
-                          onClick={() => handleLike(post.id)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
-                        >
-                          <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
-                          <span>{post.likes}</span>
-                        </button>
-
-                        {/* Dislike */}
-                        <button
-                          onClick={() => handleDislike(post.id)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
-                        >
-                          <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                          <span>{post.dislikes}</span>
-                        </button>
-                      </div>
-
-                      {/* Comments trigger */}
-                      <button
-                        onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
-                        className="flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer bg-white border-none font-semibold"
-                      >
-                        <MessageSquare className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
-                        <span className="hidden sm:inline">{post.comments.length} {t('commentStat')}</span>
-                        <span className="inline sm:hidden">{post.comments.length}</span>
-                      </button>
-                    </div>
-
-                    {/* Actions Dropdown Button (3-dots) */}
-                    <div className="relative">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveDropdownPostId(activeDropdownPostId === post.id ? null : post.id);
-                        }}
-                        className="flex items-center gap-1.5 p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
-                        title={language === 'vi' ? 'Thao tác' : 'Actions'}
-                      >
-                        <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                      </button>
-
-                      {activeDropdownPostId === post.id && (
-                        <div className="absolute right-0 bottom-10 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 z-50 animate-scale-up select-none">
-                          {/* Case A: Is the Owner of the post */}
-                          {post.authorId === currentUser?.id ? (
-                            <>
-                              {/* Option 1: Can DELETE if 0 likes AND 0 comments */}
-                              {post.likes === 0 && post.comments.length === 0 ? (
-                                <button
-                                  onClick={() => handleDeletePost(post.id)}
-                                  className="w-full text-left px-4 py-2 text-xs font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                  <span>{language === 'vi' ? 'Xóa bài viết' : 'Delete Post'}</span>
-                                </button>
-                              ) : (
-                                /* Option 2: Can HIDE or SHOW if likes > 0 OR comments > 0 */
-                                post.status === 'hidden' ? (
-                                  <button
-                                    onClick={() => handleToggleHidePost(post.id, 'public')}
-                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                                  >
-                                    <Eye className="w-4 h-4 text-ricefield-green" />
-                                    <span>{language === 'vi' ? 'Hiển thị bài viết' : 'Show Post'}</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleToggleHidePost(post.id, 'hidden')}
-                                    className="w-full text-left px-4 py-2 text-xs font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                                  >
-                                    <EyeOff className="w-4 h-4 text-gray-400" />
-                                    <span>{language === 'vi' ? 'Ẩn bài viết' : 'Hide Post'}</span>
-                                  </button>
-                                )
-                              )}
-                            </>
-                          ) : (
-                            /* Case B: NOT the Owner of the post */
-                            <button
-                              onClick={() => handleReportPost(post.id)}
-                              className="w-full text-left px-4 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                            >
-                              <AlertTriangle className="w-4 h-4 text-blue-500 animate-pulse" />
-                              <span>{language === 'vi' ? 'Báo cáo vi phạm' : 'Report Post'}</span>
-                            </button>
-                          )}
-
-                          {/* Share Link option inside menu */}
-                          <div className="border-t border-gray-100 my-1" />
-                          <button
-                            onClick={() => {
-                              handleShareLink(post.id);
-                              setActiveDropdownPostId(null);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-xs font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
-                              sharedPostId === post.id ? 'text-green-600 hover:bg-green-50' : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Share2 className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {sharedPostId === post.id 
-                                ? (language === 'vi' ? 'Đã copy link!' : 'Copied!') 
-                                : (language === 'vi' ? 'Chia sẻ liên kết' : 'Copy Share Link')}
-                            </span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-
-                  {/* Comment Thread */}
-                  {openCommentsPostId === post.id && (
-                    <div className="border-t border-gray-100 mt-2 pt-4 flex flex-col gap-4 bg-gray-50 p-4 rounded-xl relative z-10 animate-fade-in">
-                      <h4 className="font-outfit text-xs font-bold text-gray-900 tracking-wide uppercase">{t('commentTitle')}</h4>
-
-                      {/* Top Level Comments List */}
-                      <div className="flex flex-col gap-4">
-                        {post.comments.length === 0 ? (
-                          <span className="text-[11px] text-gray-400 font-semibold">{t('noComments')}</span>
-                        ) : (
-                          post.comments.map((comment) => (
-                            <div key={comment.id} className="flex flex-col gap-2 bg-white border border-gray-200/80 p-3 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
-                              {/* Comment Header */}
-                              <div className="flex gap-2.5 items-center justify-between">
-                                <div className="flex gap-2.5 items-center">
-                                  <img
-                                    src={comment.userAvatar}
-                                    alt={comment.userName}
-                                    className="w-7 h-7 rounded-full object-cover border border-gray-100"
-                                  />
-                                  <div className="flex flex-col">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[11.5px] font-bold text-gray-900 leading-none">{comment.userName}</span>
-                                      {post.authorId && comment.userId && post.authorId === comment.userId && (
-                                        <span className="text-[8px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                                          {language === 'vi' ? 'Tác giả' : 'Author'}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="text-[9px] text-gray-400 mt-0.5">{language === 'vi' ? 'Vừa xong' : 'Just now'}</span>
-                                  </div>
-                                </div>
-                                {currentUser && currentUser.id === comment.userId && (
-                                  <button
-                                    onClick={() => handleDeleteComment(post.id, comment.id)}
-                                    className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors cursor-pointer border-none bg-transparent"
-                                    title={language === 'vi' ? 'Xóa bình luận' : 'Delete comment'}
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-
-
-                              {/* Comment content */}
-                              <p className="text-[12px] text-gray-700 leading-relaxed pl-9">
-                                {comment.content[language]}
-                              </p>
-
-                              {/* Nested Replies Rendering */}
-                              {comment.replies && comment.replies.length > 0 && (
-                                <div className="pl-9 mt-2 flex flex-col gap-2 border-l border-gray-200">
-                                  {comment.replies.map((reply) => (
-                                    <div key={reply.id} className="flex gap-2 items-start mt-1 p-2 bg-gray-50 rounded-lg animate-fade-in">
-                                      <CornerDownRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                      <img
-                                        src={reply.userAvatar}
-                                        alt={reply.userName}
-                                        className="w-7 h-7 rounded-full object-cover border border-gray-150"
-                                      />
-                                      <div className="flex-grow min-w-0">
-                                        <div className="flex items-center justify-between w-full">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="text-[10px] font-bold text-gray-900 leading-none">{reply.userName}</span>
-                                            {post.authorId && reply.userId && post.authorId === reply.userId && (
-                                              <span className="text-[7.5px] bg-heritage-amber/10 text-heritage-amber border border-heritage-amber/20 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                                                {language === 'vi' ? 'Tác giả' : 'Author'}
-                                              </span>
-                                            )}
-                                          </div>
-                                          {currentUser && currentUser.id === reply.userId && (
-                                            <button
-                                              onClick={() => handleDeleteComment(post.id, reply.id)}
-                                              className="p-0.5 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors cursor-pointer border-none bg-transparent"
-                                              title={language === 'vi' ? 'Xóa phản hồi' : 'Delete reply'}
-                                            >
-                                              <X className="w-3 h-3" />
-                                            </button>
-                                          )}
-                                        </div>
-                                        <p className="text-[11px] text-gray-600 mt-1 leading-normal">
-                                          {reply.content[language]}
-                                        </p>
-                                      </div>
-
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Reply trigger input */}
-                              <div className="pl-9 mt-2">
-                                {activeReplyBoxId === comment.id ? (
-                                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center animate-fade-in">
-                                    <input
-                                      type="text"
-                                      value={replyInputs[comment.id] || ''}
-                                      onChange={(e) => setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })}
-                                      placeholder={t('replyPlaceholder')}
-                                      className="flex-grow bg-white border border-gray-200 text-xs text-gray-800 rounded-lg px-2.5 py-1 focus:outline-none focus:border-heritage-amber"
-                                    />
-                                    <button
-                                      onClick={() => handleAddReply(post.id, comment.id)}
-                                      className="px-3 py-2 sm:py-1 bg-ricefield-green hover:bg-ricefield-light text-white font-bold text-[10px] rounded-lg cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
-                                    >
-                                      {t('replyButton')}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => setActiveReplyBoxId(comment.id)}
-                                    className="text-[10px] text-gray-400 hover:text-heritage-amber font-bold cursor-pointer bg-transparent border-none"
-                                  >
-                                    {t('replyTrigger')}
-                                  </button>
-                                )}
-                              </div>
-
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* Create top-level comment Input */}
-                      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center border-t border-gray-200 pt-3">
-                        <input
-                          type="text"
-                          value={commentInputs[post.id] || ''}
-                          onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                          placeholder={t('commentPlaceholder')}
-                          className="flex-grow bg-white border border-gray-200 text-xs text-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-heritage-amber placeholder-gray-400 shadow-inner"
-                        />
-                        <button
-                          onClick={() => handleAddComment(post.id)}
-                          className="p-2.5 bg-heritage-amber hover:bg-heritage-gold text-white rounded-xl flex items-center justify-center cursor-pointer border-none shadow-sm transition-colors w-full sm:w-auto"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                    </div>
-                  )}
-
-                </article>
+                  post={post}
+                  idx={idx}
+                  currentUser={currentUser}
+                  language={language}
+                  t={t}
+                  openCommentsPostId={openCommentsPostId}
+                  setOpenCommentsPostId={setOpenCommentsPostId}
+                  commentInputs={commentInputs}
+                  setCommentInputs={setCommentInputs}
+                  replyInputs={replyInputs}
+                  setReplyInputs={setReplyInputs}
+                  activeReplyBoxId={activeReplyBoxId}
+                  setActiveReplyBoxId={setActiveReplyBoxId}
+                  activeDropdownPostId={activeDropdownPostId}
+                  setActiveDropdownPostId={setActiveDropdownPostId}
+                  sharedPostId={sharedPostId}
+                  activeHashtagFilter={activeHashtagFilter}
+                  setActiveHashtagFilter={setActiveHashtagFilter}
+                  handleLike={handleLike}
+                  handleDislike={handleDislike}
+                  handleReportPost={handleReportPost}
+                  handleDeletePost={handleDeletePost}
+                  handleToggleHidePost={handleToggleHidePost}
+                  handleShareLink={handleShareLink}
+                  handleAddComment={handleAddComment}
+                  handleAddReply={handleAddReply}
+                  handleDeleteComment={handleDeleteComment}
+                />
               ))
             )}
           </div>
@@ -1592,266 +1139,38 @@ export default function CommunityFeed() {
         </div>
 
         {/* Local Expert Sidebar Column */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-
-          {/* Daily Cultural Quest Card with Shimmer trigger */}
-          <div className="bg-gradient-to-tr from-blue-500 to-heritage-amber text-white p-5 rounded-3xl shadow-lg shadow-heritage-amber/10 flex flex-col gap-4 relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:200ms]">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-
-            <div className="flex items-center gap-2 border-b border-white/20 pb-2.5 relative z-10">
-              <div className="bg-white/20 p-2 rounded-xl text-white animate-float">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-outfit text-sm font-extrabold text-white tracking-wide uppercase">
-                {t('challengeTitle')}
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-2 relative z-10">
-              <p className="text-[12px] text-white/95 leading-relaxed font-semibold">
-                "{t('challengeQuest')}"
-              </p>
-              <div className="bg-white/15 border border-white/10 p-3 rounded-2xl mt-1 flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-white/80">{language === 'vi' ? 'Phần thưởng' : 'Reward'}:</span>
-                <span className="text-[10.5px] font-bold text-blue-100">{t('challengeReward')}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowQuestSuccess(true)}
-              className="w-full py-2.5 bg-white hover:bg-gray-50 text-heritage-amber font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer border-none relative z-10"
-            >
-              <Award className="w-4 h-4 animate-bounce" />
-              {t('participate')}
-            </button>
-          </div>
-
-          {/* Featured Local Experts Spotlight - Apple Shimmer */}
-          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:300ms]">
-            <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
-              <UserCheck className="w-4 h-4 text-heritage-amber" />
-              {t('localExperts')}
-            </h3>
-
-            <div className="flex flex-col gap-4 relative z-10">
-              {experts.map((expert, idx) => (
-                <div key={idx} className="flex items-center gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100 hover:border-heritage-gold/20 hover:-translate-y-0.5 transition-all duration-300">
-                  <div className="relative">
-                    <img
-                      src={expert.avatar}
-                      alt={expert.name}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                    />
-                    {expert.online && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full animate-pulse" />
-                    )}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <h4 className="text-xs font-bold text-gray-800 truncate leading-tight">{expert.name}</h4>
-                     <span className="text-[9px] text-gray-400 block truncate mt-0.5">{expert.role[language]}</span>
-                  </div>
-                  <button
-                    onClick={() => handleOpenExpertChat(expert)}
-                    className="p-2 bg-white hover:bg-heritage-amber/10 border border-gray-200 hover:border-heritage-amber text-gray-500 hover:text-heritage-amber rounded-lg transition-colors cursor-pointer"
-                    title={t('askExpert')}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Hot Trending Hashtags */}
-          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]">
-            <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
-              <Flame className="w-4 h-4 text-blue-500" />
-              {t('trendingHashtags')}
-            </h3>
-
-            <div className="flex flex-col gap-3 relative z-10">
-              {getTrendingHashtags().map((item, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setActiveHashtagFilter(item.tag)}
-                  className="flex justify-between items-center text-xs group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
-                    <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
-                    {idx === 0 && (
-                      <span className="text-[9px] bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
-                    )}
-                    {idx > 0 && idx < 3 && (
-                      <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-
-        </div>
+        <LocalExpertSidebar
+          language={language}
+          t={t}
+          experts={experts}
+          handleOpenExpertChat={handleOpenExpertChat}
+          getTrendingHashtags={getTrendingHashtags}
+          activeHashtagFilter={activeHashtagFilter}
+          setActiveHashtagFilter={setActiveHashtagFilter}
+          showQuestSuccess={showQuestSuccess}
+          setShowQuestSuccess={setShowQuestSuccess}
+        />
 
       </div>
 
       {/* CULTURAL QUEST ACCEPTED MODAL */}
-      {showQuestSuccess && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-gray-200 p-6 rounded-3xl max-w-sm w-full flex flex-col items-center text-center gap-4 shadow-2xl animate-scale-up">
-            <div className="p-3 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber rounded-full animate-float">
-              <Trophy className="w-8 h-8" />
-            </div>
-            <div>
-              <h3 className="font-outfit text-base font-extrabold text-gray-900">{language === 'vi' ? 'Quest Đã Nhận!' : 'Quest Accepted!'}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed mt-1.5 font-semibold">
-                {language === 'vi'
-                  ? 'Hãy ghé thăm Chùa Cầu vào sáng sớm mai, chụp một bức ảnh đẹp và tải lên bài viết (chọn tag Góc chụp ảnh đẹp) để nhận Voucher Đèn Lồng 50k nhé!'
-                  : 'Visit the Covered Bridge tomorrow morning, take a beautiful photo, and publish a post (select Scenic tag) to claim your 50k Voucher!'}
-              </p>
-            </div>
-            <button
-              onClick={() => setShowQuestSuccess(false)}
-              className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
-            >
-              {language === 'vi' ? 'Tôi đã hiểu!' : 'Got it!'}
-            </button>
-          </div>
-        </div>
-      )}
+      <QuestSuccessModal
+        showQuestSuccess={showQuestSuccess}
+        setShowQuestSuccess={setShowQuestSuccess}
+        language={language}
+      />
 
-      {/* QUICK EXPERT CHAT DIALOG */}
-      {showChatModal && activeExpert && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-white border border-gray-200 p-5 rounded-3xl max-w-md w-full flex flex-col gap-4 shadow-2xl animate-scale-up">
-            <div className="flex justify-between items-center border-b border-gray-150 pb-3">
-              <div className="flex gap-2.5 items-center">
-                <img
-                  src={activeExpert.avatar}
-                  alt={activeExpert.name}
-                  className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                />
-                <div>
-                  <h4 className="text-xs font-extrabold text-gray-800 leading-tight">{activeExpert.name}</h4>
-                  <span className="text-[9px] text-green-500 font-bold tracking-wide uppercase flex items-center gap-0.5">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse" />
-                    Online
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowChatModal(false)}
-                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer border-none bg-transparent"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {messageSuccess ? (
-              <div className="flex flex-col items-center text-center p-6 gap-3 animate-fade-in">
-                <CheckCircle className="w-10 h-10 text-ricefield-green" />
-                <div>
-                  <h4 className="text-xs font-extrabold text-gray-800">{language === 'vi' ? 'Đã gửi câu hỏi!' : 'Question Sent!'}</h4>
-                  <p className="text-[11px] text-gray-400 mt-1 leading-normal">
-                    {language === 'vi'
-                      ? 'Chuyên gia bản địa sẽ phản hồi tin nhắn của bạn trong vòng ít phút thông qua hộp thư đến.'
-                      : 'The local guide will respond to your query shortly via your inbox.'}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <p className="text-[11px] text-gray-500 leading-relaxed italic bg-gray-50 p-3 rounded-xl border border-gray-150">
-                  {language === 'vi'
-                    ? `Chào bạn! Mình có thể tư vấn tất cả kinh nghiệm local về các dịch vụ di chuyển, ẩm thực hay nghề thủ công truyền thống ở Hội An. Hãy để lại câu hỏi bên dưới nhé!`
-                    : `Hello! I can advise on all local guides regarding dining, transport, or traditional craft workshops in Hoi An. Leave your question below!`
-                  }
-                </p>
-                <textarea
-                  value={expertMessageText}
-                  onChange={(e) => setExpertMessageText(e.target.value)}
-                  placeholder={language === 'vi' ? 'Nhập câu hỏi của bạn tại đây...' : 'Type your question here...'}
-                  className="bg-white border border-gray-200 text-xs text-gray-800 rounded-xl p-3 h-24 resize-none focus:outline-none focus:border-heritage-amber placeholder-gray-450 shadow-inner"
-                />
-                <button
-                  onClick={handleSendExpertMessage}
-                  className="w-full py-2.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-xs rounded-xl cursor-pointer border-none shadow-md shadow-heritage-amber/10 transition-colors"
-                >
-                  {language === 'vi' ? 'Gửi Câu Hỏi' : 'Submit Question'}
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* Lightbox Modal */}
-      {lightboxData.isOpen && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
-          onClick={() => setLightboxData({...lightboxData, isOpen: false})}
-        >
-          {/* close button */}
-          <button 
-            onClick={() => setLightboxData({...lightboxData, isOpen: false})} 
-            className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full transition-colors border-none bg-transparent cursor-pointer z-50"
-          >
-            <X className="w-8 h-8"/>
-          </button>
-          
-          {/* prev button */}
-          {lightboxData.images.length > 1 && (
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setLightboxData({
-                  ...lightboxData, 
-                  currentIndex: (lightboxData.currentIndex - 1 + lightboxData.images.length) % lightboxData.images.length
-                }); 
-              }} 
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors border-none cursor-pointer z-50"
-            >
-              <ChevronLeft className="w-8 h-8"/>
-            </button>
-          )}
-
-          {/* next button */}
-          {lightboxData.images.length > 1 && (
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setLightboxData({
-                  ...lightboxData, 
-                  currentIndex: (lightboxData.currentIndex + 1) % lightboxData.images.length
-                }); 
-              }} 
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors border-none cursor-pointer z-50"
-            >
-              <ChevronRight className="w-8 h-8"/>
-            </button>
-          )}
-
-          <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={lightboxData.images[lightboxData.currentIndex]} 
-              className="max-w-full max-h-full w-auto h-auto object-contain select-none animate-fade-in drop-shadow-2xl" 
-              alt="Lightbox view" 
-            />
-          </div>
-          
-          {/* Image counter */}
-          {lightboxData.images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 font-medium bg-black/50 px-4 py-1.5 rounded-full z-50">
-              {lightboxData.currentIndex + 1} / {lightboxData.images.length}
-            </div>
-          )}
-        </div>
-      )}
+            {/* QUICK EXPERT CHAT DIALOG */}
+      <ExpertChatModal
+        showChatModal={showChatModal}
+        setShowChatModal={setShowChatModal}
+        activeExpert={activeExpert}
+        language={language}
+        expertMessageText={expertMessageText}
+        setExpertMessageText={setExpertMessageText}
+        messageSuccess={messageSuccess}
+        handleSendExpertMessage={handleSendExpertMessage}
+      />
 
     </div>
   );

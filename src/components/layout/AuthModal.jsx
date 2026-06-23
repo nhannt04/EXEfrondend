@@ -3,6 +3,7 @@ import { X, Mail, Lock, User, Sparkles, ShieldCheck, AlertCircle, Eye, EyeOff } 
 import { GoogleLogin } from '@react-oauth/google';
 import authService from '../../services/authService';
 import logoImg from '../../assets/logo.jpg';
+import Button from '@/components/ui/Button/Button';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register' | 'forgot-password'
@@ -347,15 +348,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </button>
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-bold text-sm py-3.5 rounded-2xl border-none cursor-pointer transition-all duration-300 shadow-md shadow-heritage-amber/10 mt-2 flex items-center justify-center gap-1.5"
+              isLoading={loading}
+              variant="primary"
+              size="md"
+              className="w-full mt-2"
             >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : 'Xác nhận Đăng nhập'}
-            </button>
+              Xác nhận Đăng nhập
+            </Button>
             
             <div className="flex items-center gap-2 my-1">
               <div className="h-px bg-gray-200 flex-1"></div>
@@ -478,15 +479,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-bold text-sm py-3.5 rounded-2xl border-none cursor-pointer transition-all duration-300 shadow-md shadow-heritage-amber/10 mt-2 flex items-center justify-center gap-1.5"
+              isLoading={loading}
+              variant="primary"
+              size="md"
+              className="w-full mt-2"
             >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (isOtpSent ? 'Xác nhận & Hoàn tất' : 'Gửi mã xác nhận')}
-            </button>
+              {isOtpSent ? 'Xác nhận & Hoàn tất' : 'Gửi mã xác nhận'}
+            </Button>
 
             {!isOtpSent && (
               <>
@@ -600,15 +601,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-heritage-amber hover:bg-heritage-gold disabled:bg-gray-300 text-white font-bold text-sm py-3.5 rounded-2xl border-none cursor-pointer transition-all duration-300 shadow-md shadow-heritage-amber/10 mt-2 flex items-center justify-center gap-1.5"
+              isLoading={loading}
+              variant="primary"
+              size="md"
+              className="w-full mt-2"
             >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (isForgotOtpSent ? 'Lưu mật khẩu mới' : 'Nhận mã khôi phục')}
-            </button>
+              {isForgotOtpSent ? 'Lưu mật khẩu mới' : 'Nhận mã khôi phục'}
+            </Button>
             
             <div className="text-center mt-2">
               <button 

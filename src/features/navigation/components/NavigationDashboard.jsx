@@ -155,7 +155,7 @@ export default function NavigationDashboard({ setActiveTab }) {
         <div className="absolute top-28 left-4 md:left-6 z-10 max-w-sm animate-slide-in-right">
           <div className="bg-emerald-500/90 dark:bg-emerald-950/90 backdrop-blur-xl border border-emerald-400/20 text-white rounded-2xl p-4 shadow-2xl flex items-start gap-3">
             <div className="bg-white/20 p-2 rounded-xl text-white">
-              <Navigation className="w-4.5 h-4.5 animate-bounce" />
+              <Navigation className="w-4 h-4 animate-bounce" />
             </div>
             <div className="text-left">
               <h4 className="text-sm font-bold font-outfit">

@@ -174,7 +174,7 @@ export default function UserProfile({ currentUser, onUpdateSuccess }) {
                   : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/50 bg-transparent'
               }`}
             >
-              <User className={`w-4.5 h-4.5 ${activeTab === 'info' ? 'animate-bounce-in' : ''}`} />
+              <User className={`w-4 h-4 ${activeTab === 'info' ? 'animate-bounce-in' : ''}`} />
               Thông tin cá nhân
             </button>
             <button
@@ -185,7 +185,7 @@ export default function UserProfile({ currentUser, onUpdateSuccess }) {
                   : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/50 bg-transparent'
               }`}
             >
-              <ShieldCheck className={`w-4.5 h-4.5 ${activeTab === 'security' ? 'animate-bounce-in' : ''}`} />
+              <ShieldCheck className={`w-4 h-4 ${activeTab === 'security' ? 'animate-bounce-in' : ''}`} />
               Bảo mật
             </button>
           </div>
