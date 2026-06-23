@@ -55,11 +55,12 @@ const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   return parseFloat((R * c).toFixed(2));
 };
 
-const formatPriceRange = (min, max, freeLabel = 'Free') => {
+const formatPriceRange = (min, max, freeLabel = 'Free', language = 'vi') => {
+  const currency = language === 'vi' ? 'đ' : ' VND';
   const hasAnyPrice = min > 0 || max > 0;
   if (!hasAnyPrice) return freeLabel;
-  if (min === max) return `${min.toLocaleString()}đ`;
-  return `${min.toLocaleString()}đ - ${max.toLocaleString()}đ`;
+  if (min === max) return `${min.toLocaleString()}${currency}`;
+  return `${min.toLocaleString()}${currency} - ${max.toLocaleString()}${currency}`;
 };
 
 const LeafletMap = ({
@@ -1508,7 +1509,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       images: backendSpot.images || [], // Keep original images array for potential future use
       lat: backendSpot.latitude,
       lng: backendSpot.longitude,
-      category: backendSpot.category
+      category: backendSpot.category,
+      address: backendSpot.address
     };
   };
 
@@ -2089,15 +2091,25 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         <span className="text-xs md:text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
                       </div>
                       <h4 className="font-outfit text-sm lg:text-base font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
-                      <p className="text-sm lg:text-base text-gray-500 leading-normal mt-0.5">{itinerary[activeDay - 1].accommodation.reason?.[language] || 'Nơi lưu trú thư giãn lý tưởng.'}</p>
+                      <div className="flex flex-col gap-1 mt-1.5">
+                        <span className="text-xs md:text-sm lg:text-base text-gray-500 flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <span className="line-clamp-1">{itinerary[activeDay - 1].accommodation.capacity || (language === 'vi' ? 'Tiêu chuẩn 2 người' : 'Standard 2 persons')}</span>
+                        </span>
+                        <span className="text-xs md:text-sm lg:text-base text-gray-500 flex items-start gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                          <span>{typeof itinerary[activeDay - 1].accommodation.address === 'string' ? itinerary[activeDay - 1].accommodation.address : (itinerary[activeDay - 1].accommodation.address?.[language] || itinerary[activeDay - 1].accommodation.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated'))}</span>
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right flex-shrink-0 relative z-10">
-                      <span className="text-sm lg:text-base text-gray-400 block">{t('estimatedNight')}</span>
-                      <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber">
+                    <div className="flex items-center justify-start sm:justify-end gap-1.5 sm:gap-2 flex-shrink-0 relative z-10 mt-1 sm:mt-0">
+                      <span className="text-[10px] sm:text-sm lg:text-base text-gray-400 uppercase sm:normal-case font-bold sm:font-normal leading-tight sm:leading-normal">{t('estimatedNight')}:</span>
+                      <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber leading-tight sm:leading-normal">
                         {formatPriceRange(
                           itinerary[activeDay - 1].accommodation.minCost || 0,
                           itinerary[activeDay - 1].accommodation.maxCost || 0,
-                          language === 'vi' ? 'Miễn phí' : 'Free'
+                          language === 'vi' ? 'Miễn phí' : 'Free',
+                          language
                         )}
                       </span>
                     </div>
@@ -2212,27 +2224,30 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                 )}
                               </div>
                             )}
-                            <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
-                              <div className="flex-grow relative z-10">
-                                <div className="flex justify-between items-center text-xs md:text-sm lg:text-base font-bold text-gray-400 uppercase tracking-widest">
-                                  <span>{label}</span>
-                                  <span className="text-sm lg:text-base text-gray-500 font-semibold">{timeStr}</span>
+                            <div className="flex flex-col w-full sm:flex-grow gap-2 relative z-10">
+                              <div className="flex flex-col sm:flex-row justify-between gap-1.5 sm:gap-4">
+                                <div className="flex-grow">
+                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-400 uppercase tracking-widest">
+                                    <span>{label}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="text-[11px] sm:text-sm lg:text-base text-gray-500 font-semibold normal-case">{timeStr}</span>
+                                  </div>
+                                  <h4 className={`font-outfit text-sm lg:text-base font-bold transition-colors mt-0.5 sm:mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
+                                    }`}>
+                                    {item.name?.[language] || 'Địa điểm tham quan'}
+                                  </h4>
                                 </div>
-                                <h4 className={`font-outfit text-sm lg:text-base font-bold transition-colors mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
-                                  }`}>
-                                  {item.name?.[language] || 'Địa điểm tham quan'}
-                                </h4>
-                                <p className="text-sm lg:text-base text-gray-500 leading-normal mt-1 flex items-start gap-1">
-                                  <Info className="w-3.5 h-3.5 text-ricefield-green flex-shrink-0 mt-0.5" />
-                                  <span>{item.reason?.[language] || 'Điểm check-in độc đáo thú vị.'}</span>
-                                </p>
+                                <div className="flex items-center justify-start sm:justify-end gap-1.5 sm:gap-2 flex-shrink-0 bg-gray-50 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-lg sm:rounded-none border border-gray-100 sm:border-none self-start sm:self-auto w-fit sm:w-auto mt-0.5 sm:mt-0">
+                                  <span className="text-[10px] sm:text-sm lg:text-base text-gray-400 uppercase sm:normal-case font-bold sm:font-normal leading-tight sm:leading-normal">{language === 'vi' ? 'Chi phí dự kiến:' : 'Est. cost:'}</span>
+                                  <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber leading-tight sm:leading-normal">
+                                    {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'), language)}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="text-right flex-shrink-0 relative z-10">
-                                <span className="text-sm lg:text-base text-gray-400 block">{language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}</span>
-                                <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber">
-                                  {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'))}
-                                </span>
-                              </div>
+                              <p className="text-sm lg:text-base text-gray-500 leading-normal flex items-start gap-1.5 mt-0.5">
+                                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-1" />
+                                <span>{typeof item.address === 'string' ? item.address : (item.address?.[language] || item.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated'))}</span>
+                              </p>
                             </div>
                           </div>
 
@@ -2418,7 +2433,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 )}
 
                 {/* Google Maps embed Frame */}
-                <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200/80 shadow-inner relative bg-gray-50 z-10">
+                <div className="w-full h-32 sm:h-48 rounded-xl overflow-hidden border border-gray-200/80 shadow-inner relative bg-gray-50 z-10">
                   <LeafletMap
                     spots={activeDaySpots}
                     selectedSpot={selectedSpot}
@@ -2444,19 +2459,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 {/* Active Target Info bar */}
                 {selectedSpot && (
                   <div className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-2 relative z-10">
-                    {/* Spot Image */}
-                    {selectedSpot.img && (
-                      <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                        <img
-                          src={selectedSpot.img}
-                          alt={selectedSpot.name[language]}
-                          className="w-full h-60 object-contain"
-                        />
-                        {selectedSpot.images && selectedSpot.images.length > 0 && (
-                          <span className="absolute bottom-1 right-1 text-xs md:text-sm lg:text-base bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold">📸 {selectedSpot.images.length}</span>
-                        )}
-                      </div>
-                    )}
+
 
                     <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-extrabold tracking-wider">{t('mapRouteTo')}:</span>
                     <span className="text-xs md:text-sm lg:text-base font-bold text-gray-900 flex items-center gap-1">
@@ -2465,14 +2468,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                     </span>
 
                     {/* Dynamic travel distances & durations */}
-                    <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                      <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                        <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold">{t('mapDistance')}</span>
-                        <span className="text-sm lg:text-base font-extrabold text-heritage-amber">{activeDistance} km</span>
+                    <div className="flex flex-row gap-2 mt-1 w-full">
+                      <div className="flex-1 w-1/2 bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
+                        <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold text-center leading-tight">{t('mapDistance')}</span>
+                        <span className="text-sm lg:text-base font-extrabold text-blue-600 mt-0.5 text-center">{activeDistance} km</span>
                       </div>
-                      <div className="bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
-                        <span className="text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold">{t('mapDuration')}</span>
-                        <span className="text-sm lg:text-base font-extrabold text-ricefield-green">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
+                      <div className="flex-1 w-1/2 bg-white p-2 rounded-lg border border-gray-150 flex flex-col justify-center items-center hover:scale-102 transition-transform">
+                        <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 uppercase font-bold text-center leading-tight">{t('mapDuration')}</span>
+                        <span className="text-sm lg:text-base font-extrabold text-blue-600 mt-0.5 text-center">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
                       </div>
                     </div>
 
@@ -2606,11 +2609,10 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                           <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase">{language === 'vi' ? 'Ngân sách đề ra' : 'Target Budget'}</span>
                           <span className="font-black text-gray-800 mt-0.5">{(budget).toLocaleString()}đ</span>
                         </div>
-                        <div className={`px-3 py-3 md:py-1.5 rounded-xl text-sm lg:text-base font-black uppercase tracking-wider border shadow-sm ${
-                          isOverBudget
+                        <div className={`px-3 py-3 md:py-1.5 rounded-xl text-sm lg:text-base font-black uppercase tracking-wider border shadow-sm ${isOverBudget
                             ? 'bg-red-50 text-red-600 border-red-200'
                             : 'bg-green-50 text-green-600 border-green-200'
-                        }`}>
+                          }`}>
                           {isOverBudget
                             ? (language === 'vi' ? '⚠️ Vượt ngân sách' : '⚠️ Over Budget')
                             : (language === 'vi' ? '✅ Đạt yêu cầu' : '✅ Within Budget')
@@ -2621,15 +2623,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   );
                 })()}
 
-                <div className="border-t border-gray-100 pt-4 flex flex-col gap-2 relative z-10">
-                  <span className="text-sm lg:text-base text-gray-400 font-bold uppercase tracking-wider block">{t('advisorTitle')}</span>
-                  <p className="text-xs md:text-sm lg:text-base text-gray-600 leading-relaxed italic bg-gray-50 border border-gray-200 p-3.5 rounded-xl">
-                    {isOverBudget
-                      ? t('advisorOver')
-                      : t('advisorUnder')
-                    }
-                  </p>
-                </div>
+
               </div>
             )}
 
@@ -2669,7 +2663,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                               <div className="flex flex-col flex-grow">
                                 <strong className="text-xs md:text-sm lg:text-base text-gray-800">{rental.name?.[language] || rental.name?.vi}</strong>
                                 <span className="text-sm lg:text-base text-gray-400">
-                                  {rental.cost ? `Từ ${rental.cost.toLocaleString('vi-VN')}đ` : 'Giá ưu đãi'} • {rental.reason?.[language] || rental.reason?.vi || (language === 'vi' ? 'Tiệm thuê uy tín gần bạn' : 'Highly-rated shop near you')}
+                                  {rental.cost ? `Từ ${rental.cost.toLocaleString('vi-VN')}đ` : 'Giá ưu đãi'}
                                 </span>
                               </div>
                               <button
@@ -2795,10 +2789,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
     <div className="max-w-[95%] w-full mx-auto px-6 py-10 flex flex-col items-center gap-10">
       {/* Page Title */}
       <div className="text-center flex flex-col items-center gap-2">
-        <div className="inline-flex items-center gap-2 bg-heritage-amber/10 border border-heritage-amber/30 text-heritage-amber px-4 py-3 md:py-1.5 rounded-full text-xs md:text-sm lg:text-base font-semibold animate-float">
-          <Sparkles className="w-4 h-4 text-heritage-gold animate-spin-slow" />
-          Travelist Trip Planner Studio
-        </div>
+
         <h2 className="font-outfit text-3xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
           {t('plannerTitle')}
         </h2>
@@ -2849,162 +2840,161 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       {activePlannerTab === 'studio' && (
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:p-8 items-start">
           {/* Left Side - Input Panel - Apple Shimmer */}
-          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-3 md:p-6 sm:p-7 rounded-3xl flex flex-col gap-3 md:p-6 shadow-xl relative overflow-hidden shimmer-trigger">
+          <div className="lg:col-span-4 bg-gradient-to-tr from-white to-amber-50/10 border border-heritage-gold/20 p-3 md:p-6 sm:p-7 rounded-3xl flex flex-col gap-3 md:p-6 shadow-xl relative overflow-hidden shimmer-trigger h-[50vh] lg:h-auto">
             {/* Absolute decorative glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl pointer-events-none" />
 
-            <h3 className="font-outfit text-lg font-black text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 relative z-10">
+            <h3 className="font-outfit text-lg font-black text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3 relative z-10 flex-shrink-0">
               <Calendar className="w-5 h-5 text-heritage-amber" />
               {t('tripParams')}
             </h3>
 
-            {/* Destination */}
-            <div className="flex flex-col gap-1.5 relative z-10">
-              <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('destination')}</label>
-              <input
-                type="text"
-                value={language === 'vi' ? 'Hội An, Quảng Nam' : 'Hoi An, Quang Nam'}
-                disabled
-                className="bg-gray-50/80 border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl text-sm lg:text-base font-bold shadow-inner"
-              />
-            </div>
+            {/* Fixed Form Content */}
+            <div className="flex-1 flex flex-col gap-1.5 sm:gap-4 relative z-10 overflow-hidden justify-between">
 
-            {/* Days & Style */}
-            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('daysCount')}</label>
-                <select
-                  value={days}
-                  onChange={(e) => setDays(Number(e.target.value))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-3 rounded-2xl text-xs md:text-sm lg:text-base font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
-                >
-                  <option value={1}>{language === 'vi' ? '1 Ngày' : '1 Day'}</option>
-                  <option value={2}>{language === 'vi' ? '2 Ngày' : '2 Days'}</option>
-                  <option value={3}>{language === 'vi' ? '3 Ngày' : '3 Days'}</option>
-                  <option value={4}>{language === 'vi' ? '4 Ngày' : '4 Days'}</option>
-                  <option value={5}>{language === 'vi' ? '5 Ngày' : '5 Days'}</option>
-                </select>
+              {/* Destination & Days */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 relative z-10">
+                <div className="flex flex-col gap-0.5 sm:gap-1.5">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('destination')}</label>
+                  <input
+                    type="text"
+                    value={language === 'vi' ? 'Hội An' : 'Hoi An'}
+                    disabled
+                    className="bg-gray-50/80 border border-gray-200 text-gray-700 px-2 sm:px-4 py-1.5 sm:py-3 rounded-xl sm:rounded-2xl text-sm lg:text-base font-bold shadow-inner"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5 sm:gap-1.5">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('daysCount')}</label>
+                  <select
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    className="bg-white border border-gray-200 text-gray-800 px-2 sm:px-3 py-1.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs md:text-sm lg:text-base font-bold focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 cursor-pointer hover:bg-gray-50 transition-all shadow-sm"
+                  >
+                    <option value={1}>{language === 'vi' ? '1 Ngày' : '1 Day'}</option>
+                    <option value={2}>{language === 'vi' ? '2 Ngày' : '2 Days'}</option>
+                    <option value={3}>{language === 'vi' ? '3 Ngày' : '3 Days'}</option>
+                    <option value={4}>{language === 'vi' ? '4 Ngày' : '4 Days'}</option>
+                    <option value={5}>{language === 'vi' ? '5 Ngày' : '5 Days'}</option>
+                  </select>
+                </div>
               </div>
 
 
-            </div>
-
-            {/* Budget Setting */}
-            <div className="flex flex-col gap-2.5 relative z-10">
-              <div className="flex justify-between items-center text-xs">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
-                <span className="text-heritage-amber font-black text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
-              </div>
-              <input
-                type="range"
-                min={1000000}
-                max={25000000}
-                step={500000}
-                value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-heritage-amber"
-              />
-            </div>
-
-            {/* Group size */}
-            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-5 relative z-10">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('adults')}</label>
+              {/* Budget Setting */}
+              <div className="flex flex-col gap-1 relative z-10">
+                <div className="flex justify-between items-center text-xs">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
+                  <span className="text-heritage-amber font-black text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
+                </div>
                 <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={adults}
-                  onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
+                  type="range"
+                  min={1000000}
+                  max={25000000}
+                  step={500000}
+                  value={budget}
+                  onChange={(e) => setBudget(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-heritage-amber"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('children')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={children}
-                  onChange={(e) => setChildren(Math.max(0, Number(e.target.value)))}
-                  className="bg-white border border-gray-200 text-gray-800 px-3 py-2.5 rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
-                />
-              </div>
-            </div>
 
-            {/* Preferences / Checkboxes */}
-            <div className="flex flex-col gap-4 relative z-10 border-t border-gray-150 pt-5">
-              
-              {/* Dishes */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
-                  {language === 'vi' ? 'Tên món ăn muốn thử' : 'Dishes to try'}
-                </label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {dbDishes.map(s => {
-                    const isSelected = selectedDishes.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setSelectedDishes(isSelected ? selectedDishes.filter(i => i !== s) : [...selectedDishes, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
-                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
+              {/* Group size */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 border-t border-gray-100 pt-2 sm:pt-5 relative z-10">
+                <div className="flex flex-col gap-0.5 sm:gap-1.5">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('adults')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={adults}
+                    onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
+                    className="bg-white border border-gray-200 text-gray-800 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5 sm:gap-1.5">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('children')}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={children}
+                    onChange={(e) => setChildren(Math.max(0, Number(e.target.value)))}
+                    className="bg-white border border-gray-200 text-gray-800 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-sm lg:text-base focus:outline-none focus:border-heritage-amber focus:ring-4 focus:ring-heritage-amber/10 text-center font-black shadow-sm"
+                  />
                 </div>
               </div>
 
-              {/* Stay Categories */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
-                  {language === 'vi' ? 'Phân loại chỗ ở' : 'Accommodation type'}
-                </label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {dbStayTypes.map(s => {
-                    const isSelected = selectedStayCategories.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setSelectedStayCategories(isSelected ? selectedStayCategories.filter(i => i !== s) : [...selectedStayCategories, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
-                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* Preferences / Checkboxes */}
+              <div className="flex flex-col gap-1.5 sm:gap-4 relative z-10 border-t border-gray-150 pt-2 sm:pt-5 overflow-hidden">
 
-              {/* Ent Categories */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
-                  {language === 'vi' ? 'Phân loại khu vui chơi' : 'Entertainment type'}
-                </label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {dbEntTypes.map(s => {
-                    const isSelected = selectedEntCategories.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setSelectedEntCategories(isSelected ? selectedEntCategories.filter(i => i !== s) : [...selectedEntCategories, s])}
-                        className={`px-3.5 py-2 rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${
-                          isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
+                {/* Dishes */}
+                <div className="flex flex-col sm:gap-2">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
+                    {language === 'vi' ? 'Món ăn' : 'Dishes to try'}
+                  </label>
+                  <div className="flex flex-nowrap overflow-x-auto scrollbar-hide gap-2 mt-0.5 sm:mt-1 pb-1">
+                    {dbDishes.map(s => {
+                      const isSelected = selectedDishes.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSelectedDishes(isSelected ? selectedDishes.filter(i => i !== s) : [...selectedDishes, s])}
+                          className={`flex-shrink-0 px-2 sm:px-3.5 py-1 sm:py-2 rounded-lg sm:rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                            }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Stay Categories */}
+                <div className="flex flex-col sm:gap-2">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
+                    {language === 'vi' ? 'Chỗ ở' : 'Accommodation type'}
+                  </label>
+                  <div className="flex flex-nowrap overflow-x-auto scrollbar-hide gap-2 mt-0.5 sm:mt-1 pb-1">
+                    {dbStayTypes.map(s => {
+                      const isSelected = selectedStayCategories.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSelectedStayCategories(isSelected ? selectedStayCategories.filter(i => i !== s) : [...selectedStayCategories, s])}
+                          className={`flex-shrink-0 px-2 sm:px-3.5 py-1 sm:py-2 rounded-lg sm:rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                            }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ent Categories */}
+                <div className="flex flex-col sm:gap-2">
+                  <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
+                    {language === 'vi' ? 'Vui chơi' : 'Entertainment type'}
+                  </label>
+                  <div className="flex flex-nowrap overflow-x-auto scrollbar-hide gap-2 mt-0.5 sm:mt-1 pb-1">
+                    {dbEntTypes.map(s => {
+                      const isSelected = selectedEntCategories.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSelectedEntCategories(isSelected ? selectedEntCategories.filter(i => i !== s) : [...selectedEntCategories, s])}
+                          className={`flex-shrink-0 px-2 sm:px-3.5 py-1 sm:py-2 rounded-lg sm:rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all border ${isSelected ? 'bg-heritage-amber border-heritage-amber text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-heritage-amber/50 hover:bg-orange-50/50'
+                            }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -3013,7 +3003,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full mt-2 py-4 bg-gradient-to-tr from-heritage-amber to-heritage-gold hover:from-heritage-gold hover:to-heritage-amber disabled:bg-gray-300 text-white font-black text-xs md:text-sm lg:text-base rounded-2xl flex items-center justify-center gap-2 tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-heritage-amber/25 hover:shadow-heritage-amber/35 cursor-pointer border-none z-10 uppercase"
+              className="w-full mt-1 flex-shrink-0 py-3 sm:py-4 bg-gradient-to-tr from-heritage-amber to-heritage-gold hover:from-heritage-gold hover:to-heritage-amber disabled:bg-gray-300 text-white font-black text-xs md:text-sm lg:text-base rounded-2xl flex items-center justify-center gap-2 tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-heritage-amber/25 hover:shadow-heritage-amber/35 cursor-pointer border-none z-10 uppercase"
             >
               <Sparkles className="w-4 h-4 animate-spin-slow" />
               {loading ? t('generating') : t('generateButton')}
@@ -3099,7 +3089,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
           )}
 
           {currentUser && savedItineraries.length > 0 && (
-            <div className="flex bg-gray-50 border border-gray-250/50 p-1 rounded-xl w-fit self-start gap-1 select-none mb-2">
+            <div className="flex flex-nowrap overflow-x-auto scrollbar-hide bg-gray-50 border border-gray-250/50 p-1 rounded-xl w-full sm:w-fit self-start gap-1 select-none mb-2">
               {[
                 { filter: 'ALL', label: language === 'vi' ? 'Tất cả' : 'All' },
                 { filter: 'NOT_STARTED', label: language === 'vi' ? 'Chưa bắt đầu' : 'Not Started' },
@@ -3109,7 +3099,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                 <button
                   key={btn.filter}
                   onClick={() => setSavedFilter(btn.filter)}
-                  className={`px-3 py-3 md:py-1.5 rounded-lg text-sm lg:text-base font-black transition-all border-none cursor-pointer ${savedFilter === btn.filter
+                  className={`flex-shrink-0 whitespace-nowrap px-3 py-3 md:py-1.5 rounded-lg text-sm lg:text-base font-black transition-all border-none cursor-pointer ${savedFilter === btn.filter
                     ? 'bg-white text-heritage-amber shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 bg-transparent'
                     }`}
@@ -3187,18 +3177,15 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
-                        <div className="flex flex-col">
-                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
-                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-gray-800 mt-0.5">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
+                      <div className="flex justify-around items-center bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-center shadow-sm">
+                        <div className="flex flex-col flex-1">
+                          <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase tracking-widest">{language === 'vi' ? 'Số ngày' : 'Days'}</span>
+                          <span className="text-sm sm:text-base lg:text-lg font-black text-gray-800 mt-1">{saved.totalDays} {language === 'vi' ? 'Ngày' : 'Days'}</span>
                         </div>
-                        <div className="flex flex-col border-x border-gray-200">
-                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Phong cách' : 'Style'}</span>
-                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber mt-0.5">{saved.travelStyle}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
-                          <span className="text-xs md:text-sm lg:text-base font-extrabold text-ricefield-green mt-0.5">{(saved.totalBudget / 1000000).toFixed(1)}M đ</span>
+                        <div className="w-px h-10 bg-gray-200 mx-2"></div>
+                        <div className="flex flex-col flex-1">
+                          <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase tracking-widest">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
+                          <span className="text-sm sm:text-base lg:text-lg font-black text-blue-600 mt-1">{(saved.totalBudget / 1000000).toFixed(1)}M {language === 'vi' ? 'đ' : 'VND'}</span>
                         </div>
                       </div>
 
@@ -3582,14 +3569,14 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   </div>
 
                   {/* Metrics */}
-                  <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
-                      <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDistance')}</span>
-                      <span className="text-base font-extrabold text-heritage-amber dark:text-heritage-gold mt-1">{activeDistance} km</span>
+                  <div className="flex flex-row w-full gap-2 sm:gap-3">
+                    <div className="flex-1 w-1/2 bg-gray-50 dark:bg-slate-900 p-2 sm:p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
+                      <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase text-center leading-tight">{t('mapDistance')}</span>
+                      <span className="text-sm sm:text-base font-extrabold text-blue-600 dark:text-blue-400 mt-1 text-center">{activeDistance} km</span>
                     </div>
-                    <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
-                      <span className="text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase">{t('mapDuration')}</span>
-                      <span className="text-base font-extrabold text-ricefield-green dark:text-emerald-450 mt-1">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
+                    <div className="flex-1 w-1/2 bg-gray-50 dark:bg-slate-900 p-2 sm:p-3 rounded-xl border border-gray-150 dark:border-slate-800 flex flex-col items-center justify-center hover:scale-102 transition-transform">
+                      <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 dark:text-slate-500 font-extrabold uppercase text-center leading-tight">{t('mapDuration')}</span>
+                      <span className="text-sm sm:text-base font-extrabold text-blue-600 dark:text-blue-400 mt-1 text-center">~{activeDuration} {language === 'vi' ? 'phút' : 'min'}</span>
                     </div>
                   </div>
 
@@ -3798,13 +3785,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       )}
 
       {/* Premium Dynamic Spot Swapper Dropdown Dialog */}
-      {/* Mobile FAB to open Map */}
-      <button 
-        onClick={() => setIsMapVisible(true)}
-        className="md:hidden fixed bottom-6 right-6 z-40 bg-blue-600 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-2 font-bold min-h-[50px] animate-bounce"
-      >
-        🗺️ Xem Bản Đồ
-      </button>
+
 
       {swapDropdown && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[999] flex items-center justify-center animate-fade-in" onClick={() => setSwapDropdown(null)}>

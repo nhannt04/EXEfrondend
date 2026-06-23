@@ -15,17 +15,7 @@ export default function AboutUs() {
     <div className="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 heritage-pattern">
       <div className="max-w-full w-full px-4 md:px-8 lg:px-16 space-y-10 animate-page-enter">
 
-        {/* Title and Hero Badge */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-heritage-amber/10 border border-heritage-amber/20 text-heritage-amber text-xs font-semibold uppercase tracking-wider animate-pulse-gold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Travelist Story</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 font-outfit">
-            {t('aboutTitle')}
-          </h1>
-          <div className="w-20 h-1 bg-gradient-to-r from-heritage-amber to-heritage-gold mx-auto rounded-full mt-4" />
-        </div>
+
 
         {/* Main Content Glass Card */}
         <div className="glass-panel p-8 sm:p-10 rounded-3xl space-y-8 shadow-xl relative overflow-hidden shimmer-trigger">

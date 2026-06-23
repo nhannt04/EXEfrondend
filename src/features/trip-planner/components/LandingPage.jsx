@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Compass, MapPin, Star, ShieldAlert, CalendarDays, Plane, Map, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Sparkles, Compass, MapPin, Star, ShieldAlert, CalendarDays, Plane, Map, Users, ThumbsUp, ThumbsDown, ArrowRight, Clock, Gem } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import spotService from '../../../services/spotService';
@@ -8,6 +8,98 @@ import cafeVideo from '../../../assets/cafe.mp4';
 import homestayVideo from '../../../assets/vuichoi.mp4';
 import foodVideo from '../../../assets/monan.mp4';
 import stayVideo from '../../../assets/homestay.mp4';
+import heroBackground from '../../../assets/backgroud.png';
+
+const AutoScrollCarousel = ({ spots, language, onSpotClick }) => {
+  const scrollRef = React.useRef(null);
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isHovered || !spots || spots.length === 0) return;
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const firstChild = container.children[0];
+        if (!firstChild) return;
+        const scrollAmount = firstChild.offsetWidth + 16;
+        
+        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isHovered, spots]);
+
+  return (
+    <div className="w-full md:w-[70%] overflow-hidden relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
+      <div 
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onTouchStart={() => setIsHovered(true)}
+        onTouchEnd={() => setIsHovered(false)}
+      >
+        {spots.map((spot, idx) => (
+          <div
+            key={`${spot.id}-${idx}`}
+            className="flex-shrink-0 snap-start flex flex-col bg-white border border-gray-150 rounded-2xl overflow-hidden w-[240px] md:min-w-[340px] md:max-w-[360px] hover:border-heritage-amber/40 hover:shadow-lg transition-all duration-300"
+          >
+            <div
+              className="h-40 md:h-56 w-full overflow-hidden relative cursor-pointer"
+              onClick={() => onSpotClick(spot)}
+            >
+              <img
+                src={spot.image}
+                alt={spot.name[language]}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 bg-heritage-amber text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
+                {spot.tag}
+              </span>
+            </div>
+            <div className="p-4 md:p-5 flex flex-col justify-between flex-grow gap-2 md:gap-3">
+              <div className="cursor-pointer" onClick={() => onSpotClick(spot)}>
+                <h4 className="text-base md:text-lg font-black text-gray-900 line-clamp-1 leading-snug">
+                  {spot.name[language]}
+                </h4>
+                <div className="text-xs sm:text-sm text-gray-700 flex flex-col gap-1.5 mt-2 leading-relaxed font-bold">
+                  {spot.desc[language]
+                    ? spot.desc[language]
+                      .split(/[.\n;]+/)
+                      .map(s => s.trim())
+                      .filter(s => s.length > 0)
+                      .slice(0, 3)
+                      .map((sentence, sIdx) => (
+                        <div key={sIdx} className="flex items-start gap-1.5">
+                          <span className="text-heritage-amber text-sm select-none mt-0.5">•</span>
+                          <span className="line-clamp-2 leading-snug">{sentence}</span>
+                        </div>
+                      ))
+                    : null}
+                </div>
+              </div>
+              <div className="flex justify-between items-center border-t border-amber-100 pt-3 bg-amber-50/60 -mx-4 md:-mx-5 px-4 md:px-5 pb-3">
+                <span className="text-[11px] text-amber-600 font-black uppercase tracking-wider">{language === 'vi' ? 'Giá' : 'Price'}</span>
+                <span className="text-heritage-amber text-sm md:text-base font-black">{spot.price[language]}</span>
+              </div>
+              <button
+                onClick={() => onSpotClick(spot)}
+                className="bg-[#003366] hover:bg-[#002244] text-white text-xs font-extrabold transition-all duration-200 cursor-pointer border-none py-3 -mx-4 md:-mx-5 -mb-4 md:-mb-5 mt-2"
+                style={{ borderRadius: '0 0 1rem 1rem' }}
+              >
+                {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   const { language, t } = useLanguage();
@@ -465,51 +557,98 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
   }
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full overflow-x-hidden flex flex-col items-center">
       {/* Hero Section with Background Image */}
-      <section className="relative w-full overflow-hidden border-b border-dark-border min-h-[480px] sm:min-h-[550px] lg:min-h-[620px] flex items-center pt-12 sm:pt-14 lg:pt-16">
+      <section className="relative w-full overflow-hidden min-h-[40vh] md:min-h-[85vh] flex pt-10 md:pt-24 pb-6 md:pb-12">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://i.pinimg.com/736x/af/89/d1/af89d1688621a527e576ebad376340fe.jpg"
+            src={heroBackground}
             alt="Vietnam landscape"
             className="w-full h-full object-cover"
           />
-          {/* Subtle overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/55 via-slate-900/35 to-transparent" />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-[95%] mx-auto px-4 sm:px-8 lg:px-12 w-full">
-          <div className="flex flex-col items-start gap-6 text-left animate-fade-in-up max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 bg-heritage-amber/40 text-white border border-heritage-amber/80 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider animate-float shadow-lg shadow-heritage-amber/50 backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-white animate-spin-slow" />
-              {language === 'vi' ? 'Khám phá Việt Nam' : 'Discover Vietnam'}
+        <div className="relative z-10 max-w-[95%] mx-auto px-4 sm:px-8 lg:px-12 w-full flex flex-col justify-between gap-4 md:gap-12">
+          {/* Top Area: Text & Buttons */}
+          <div className="flex flex-col items-start text-left max-w-2xl mt-2 md:mt-12">
+            <div className="flex items-center gap-2 mb-1 md:mb-2">
+              <span className="text-3xl md:text-5xl font-light text-white" style={{fontFamily: "'Dancing Script', cursive"}}>{language === 'vi' ? 'Khám phá' : 'Discover'}</span>
+              <Plane className="w-6 h-6 md:w-8 md:h-8 text-white -rotate-45" />
+            </div>
+            
+            <h1 className="font-outfit text-[50px] md:text-[100px] lg:text-[120px] font-black text-white tracking-wider leading-none drop-shadow-xl mb-1 md:mb-2">
+              {language === 'vi' ? (
+                <>VIỆT <span className="text-[#FFC107]">NAM</span></>
+              ) : (
+                <>VIET<span className="text-[#FFC107]">NAM</span></>
+              )}
+            </h1>
+            
+            <div className="flex items-center gap-2 sm:gap-3 mt-2 mb-8 flex-wrap sm:flex-nowrap">
+              <span className="text-sm sm:text-xl font-bold tracking-[0.1em] sm:tracking-[0.2em] text-white uppercase drop-shadow-md">{language === 'vi' ? 'THEO CÁCH LOCAL THỰC THỤ' : 'LIKE A TRUE LOCAL'}</span>
+              <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
 
-            <h1 className="font-outfit text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white max-w-2xl">
-              {language === 'vi' ? 'Khám phá Việt Nam theo cách Local thực thụ' : 'Discover Vietnam the True Local Way'}
-            </h1>
-
-            <p className="text-blue-50 text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
-              {language === 'vi'
-                ? 'Nhập ngân sách, thời gian và gu của bạn. Trí tuệ nhân tạo sẽ lập tức thiết lập lịch trình ăn chơi, ngủ nghỉ tối ưu và tiết kiệm nhất trên khắp Việt Nam.'
-                : 'Enter your budget, time and style. Artificial intelligence will instantly create the optimal and most economical eating, entertainment, and rest schedule throughout Vietnam.'}
+            <p className="text-white/95 text-base sm:text-lg max-w-lg leading-relaxed font-medium drop-shadow-md mb-10 text-justify">
+              {t('heroSubtitle')}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto pt-2">
+            <div className="flex flex-col sm:flex-row gap-5">
               <button
                 onClick={handleQuickStart}
-                className="px-6 py-3.5 bg-heritage-amber hover:bg-heritage-gold text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-heritage-amber/40 transition-all duration-300 cursor-pointer border-none hover:scale-105 active:scale-95"
+                className="flex items-center justify-center gap-2 px-8 py-4 bg-[#FFC107] hover:bg-yellow-500 text-black font-extrabold text-base rounded-full shadow-lg transition-transform hover:scale-105"
               >
-                {language === 'vi' ? 'Bắt đầu ngay' : 'Start Now'}
+                {t('startNow')} <ArrowRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.35, behavior: 'smooth' })}
-                className="px-6 py-3.5 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-extrabold text-sm rounded-2xl transition-all duration-300 cursor-pointer backdrop-blur-sm hover:scale-105 active:scale-95"
+                className="flex items-center justify-center gap-2 px-8 py-4 bg-transparent border border-white text-white hover:bg-white/10 font-extrabold text-base rounded-full shadow-lg transition-transform hover:scale-105 backdrop-blur-sm"
               >
-                {language === 'vi' ? 'Xem điểm đến nổi bật' : 'View Highlighted Destinations'}
+                {language === 'vi' ? 'Xem điểm đến nổi bật' : 'View Highlights'} <MapPin className="w-5 h-5" />
               </button>
+            </div>
+          </div>
+
+          {/* Bottom Area: Features Box & Right Text */}
+          <div className="flex items-end justify-between w-full mt-auto">
+            {/* Bottom Feature Box */}
+            <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-[2rem] p-6 hidden lg:flex gap-12 shadow-xl">
+              <div className="flex flex-col items-center gap-2 text-white">
+                <Sparkles className="w-8 h-8" strokeWidth={1.5} />
+                <div className="text-center">
+                  <p className="font-bold text-sm">{language === 'vi' ? 'Gợi ý thông minh' : 'Smart Suggestions'}</p>
+                  <p className="text-xs opacity-80">{language === 'vi' ? 'AI đề xuất theo sở thích' : 'AI-powered picks'}</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2 text-white">
+                <Clock className="w-8 h-8" strokeWidth={1.5} />
+                <div className="text-center">
+                  <p className="font-bold text-sm">{language === 'vi' ? 'Lịch trình tối ưu' : 'Optimal Itinerary'}</p>
+                  <p className="text-xs opacity-80">{language === 'vi' ? 'Tiết kiệm thời gian' : 'Save your time'}</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2 text-white">
+                <Gem className="w-8 h-8" strokeWidth={1.5} />
+                <div className="text-center">
+                  <p className="font-bold text-sm">{language === 'vi' ? 'Trải nghiệm địa phương' : 'Local Experience'}</p>
+                  <p className="text-xs opacity-80">Local tips & hidden gems</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2 text-white">
+                <Users className="w-8 h-8" strokeWidth={1.5} />
+                <div className="text-center">
+                  <p className="font-bold text-sm">{language === 'vi' ? 'Cộng đồng du lịch' : 'Travel Community'}</p>
+                  <p className="text-xs opacity-80">{language === 'vi' ? 'Chia sẻ & kết nối' : 'Share & connect'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Right Text */}
+            <div className="text-right hidden lg:block" style={{fontFamily: "'Dancing Script', cursive"}}>
+              <div className="text-4xl text-white drop-shadow-md">{language === 'vi' ? 'Đi để cảm nhận' : 'Travel to feel'}</div>
+              <div className="text-5xl font-bold text-[#FFC107] drop-shadow-md mt-2">{language === 'vi' ? 'Sống để nhớ mãi' : 'Live to remember'}</div>
             </div>
           </div>
         </div>
@@ -581,9 +720,9 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               <React.Fragment key={cat}>
                 {/* Rectangular divider section title */}
                 <div className="w-full mt-12 mb-4 scroll-reveal">
-                  <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
+                  <div className="w-full py-4 px-4 sm:py-5 sm:px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-3 sm:gap-6 shadow-sm overflow-hidden">
                     <div className="h-[1px] bg-gray-300 flex-grow" />
-                    <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+                    <span className="font-outfit text-sm sm:text-lg font-black text-gray-800 uppercase tracking-widest text-center">
                       {language === 'vi' ? 'Cafe và Ẩm thực' : 'Cafe & Local Food'}
                     </span>
                     <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -629,73 +768,12 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                     </div>
                   </div>
 
-                  {/* Right 70%: Marquee displaying detailed cards */}
-                  <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
-                    <div
-                      className="animate-marquee-horizontal flex gap-4 select-none"
-                      style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
-                    >
-                      {/* Triple the list to ensure seamless looping */}
-                      {[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]].map((spot, idx) => (
-                        <div
-                          key={`${spot.id}-${idx}`}
-                          className="flex flex-col bg-white border border-gray-150 rounded-2xl overflow-hidden min-w-[340px] max-w-[360px] hover:border-heritage-amber/40 hover:shadow-lg transition-all duration-300"
-                        >
-                          <div
-                            className="h-56 w-full overflow-hidden relative cursor-pointer"
-                            onClick={() => setSelectedSpotDetail(spot)}
-                          >
-                            <img
-                              src={spot.image}
-                              alt={spot.name[language]}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <span className="absolute top-3 left-3 bg-heritage-amber text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                              {spot.tag}
-                            </span>
-                          </div>
-                          <div className="p-5 flex flex-col justify-between flex-grow gap-3">
-                            <div
-                              className="cursor-pointer"
-                              onClick={() => setSelectedSpotDetail(spot)}
-                            >
-                              <h4 className="text-lg font-black text-gray-900 line-clamp-1 leading-snug">
-                                {spot.name[language]}
-                              </h4>
-                              <div className="text-[13px] sm:text-sm text-gray-700 flex flex-col gap-1.5 mt-2 leading-relaxed font-bold">
-                                {spot.desc[language]
-                                  ? spot.desc[language]
-                                    .split(/[.\n;]+/)
-                                    .map(s => s.trim())
-                                    .filter(s => s.length > 0)
-                                    .slice(0, 3)
-                                    .map((sentence, sIdx) => (
-                                      <div key={sIdx} className="flex items-start gap-1.5">
-                                        <span className="text-heritage-amber text-sm select-none mt-0.5">•</span>
-                                        <span className="line-clamp-2 leading-snug">{sentence}</span>
-                                      </div>
-                                    ))
-                                  : null}
-                              </div>
-                            </div>
-                            {/* Price — prominent, amber */}
-                            <div className="flex justify-between items-center border-t border-amber-100 pt-3 mt-1 bg-amber-50/60 -mx-5 px-5 pb-3">
-                              <span className="text-[11px] text-amber-600 font-black uppercase tracking-wider">{language === 'vi' ? 'Giá' : 'Price'}</span>
-                              <span className="text-heritage-amber text-base font-black">{spot.price[language]}</span>
-                            </div>
-                            {/* View detail button */}
-                            <button
-                              onClick={() => setSelectedSpotDetail(spot)}
-                              className="bg-[#003366] hover:bg-[#002244] text-white text-xs font-extrabold transition-all duration-200 cursor-pointer border-none py-3 -mx-5 -mb-5 mt-2"
-                              style={{ borderRadius: '0 0 1rem 1rem' }}
-                            >
-                              {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Right 70%: Auto Scroll Carousel */}
+                  <AutoScrollCarousel 
+                    spots={[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]]} 
+                    language={language} 
+                    onSpotClick={setSelectedSpotDetail} 
+                  />
                 </div>
               </React.Fragment>
             );
@@ -706,9 +784,9 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
               <React.Fragment key={cat}>
                 {/* Rectangular divider section title */}
                 <div className="w-full mt-12 mb-4 scroll-reveal">
-                  <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
+                  <div className="w-full py-4 px-4 sm:py-5 sm:px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-3 sm:gap-6 shadow-sm overflow-hidden">
                     <div className="h-[1px] bg-gray-300 flex-grow" />
-                    <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+                    <span className="font-outfit text-sm sm:text-lg font-black text-gray-800 uppercase tracking-widest text-center">
                       {language === 'vi' ? 'Vui chơi và Nghỉ dưỡng' : 'Entertainment & Stay'}
                     </span>
                     <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -752,66 +830,11 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                   </div>
 
                   {/* Right 70%: Scrollable spot cards */}
-                  <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
-                    <div
-                      className="animate-marquee-horizontal flex gap-4 select-none"
-                      style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
-                    >
-                      {[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]].map((spot, idx) => (
-                        <div
-                          key={`${spot.id}-${idx}`}
-                          className="flex flex-col bg-white border border-gray-150 rounded-2xl overflow-hidden min-w-[340px] max-w-[360px] hover:border-heritage-amber/40 hover:shadow-lg transition-all duration-300"
-                        >
-                          <div
-                            className="h-56 w-full overflow-hidden relative cursor-pointer"
-                            onClick={() => setSelectedSpotDetail(spot)}
-                          >
-                            <img
-                              src={spot.image}
-                              alt={spot.name[language]}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <span className="absolute top-3 left-3 bg-heritage-amber text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                              {spot.tag}
-                            </span>
-                          </div>
-                          <div className="p-5 flex flex-col justify-between flex-grow gap-3">
-                            <div className="cursor-pointer" onClick={() => setSelectedSpotDetail(spot)}>
-                              <h4 className="text-lg font-black text-gray-900 line-clamp-1 leading-snug">
-                                {spot.name[language]}
-                              </h4>
-                              <div className="text-[13px] sm:text-sm text-gray-700 flex flex-col gap-1.5 mt-2 leading-relaxed font-bold">
-                                {spot.desc[language]
-                                  ? spot.desc[language]
-                                    .split(/[.\n;]+/)
-                                    .map(s => s.trim())
-                                    .filter(s => s.length > 0)
-                                    .slice(0, 3)
-                                    .map((sentence, sIdx) => (
-                                      <div key={sIdx} className="flex items-start gap-1.5">
-                                        <span className="text-heritage-amber text-sm select-none mt-0.5">•</span>
-                                        <span className="line-clamp-2 leading-snug">{sentence}</span>
-                                      </div>
-                                    ))
-                                  : null}
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center border-t border-amber-100 pt-3 bg-amber-50/60 -mx-5 px-5 pb-3">
-                              <span className="text-[11px] text-amber-600 font-black uppercase tracking-wider">{language === 'vi' ? 'Giá' : 'Price'}</span>
-                              <span className="text-heritage-amber text-base font-black">{spot.price[language]}</span>
-                            </div>
-                            <button
-                              onClick={() => setSelectedSpotDetail(spot)}
-                              className="bg-[#003366] hover:bg-[#002244] text-white text-xs font-extrabold transition-all duration-200 cursor-pointer border-none py-3 -mx-5 -mb-5 mt-2"
-                              style={{ borderRadius: '0 0 1rem 1rem' }}
-                            >
-                              {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <AutoScrollCarousel 
+                    spots={[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]]} 
+                    language={language} 
+                    onSpotClick={setSelectedSpotDetail} 
+                  />
                 </div>
               </React.Fragment>
             );
@@ -856,66 +879,11 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </div>
 
                 {/* Right 70%: Marquee */}
-                <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
-                  <div
-                    className="animate-marquee-horizontal flex gap-4 select-none"
-                    style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
-                  >
-                    {[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]].map((spot, idx) => (
-                      <div
-                        key={`${spot.id}-${idx}`}
-                        className="flex flex-col bg-white border border-gray-150 rounded-2xl overflow-hidden min-w-[340px] max-w-[360px] hover:border-heritage-amber/40 hover:shadow-lg transition-all duration-300"
-                      >
-                        <div
-                          className="h-56 w-full overflow-hidden relative cursor-pointer"
-                          onClick={() => setSelectedSpotDetail(spot)}
-                        >
-                          <img
-                            src={spot.image}
-                            alt={spot.name[language]}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                          />
-                          <span className="absolute top-3 left-3 bg-heritage-amber text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                            {spot.tag}
-                          </span>
-                        </div>
-                        <div className="p-5 flex flex-col justify-between flex-grow gap-3">
-                          <div className="cursor-pointer" onClick={() => setSelectedSpotDetail(spot)}>
-                            <h4 className="text-lg font-black text-gray-900 line-clamp-1 leading-snug">
-                              {spot.name[language]}
-                            </h4>
-                            <div className="text-[13px] sm:text-sm text-gray-700 flex flex-col gap-1.5 mt-2 leading-relaxed font-bold">
-                              {spot.desc[language]
-                                ? spot.desc[language]
-                                  .split(/[.\n;]+/)
-                                  .map(s => s.trim())
-                                  .filter(s => s.length > 0)
-                                  .slice(0, 3)
-                                  .map((sentence, sIdx) => (
-                                    <div key={sIdx} className="flex items-start gap-1.5">
-                                      <span className="text-heritage-amber text-sm select-none mt-0.5">•</span>
-                                      <span className="line-clamp-2 leading-snug">{sentence}</span>
-                                    </div>
-                                  ))
-                                : null}
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center border-t border-amber-100 pt-3 bg-amber-50/60 -mx-5 px-5 pb-3">
-                            <span className="text-[11px] text-amber-600 font-black uppercase tracking-wider">{language === 'vi' ? 'Giá' : 'Price'}</span>
-                            <span className="text-heritage-amber text-base font-black">{spot.price[language]}</span>
-                          </div>
-                          <button
-                            onClick={() => setSelectedSpotDetail(spot)}
-                            className="bg-[#003366] hover:bg-[#002244] text-white text-xs font-extrabold transition-all duration-200 cursor-pointer border-none py-3 -mx-5 -mb-5 mt-2"
-                            style={{ borderRadius: '0 0 1rem 1rem' }}
-                          >
-                            {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <AutoScrollCarousel 
+                  spots={[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]]} 
+                  language={language} 
+                  onSpotClick={setSelectedSpotDetail} 
+                />
               </div>
             );
           }
@@ -959,66 +927,11 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
                 </div>
 
                 {/* Right 70%: Marquee */}
-                <div className="w-full md:w-[70%] overflow-x-auto md:overflow-hidden scrollbar-hide relative flex items-center bg-gray-50/60 rounded-2xl py-5 px-2">
-                  <div
-                    className="animate-marquee-horizontal flex gap-4 select-none"
-                    style={{ animationDuration: `${Math.max(40, categorySpots[cat].length * 13.3)}s` }}
-                  >
-                    {[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]].map((spot, idx) => (
-                      <div
-                        key={`${spot.id}-${idx}`}
-                        className="flex flex-col bg-white border border-gray-150 rounded-2xl overflow-hidden min-w-[340px] max-w-[360px] hover:border-heritage-amber/40 hover:shadow-lg transition-all duration-300"
-                      >
-                        <div
-                          className="h-56 w-full overflow-hidden relative cursor-pointer"
-                          onClick={() => setSelectedSpotDetail(spot)}
-                        >
-                          <img
-                            src={spot.image}
-                            alt={spot.name[language]}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                          />
-                          <span className="absolute top-3 left-3 bg-heritage-amber text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                            {spot.tag}
-                          </span>
-                        </div>
-                        <div className="p-5 flex flex-col justify-between flex-grow gap-3">
-                          <div className="cursor-pointer" onClick={() => setSelectedSpotDetail(spot)}>
-                            <h4 className="text-lg font-black text-gray-900 line-clamp-1 leading-snug">
-                              {spot.name[language]}
-                            </h4>
-                            <div className="text-[13px] sm:text-sm text-gray-700 flex flex-col gap-1.5 mt-2 leading-relaxed font-bold">
-                              {spot.desc[language]
-                                ? spot.desc[language]
-                                  .split(/[.\n;]+/)
-                                  .map(s => s.trim())
-                                  .filter(s => s.length > 0)
-                                  .slice(0, 3)
-                                  .map((sentence, sIdx) => (
-                                    <div key={sIdx} className="flex items-start gap-1.5">
-                                      <span className="text-heritage-amber text-sm select-none mt-0.5">•</span>
-                                      <span className="line-clamp-2 leading-snug">{sentence}</span>
-                                    </div>
-                                  ))
-                                : null}
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center border-t border-amber-100 pt-3 bg-amber-50/60 -mx-5 px-5 pb-3">
-                            <span className="text-[11px] text-amber-600 font-black uppercase tracking-wider">{language === 'vi' ? 'Giá' : 'Price'}</span>
-                            <span className="text-heritage-amber text-base font-black">{spot.price[language]}</span>
-                          </div>
-                          <button
-                            onClick={() => setSelectedSpotDetail(spot)}
-                            className="bg-[#003366] hover:bg-[#002244] text-white text-xs font-extrabold transition-all duration-200 cursor-pointer border-none py-3 -mx-5 -mb-5 mt-2"
-                            style={{ borderRadius: '0 0 1rem 1rem' }}
-                          >
-                            {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <AutoScrollCarousel 
+                  spots={[...categorySpots[cat], ...categorySpots[cat], ...categorySpots[cat]]} 
+                  language={language} 
+                  onSpotClick={setSelectedSpotDetail} 
+                />
               </div>
             );
           }
@@ -1056,9 +969,9 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
       {/* Rectangular divider section title for Video */}
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 scroll-reveal">
-        <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
+        <div className="w-full py-4 px-4 sm:py-5 sm:px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-3 sm:gap-6 shadow-sm overflow-hidden">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-sm sm:text-lg font-black text-gray-800 uppercase tracking-widest text-center">
             Video
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -1092,9 +1005,9 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
       {/* Rectangular divider section title for News */}
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 mt-4 scroll-reveal">
-        <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
+        <div className="w-full py-4 px-4 sm:py-5 sm:px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-3 sm:gap-6 shadow-sm overflow-hidden">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-sm sm:text-lg font-black text-gray-800 uppercase tracking-widest text-center">
             {language === 'vi' ? 'Tin tức nổi bật của chúng tôi' : 'Our Featured News'}
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />
@@ -1156,9 +1069,9 @@ export default function LandingPage({ setActiveTab, setPlannerPrefill }) {
 
       {/* Rectangular divider section title for Featured Community Post */}
       <div className="max-w-[95%] w-full px-4 sm:px-8 mb-8 mt-4 scroll-reveal">
-        <div className="w-full py-5 px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-6 shadow-sm">
+        <div className="w-full py-4 px-4 sm:py-5 sm:px-8 bg-gray-50/70 border border-gray-200 rounded-2xl flex items-center justify-center gap-3 sm:gap-6 shadow-sm overflow-hidden">
           <div className="h-[1px] bg-gray-300 flex-grow" />
-          <span className="font-outfit text-lg font-black text-gray-800 uppercase tracking-widest whitespace-nowrap">
+          <span className="font-outfit text-sm sm:text-lg font-black text-gray-800 uppercase tracking-widest text-center">
             {language === 'vi' ? 'Bài viết cộng đồng nổi bật nhất' : 'Most Outstanding Community Post'}
           </span>
           <div className="h-[1px] bg-gray-300 flex-grow" />

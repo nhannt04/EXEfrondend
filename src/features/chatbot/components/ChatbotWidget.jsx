@@ -219,23 +219,6 @@ export default function ChatbotWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Suggestions Pills */}
-          <div className="px-4 py-2 border-t border-gray-100 flex flex-col gap-1.5 bg-white">
-            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-extrabold flex items-center gap-1">
-              <HelpCircle className="w-3.5 h-3.5 text-heritage-amber" /> {t('botSuggestHeader')}
-            </span>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => handleSendMessage(s.text)}
-                  className="text-[10px] whitespace-nowrap px-3 py-1.5 rounded-lg border border-gray-200 hover:border-heritage-amber hover:text-heritage-amber bg-gray-50 hover:bg-white text-gray-500 transition-all duration-300 cursor-pointer shadow-sm font-semibold"
-                >
-                  {s.text}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Footer Input Bar */}
           <div className="p-3 border-t border-gray-150 flex gap-2 items-center bg-white">
