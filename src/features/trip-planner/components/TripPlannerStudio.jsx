@@ -2223,9 +2223,9 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                                 )}
                               </div>
                             )}
-                            <div className="flex flex-col w-full sm:flex-grow gap-2 relative z-10">
-                              <div className="flex flex-col sm:flex-row justify-between gap-1.5 sm:gap-4">
-                                <div className="flex-grow">
+                            <div className="flex flex-col w-full sm:flex-grow gap-2 relative z-10 min-w-0">
+                              <div className="flex flex-col sm:flex-row flex-wrap justify-between gap-1.5 sm:gap-4">
+                                <div className="flex-grow min-w-[120px]">
                                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-400 uppercase tracking-widest">
                                     <span>{label}</span>
                                     <span className="text-gray-300">•</span>
