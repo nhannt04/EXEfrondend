@@ -2084,8 +2084,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-row justify-between w-full sm:w-auto sm:flex-grow gap-2">
-                    <div className="flex-grow relative z-10">
+                  <div className="flex flex-col sm:flex-row flex-wrap justify-between w-full sm:w-auto sm:flex-grow gap-2 min-w-0">
+                    <div className="flex-grow relative z-10 min-w-[120px]">
                       <div className="flex items-center gap-2">
                         <span className="text-xs md:text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
                       </div>
