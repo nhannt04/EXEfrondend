@@ -1461,7 +1461,6 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
     if (prefill) {
       if (prefill.days) setDays(prefill.days);
       if (prefill.budget) setBudget(prefill.budget);
-      if (prefill.style) setStyle(prefill.style);
       if (prefill.directionSpot) {
         setSelectedSpot(prefill.directionSpot);
         setActivePlannerTab('viewer');
