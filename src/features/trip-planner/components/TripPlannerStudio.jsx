@@ -2556,7 +2556,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                   return (
                     <div className="flex flex-col gap-3 md:p-5 relative z-10">
                       {/* Donut Pie Chart & Legend Row */}
-                      <div className="flex flex-col sm:flex-row items-center gap-3 md:p-6">
+                      <div className="flex flex-col items-center gap-5 md:p-2">
                         {/* Circular Donut Chart */}
                         <div
                           className="relative w-36 h-36 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
@@ -2574,26 +2574,26 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                             <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                               {language === 'vi' ? 'Ước tính' : 'Estimated'}
                             </span>
-                            <span className="text-sm lg:text-base font-black text-gray-900 mt-0.5 truncate max-w-full">
-                              {(costs.totalMax).toLocaleString()}đ
+                            <span className="text-sm sm:text-base font-black text-gray-900 mt-0.5 tracking-tighter w-full text-center whitespace-nowrap">
+                              {costs.totalMax >= 1000000 ? `${(costs.totalMax / 1000000).toFixed(1)}M đ` : `${(costs.totalMax).toLocaleString()}đ`}
                             </span>
                           </div>
                         </div>
 
                         {/* Legend List */}
-                        <div className="flex flex-col gap-2.5 w-full">
+                        <div className="flex flex-col gap-3 w-full flex-1 min-w-0">
                           {[
                             { name: t('costsAccommodation'), pct: pAccom, color: 'bg-indigo-600', val: costs.accommodationMax },
                             { name: t('costsFood'), pct: pFood, color: 'bg-heritage-amber', val: costs.foodMax },
                             { name: t('costsActivities'), pct: pAct, color: 'bg-ricefield-green', val: costs.activitiesMax },
                             { name: t('costsTransport'), pct: pTrans, color: 'bg-gray-400', val: costs.transport }
                           ].map((cat) => (
-                            <div key={cat.name} className="flex items-center justify-between text-sm lg:text-base font-bold text-gray-700">
-                              <div className="flex items-center gap-2">
+                            <div key={cat.name} className="flex items-center justify-between text-sm lg:text-base font-bold text-gray-700 w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
                                 <span className={`w-2.5 h-2.5 rounded-full ${cat.color} flex-shrink-0`} />
-                                <span className="truncate max-w-[120px]">{cat.name}</span>
+                                <span className="truncate">{cat.name}</span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-right font-black">
+                              <div className="flex items-center justify-end gap-1.5 text-right font-black flex-shrink-0">
                                 <span className="text-gray-900">{cat.pct.toFixed(0)}%</span>
                                 <span className="text-gray-400 font-semibold text-[9.5px]">({(cat.val / 1000).toFixed(0)}k)</span>
                               </div>
