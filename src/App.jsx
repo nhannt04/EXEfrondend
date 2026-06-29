@@ -53,6 +53,15 @@ function AppContent() {
       }
     };
     trackPageView();
+
+    // Google Analytics 4 page view tracking for SPA tabs
+    if (window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_title: activeTab.toUpperCase() + ' - Travelist',
+        page_location: window.location.origin + '/' + activeTab,
+        page_path: '/' + activeTab
+      });
+    }
   }, [activeTab]);
 
   // Router dispatcher
