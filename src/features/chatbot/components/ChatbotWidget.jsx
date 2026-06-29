@@ -11,6 +11,16 @@ export default function ChatbotWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Dragging states initialized to default bottom-right area
+  const [position, setPosition] = useState({
+    x: window.innerWidth - 80,
+    y: window.innerHeight - 88
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [preOpenPosition, setPreOpenPosition] = useState(null);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const elementStartRef = useRef({ x: 0, y: 0 });
+
   // Initialize welcome message based on language
   useEffect(() => {
     setMessages([
@@ -22,12 +32,6 @@ export default function ChatbotWidget() {
       }
     ]);
   }, [language]);
-
-  const SUGGESTIONS = [
-    { text: t('suggestMeal'), id: 's1' },
-    { text: t('suggestHistory'), id: 's2' },
-    { text: t('suggestSunset'), id: 's3' }
-  ];
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -41,7 +45,6 @@ export default function ChatbotWidget() {
   const handleSendMessage = async (text) => {
     if (!text.trim()) return;
 
-    // Add user message
     const userMsg = {
       id: `m_user_${Date.now()}`,
       sender: 'user',
@@ -78,6 +81,142 @@ export default function ChatbotWidget() {
       setIsTyping(false);
     }
   };
+
+  // Keep chatbot widget inside screen viewport on resize or toggle open/close
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prev) => {
+        const isMobile = window.innerWidth < 640;
+        const chatWidth = window.innerWidth < 400 ? window.innerWidth - 32 : 360;
+        const width = isOpen ? (isMobile ? chatWidth : 400) : 56;
+        const height = isOpen ? 520 : 56;
+        const maxX = window.innerWidth - width - 10;
+        const maxY = window.innerHeight - height - 10;
+        return {
+          x: Math.max(10, Math.min(prev.x, maxX)),
+          y: Math.max(10, Math.min(prev.y, maxY))
+        };
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
+
+  // Adjust positioning when opening chat to prevent it from going offscreen
+  useEffect(() => {
+    if (isOpen) {
+      // Save current button position before centering/adjusting
+      setPreOpenPosition({ x: position.x, y: position.y });
+
+      setPosition((prev) => {
+        const isMobile = window.innerWidth < 640;
+        const chatWidth = window.innerWidth < 400 ? window.innerWidth - 32 : 360;
+        const width = isMobile ? chatWidth : 400;
+        const height = 520;
+        
+        let targetX = prev.x;
+        let targetY = prev.y;
+
+        if (isMobile) {
+          // Center horizontally on mobile viewport
+          targetX = (window.innerWidth - width) / 2;
+          // Position vertically above the mobile bottom navigation bar
+          targetY = window.innerHeight - height - 80;
+        } else {
+          // Keep it within desktop right edge viewport bounds
+          if (prev.x + width > window.innerWidth) {
+            targetX = window.innerWidth - width - 24;
+          }
+        }
+        
+        const maxX = window.innerWidth - width - 10;
+        const maxY = window.innerHeight - height - 10;
+        
+        return {
+          x: Math.max(10, Math.min(targetX, maxX)),
+          y: Math.max(10, Math.min(targetY, maxY))
+        };
+      });
+    } else {
+      // Restore cached position when closing the window
+      if (preOpenPosition) {
+        setPosition(preOpenPosition);
+      }
+    }
+  }, [isOpen]);
+
+  const handleDragStart = (e) => {
+    if (e.button !== undefined && e.button !== 0) return; // Left click only
+    
+    setIsDragging(true);
+    const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+    const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+    
+    dragStartRef.current = { x: clientX, y: clientY };
+    
+    const rect = e.currentTarget.closest('.fixed-widget-container').getBoundingClientRect();
+    elementStartRef.current = { x: rect.left, y: rect.top };
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    
+    const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+    const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+    
+    const dx = clientX - dragStartRef.current.x;
+    const dy = clientY - dragStartRef.current.y;
+    
+    let newX = elementStartRef.current.x + dx;
+    let newY = elementStartRef.current.y + dy;
+    
+    // Bounds boundaries
+    const width = isOpen ? (window.innerWidth < 400 ? window.innerWidth - 20 : 400) : 56;
+    const height = isOpen ? 520 : 56;
+    const maxX = window.innerWidth - width - 10;
+    const maxY = window.innerHeight - height - 10;
+    
+    newX = Math.max(10, Math.min(newX, maxX));
+    newY = Math.max(10, Math.min(newY, maxY));
+    
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    const clientX = e.clientX !== undefined ? e.clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0);
+    
+    const dist = Math.sqrt(Math.pow(clientX - dragStartRef.current.x, 2) + Math.pow(clientY - dragStartRef.current.y, 2));
+    // If click (little movement), open chat window
+    if (dist < 6) {
+      if (e.currentTarget.tagName === 'BUTTON') {
+        setIsOpen(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDragMove, { passive: false });
+      window.addEventListener('touchend', handleDragEnd);
+    } else {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging]);
 
   const renderMessageText = (text) => {
     if (!text) return null;
@@ -134,23 +273,33 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div 
+      className="fixed-widget-container fixed z-[100] flex flex-col items-end"
+      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+    >
       {/* Floating Action Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
-          className="w-14 h-14 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse-gold cursor-pointer border-none"
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onMouseUp={handleDragEnd}
+          onTouchEnd={handleDragEnd}
+          className="w-14 h-14 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse-gold cursor-move border-none select-none touch-none"
         >
-          <Bot className="w-7 h-7 text-white" />
+          <Bot className="w-7 h-7 text-white pointer-events-none" />
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[520px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in">
-          {/* Header */}
-          <div className="bg-heritage-amber text-white p-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2.5">
+        <div className="w-[calc(100vw-32px)] sm:w-[400px] max-w-[360px] sm:max-w-none h-[520px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden border border-gray-200/80 animate-fade-in select-text">
+          {/* Header - Drag handler */}
+          <div 
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+            className="bg-heritage-amber text-white p-4 flex items-center justify-between shadow-sm cursor-move select-none touch-none"
+          >
+            <div className="flex items-center gap-2.5 pointer-events-none">
               <div className="bg-white/20 p-2 rounded-xl text-white">
                 <Bot className="w-5 h-5 text-white" />
               </div>
@@ -218,7 +367,6 @@ export default function ChatbotWidget() {
             )}
             <div ref={messagesEndRef} />
           </div>
-
 
           {/* Footer Input Bar */}
           <div className="p-3 border-t border-gray-150 flex gap-2 items-center bg-white">

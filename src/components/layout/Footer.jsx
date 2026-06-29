@@ -12,7 +12,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="w-full bg-white border-t border-dark-border mt-16 px-8 py-12 text-gray-500">
+    <footer className="w-full bg-white border-t border-dark-border mt-4 md:mt-16 px-6 md:px-8 py-6 md:py-12 pb-20 md:pb-12 text-gray-500">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-8">
         {/* Brand section */}
         <div className="flex flex-col gap-4 mb-4 md:mb-0">

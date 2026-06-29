@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Sparkles, Calendar, DollarSign, Users, Award, ShieldAlert, Check, RefreshCw, Info, Moon, Sun, Sunrise, MapPin, Navigation, Compass, Footprints, Bike, Car, X, ChevronLeft, ChevronRight, BookOpen, Hotel } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import axiosClient from '../../../services/axiosClient';
 import tripService from '../../../services/tripService';
@@ -2058,268 +2058,182 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
         </div>
 
         {/* Layout for Timeline vs Cost Breakdown & Dynamic GPS Maps */}
-        <div className="w-full grid grid-cols-1 grid-cols-1 md:grid-cols-12 gap-3 md:p-6">
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-3 md:p-6">
 
           {/* Timeline Column */}
           <div className="md:col-span-7 flex flex-col gap-4 order-2 md:order-1">
-            {itinerary[activeDay - 1].accommodation ? (
-              <div
-                onClick={() => selectSpotAndScroll(itinerary[activeDay - 1].accommodation)}
-                className={`w-full bg-white border p-4 rounded-2xl flex flex-col gap-3 shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md shimmer-trigger animate-fade-in-up [animation-delay:100ms] ${selectedSpot && selectedSpot.lat === itinerary[activeDay - 1].accommodation.lat
-                  ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
-                  : 'border-gray-200 hover:border-gray-300'
-                  }`}
-              >
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
-                  <div className="relative flex-shrink-0 w-full sm:w-auto">
-                    <img
-                      src={itinerary[activeDay - 1].accommodation.img || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=300&q=80'}
-                      alt="Homestay"
-                      className="w-full sm:w-28 h-40 sm:h-28 rounded-xl object-cover bg-gray-50 border border-gray-100 relative z-10"
-                    />
-                    {showTravelRoute && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3 z-25">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col sm:flex-row flex-wrap justify-between w-full sm:w-auto sm:flex-grow gap-2 min-w-0">
-                    <div className="flex-grow relative z-10 min-w-[120px]">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs md:text-sm lg:text-base bg-ricefield-green/10 text-ricefield-green border border-ricefield-green/20 font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">{t('restPlace')}</span>
-                      </div>
-                      <h4 className="font-outfit text-sm lg:text-base font-bold text-gray-900 mt-1">{itinerary[activeDay - 1].accommodation.name?.[language] || 'Homestay / Khách sạn'}</h4>
-                      <div className="flex flex-col gap-1 mt-1.5">
-                        <span className="text-xs md:text-sm lg:text-base text-gray-500 flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                          <span className="line-clamp-1">{itinerary[activeDay - 1].accommodation.capacity || (language === 'vi' ? 'Tiêu chuẩn 2 người' : 'Standard 2 persons')}</span>
-                        </span>
-                        <span className="text-xs md:text-sm lg:text-base text-gray-500 flex items-start gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                          <span>{typeof itinerary[activeDay - 1].accommodation.address === 'string' ? itinerary[activeDay - 1].accommodation.address : (itinerary[activeDay - 1].accommodation.address?.[language] || itinerary[activeDay - 1].accommodation.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated'))}</span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-start sm:justify-end gap-1.5 sm:gap-2 flex-shrink-0 relative z-10 mt-1 sm:mt-0">
-                      <span className="text-[10px] sm:text-sm lg:text-base text-gray-400 uppercase sm:normal-case font-bold sm:font-normal leading-tight sm:leading-normal">{t('estimatedNight')}:</span>
-                      <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber leading-tight sm:leading-normal">
-                        {formatPriceRange(
-                          itinerary[activeDay - 1].accommodation.minCost || 0,
-                          itinerary[activeDay - 1].accommodation.maxCost || 0,
-                          language === 'vi' ? 'Miễn phí' : 'Free',
-                          language
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex flex-col gap-6 relative pl-1 w-full">
+              {/* Connecting line background */}
+              <div className="absolute left-[19px] top-6 bottom-6 w-0.5 bg-gray-250" />
 
-                {/* Standard bottom quick action bar */}
-                <div className="flex justify-between items-center mt-2 pt-3 border-t border-gray-100 relative z-10">
-                  <span className="text-sm lg:text-base text-gray-400 font-semibold">{t('quickActions')}</span>
-                  <button
-                    onClick={(e) => {
+              {(() => {
+                const activeDayData = itinerary[activeDay - 1];
+                const timelineItems = [];
+
+                // 1. Accommodation (STAY)
+                if (activeDayData.accommodation) {
+                  const acc = activeDayData.accommodation;
+                  timelineItems.push({
+                    slot: 'STAY',
+                    icon: Hotel,
+                    color: 'text-blue-500 bg-blue-50 border-blue-200',
+                    time: '14:00',
+                    badge: language === 'vi' ? 'Nơi nghỉ ngơi' : 'Accommodation',
+                    name: acc.name?.[language] || acc.name?.vi || 'Homestay / Hotel',
+                    img: acc.img || acc.image,
+                    isAccommodation: true,
+                    spot: acc,
+                    details: [
+                      { icon: <Users className="w-3.5 h-3.5 text-gray-400" />, text: acc.capacity || (language === 'vi' ? 'Tiêu chuẩn 2 người' : 'Standard 2 persons') },
+                      { icon: <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />, text: typeof acc.address === 'string' ? acc.address : (acc.address?.[language] || acc.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated')) },
+                      { icon: <DollarSign className="w-3.5 h-3.5 text-gray-400" />, text: `${language === 'vi' ? 'Ước tính/đêm' : 'Est./night'}: ${formatPriceRange(acc.minCost || 0, acc.maxCost || 0, t('free'), language)}` }
+                    ],
+                    onSwap: (e) => {
                       e.stopPropagation();
                       handleSwapSpot(activeDay - 1, 'STAY');
-                    }}
-                    className="text-sm lg:text-base hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                    {language === 'vi' ? 'Đổi địa điểm' : 'Swap Place'}
-                  </button>
-                </div>
-              </div>
-            ) : null}
+                    }
+                  });
+                }
 
-            {/* Timeline elements with Cascading Delay Animations */}
-            {(() => {
-              const activeDayData = itinerary[activeDay - 1];
-              const displaySlots = activeDayData.slots
-                ? activeDayData.slots.filter(s => s.slot !== 'STAY')
-                : [
-                  { slot: 'morning', spot: activeDayData.morning, time: '08:00 - 09:30' },
-                  { slot: 'afternoon', spot: activeDayData.afternoon, time: '14:30 - 16:00' },
-                  { slot: 'evening', spot: activeDayData.evening, time: '19:00 - 20:30' }
-                ].filter(s => s.spot);
+                // 2. Slots
+                const displaySlots = activeDayData.slots
+                  ? activeDayData.slots.filter(s => s.slot !== 'STAY')
+                  : [
+                      { slot: 'morning', spot: activeDayData.morning, time: '08:00 - 09:30' },
+                      { slot: 'afternoon', spot: activeDayData.afternoon, time: '14:30 - 16:00' },
+                      { slot: 'evening', spot: activeDayData.evening, time: '19:00 - 20:30' }
+                    ].filter(s => s.spot);
 
-              const getSlotInfo = (slotKey) => {
-                const key = slotKey?.toUpperCase() || '';
-                if (key.includes('BREAKFAST')) {
-                  return { label: language === 'vi' ? '🥞 Ăn sáng' : '🥞 Breakfast', icon: Sunrise, color: 'text-amber-600 bg-amber-50 border-amber-200' };
-                }
-                if (key.includes('MORNING')) {
-                  return { label: language === 'vi' ? '☀️ Tham quan Sáng' : '☀️ Morning Sightseeing', icon: Compass, color: 'text-blue-500 bg-blue-50 border-blue-200' };
-                }
-                if (key.includes('LUNCH')) {
-                  return { label: language === 'vi' ? '🍲 Ăn trưa' : '🍲 Lunch', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
-                }
-                if (key.includes('AFTERNOON_TEA') || key.includes('CAFE')) {
-                  return { label: language === 'vi' ? '☕ Ăn chiều & Cà phê' : '☕ Afternoon Tea & Cafe', icon: Compass, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
-                }
-                if (key.includes('AFTERNOON')) {
-                  return { label: language === 'vi' ? '🌇 Tham quan Chiều' : '🌇 Afternoon Sightseeing', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
-                }
-                if (key.includes('DINNER')) {
-                  return { label: language === 'vi' ? '🏮 Ăn tối' : '🏮 Dinner', icon: Moon, color: 'text-rose-600 bg-rose-50 border-rose-200' };
-                }
-                if (key.includes('EVENING')) {
-                  return { label: language === 'vi' ? '🌃 Vui chơi Tối' : '🌃 Evening Experience', icon: Moon, color: 'text-indigo-650 bg-indigo-50 border-indigo-200' };
-                }
-                return { label: language === 'vi' ? '📌 Trải nghiệm' : '📌 Activity', icon: Compass, color: 'text-gray-500 bg-gray-50 border-gray-200' };
-              };
+                const getSlotInfo = (slotKey) => {
+                  const key = slotKey?.toUpperCase() || '';
+                  if (key.includes('BREAKFAST')) {
+                    return { label: language === 'vi' ? 'Ăn sáng' : 'Breakfast', icon: Sunrise, color: 'text-amber-600 bg-amber-50 border-amber-200' };
+                  }
+                  if (key.includes('MORNING')) {
+                    return { label: language === 'vi' ? 'Tham quan Sáng' : 'Morning Sightseeing', icon: Compass, color: 'text-blue-500 bg-blue-50 border-blue-200' };
+                  }
+                  if (key.includes('LUNCH')) {
+                    return { label: language === 'vi' ? 'Ăn trưa' : 'Lunch', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                  }
+                  if (key.includes('AFTERNOON_TEA') || key.includes('CAFE')) {
+                    return { label: language === 'vi' ? 'Ăn chiều & Cà phê' : 'Afternoon Tea & Cafe', icon: Compass, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+                  }
+                  if (key.includes('AFTERNOON')) {
+                    return { label: language === 'vi' ? 'Tham quan Chiều' : 'Afternoon Sightseeing', icon: Sun, color: 'text-orange-600 bg-orange-50 border-orange-200' };
+                  }
+                  if (key.includes('DINNER')) {
+                    return { label: language === 'vi' ? 'Ăn tối' : 'Dinner', icon: Moon, color: 'text-rose-600 bg-rose-50 border-rose-200' };
+                  }
+                  if (key.includes('EVENING')) {
+                    return { label: language === 'vi' ? 'Vui chơi Tối' : 'Evening Experience', icon: Moon, color: 'text-indigo-650 bg-indigo-50 border-indigo-200' };
+                  }
+                  return { label: language === 'vi' ? 'Trải nghiệm' : 'Activity', icon: Compass, color: 'text-gray-500 bg-gray-50 border-gray-200' };
+                };
 
-              const itemsPerPage = 3;
-              const totalPages = Math.ceil(displaySlots.length / itemsPerPage);
-              const safePage = Math.min(slotPage, Math.max(1, totalPages));
-              const startIndex = (safePage - 1) * itemsPerPage;
-              const paginatedSlots = displaySlots.slice(startIndex, startIndex + itemsPerPage);
+                displaySlots.forEach((s) => {
+                  const spot = s.spot;
+                  if (!spot) return;
+                  const { label, icon, color } = getSlotInfo(s.slot);
+                  timelineItems.push({
+                    slot: s.slot,
+                    icon,
+                    color,
+                    time: s.time || '',
+                    badge: label,
+                    name: spot.name?.[language] || spot.name?.vi || 'Spot',
+                    img: spot.img || spot.image,
+                    isAccommodation: false,
+                    spot,
+                    details: [
+                      { icon: <DollarSign className="w-3.5 h-3.5 text-gray-400" />, text: `${language === 'vi' ? 'Chi phí dự kiến' : 'Est. cost'}: ${formatPriceRange(spot.minCost || 0, spot.maxCost || 0, t('free'), language)}` },
+                      { icon: <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />, text: typeof spot.address === 'string' ? spot.address : (spot.address?.[language] || spot.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated')) }
+                    ],
+                    onSwap: (e) => {
+                      e.stopPropagation();
+                      handleSwapSpot(activeDay - 1, s.slot);
+                    }
+                  });
+                });
 
-              return (
-                <>
-                  {paginatedSlots.map((s, idx) => {
-                    const item = s.spot;
-                    if (!item) return null;
-                    const { label, icon: Icon, color } = getSlotInfo(s.slot);
-                    const isFocus = selectedSpot && selectedSpot.lat === item.lat && selectedSpot.lng === item.lng;
-                    const delay = `[animation-delay:${200 + idx * 100}ms]`;
-                    const timeStr = s.time ? s.time : (language === 'vi' ? 'Lịch trình dự kiến' : 'Estimated schedule');
+                return timelineItems.map((item, idx) => {
+                  const isFocus = selectedSpot && selectedSpot.lat === item.spot.lat && selectedSpot.lng === item.spot.lng;
+                  const Icon = item.icon;
 
-                    return (
-                      <div
-                        key={`${s.slot}-${idx}`}
-                        onClick={() => selectSpotAndScroll(item)}
-                        className={`relative flex gap-4 bg-white border p-4 rounded-2xl group hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer shimmer-trigger animate-fade-in-up ${delay} ${isFocus
-                          ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                      >
-                        {/* Timeline node */}
-                        <div className="flex flex-col items-center relative z-10">
-                          <div className={`p-2 rounded-xl border ${color} flex-shrink-0 group-hover:scale-105 transition-transform duration-300 relative`}>
-                            <Icon className="w-4 h-4" />
-                            {showTravelRoute && (
-                              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 z-25">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="w-0.5 h-full bg-gray-150 mt-2 group-last:hidden" />
+                  return (
+                    <div
+                      key={`${item.slot}-${idx}`}
+                      onClick={() => selectSpotAndScroll(item.spot)}
+                      className="flex gap-3 items-start relative group w-full"
+                    >
+                      {/* Left: Timeline Icon & Time Stack */}
+                      <div className="flex flex-col items-center w-10 flex-shrink-0 z-10">
+                        <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-md bg-white transition-transform group-hover:scale-105 duration-300 ${item.color}`}>
+                          <Icon className="w-4 h-4" />
                         </div>
+                        {item.time && (
+                          <div className="text-[9.5px] text-gray-500 font-extrabold mt-1.5 text-center leading-tight">
+                            {item.time.split('-').map((t, tIdx) => (
+                              <div key={tIdx}>{t.trim()}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                        {/* Content using accommodation layout style */}
-                        <div className="flex-grow relative z-10 flex flex-col gap-3">
-                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
-                            {item.img && (
-                              <div className="relative flex-shrink-0 w-full sm:w-auto">
-                                <img
-                                  src={item.img}
-                                  alt={item.name?.[language] || 'Spot'}
-                                  className="w-full sm:w-28 h-40 sm:h-28 rounded-xl object-cover bg-gray-50 border border-gray-100 relative z-10"
-                                />
-                                {item.images && item.images.length > 0 && (
-                                  <span className="absolute bottom-1 right-1 text-xs md:text-sm lg:text-base bg-black/50 text-white px-1.5 py-0.5 rounded-md font-semibold z-20">📸 {item.images.length}</span>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex flex-col w-full sm:flex-grow gap-2 relative z-10 min-w-0">
-                              <div className="flex flex-col sm:flex-row flex-wrap justify-between gap-1.5 sm:gap-4">
-                                <div className="flex-grow min-w-[120px]">
-                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-xs md:text-sm lg:text-base font-bold text-gray-400 uppercase tracking-widest">
-                                    <span>{label}</span>
-                                    <span className="text-gray-300">•</span>
-                                    <span className="text-[11px] sm:text-sm lg:text-base text-gray-500 font-semibold normal-case">{timeStr}</span>
-                                  </div>
-                                  <h4 className={`font-outfit text-sm lg:text-base font-bold transition-colors mt-0.5 sm:mt-1 ${isFocus ? 'text-heritage-amber font-extrabold' : 'text-gray-900 group-hover:text-heritage-amber'
-                                    }`}>
-                                    {item.name?.[language] || 'Địa điểm tham quan'}
-                                  </h4>
+                      {/* Right: Card content */}
+                      <div
+                        className={`flex-grow min-w-0 bg-white border p-4 rounded-2xl shadow-sm flex flex-col gap-2.5 transition-all duration-300 cursor-pointer ${
+                          isFocus
+                            ? 'border-heritage-amber ring-2 ring-heritage-amber/20 scale-[1.01]'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex gap-3 items-start">
+                          {item.img && (
+                            <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0">
+                              <img
+                                src={item.img}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-grow flex flex-col min-w-0">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 leading-none mb-1">
+                              {item.badge}
+                            </span>
+                            <h4 className="font-outfit text-sm font-black text-gray-900 leading-snug line-clamp-2">
+                              {item.name}
+                            </h4>
+                            
+                            {/* Details layout */}
+                            <div className="flex flex-col gap-1 mt-1 text-[11px] text-gray-500 font-bold leading-normal">
+                              {item.details.map((d, dIdx) => (
+                                <div key={dIdx} className="flex items-center gap-1.5 min-w-0">
+                                  <span className="flex-shrink-0">{d.icon}</span>
+                                  <span className="truncate">{d.text}</span>
                                 </div>
-                                <div className="flex items-center justify-start sm:justify-end gap-1.5 sm:gap-2 flex-shrink-0 bg-gray-50 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-lg sm:rounded-none border border-gray-100 sm:border-none self-start sm:self-auto w-fit sm:w-auto mt-0.5 sm:mt-0">
-                                  <span className="text-[10px] sm:text-sm lg:text-base text-gray-400 uppercase sm:normal-case font-bold sm:font-normal leading-tight sm:leading-normal">{language === 'vi' ? 'Chi phí dự kiến:' : 'Est. cost:'}</span>
-                                  <span className="text-xs md:text-sm lg:text-base font-extrabold text-heritage-amber leading-tight sm:leading-normal">
-                                    {formatPriceRange(item.minCost || 0, item.maxCost || 0, t('free'), language)}
-                                  </span>
-                                </div>
-                              </div>
-                              <p className="text-sm lg:text-base text-gray-500 leading-normal flex items-start gap-1.5 mt-0.5">
-                                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-1" />
-                                <span>{typeof item.address === 'string' ? item.address : (item.address?.[language] || item.address?.vi || (language === 'vi' ? 'Chưa cập nhật địa chỉ' : 'Address not updated'))}</span>
-                              </p>
+                              ))}
                             </div>
                           </div>
+                        </div>
 
-                          {/* Interchange actions */}
-                          <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                            <span className="text-sm lg:text-base text-gray-400 font-semibold">{t('quickActions')}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSwapSpot(activeDay - 1, s.slot);
-                              }}
-                              className="text-sm lg:text-base hover:text-heritage-amber text-gray-500 flex items-center gap-1 transition-colors cursor-pointer font-bold border-none bg-transparent"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                              {t('swapSpot')}
-                            </button>
-                          </div>
+                        {/* Bottom Action Bar */}
+                        <div className="flex justify-between items-center mt-1 pt-2.5 border-t border-gray-100 text-[11px] font-bold text-gray-400">
+                          <span>{language === 'vi' ? 'Hành động nhanh' : 'Quick Actions'}</span>
+                          <button
+                            onClick={item.onSwap}
+                            className="text-[11px] text-blue-650 hover:text-heritage-amber flex items-center gap-1 font-bold border-none bg-transparent cursor-pointer"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            {language === 'vi' ? 'Đổi địa điểm' : 'Swap Place'}
+                          </button>
                         </div>
                       </div>
-                    );
-                  })}
-
-                  {/* Beautiful & Premium Pagination Controls */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-3 p-3 bg-white border border-gray-150 rounded-2xl shadow-sm animate-fade-in-up">
-                      <button
-                        type="button"
-                        disabled={safePage === 1}
-                        onClick={() => setSlotPage(p => Math.max(1, p - 1))}
-                        className={`p-2 rounded-xl flex items-center justify-center border transition-all duration-200 cursor-pointer ${safePage === 1
-                          ? 'bg-transparent text-gray-300 border-gray-100 cursor-not-allowed'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:text-heritage-amber hover:border-heritage-amber hover:bg-amber-50/20 active:scale-95'
-                          }`}
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-
-                      <div className="flex items-center gap-1.5">
-                        {Array.from({ length: totalPages }).map((_, pageIdx) => {
-                          const pageNum = pageIdx + 1;
-                          const isActive = pageNum === safePage;
-                          return (
-                            <button
-                              key={pageNum}
-                              type="button; cursor-pointer"
-                              onClick={() => setSlotPage(pageNum)}
-                              className={`w-12 md:w-8 h-12 md:h-8 rounded-xl text-xs md:text-sm lg:text-base font-extrabold flex items-center justify-center transition-all duration-200 border cursor-pointer ${isActive
-                                ? 'bg-heritage-amber text-white border-transparent shadow-md shadow-heritage-amber/15 scale-[1.05]'
-                                : 'bg-white text-gray-500 border-gray-200 hover:text-gray-900 hover:border-gray-350 hover:bg-gray-50'
-                                }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={safePage === totalPages}
-                        onClick={() => setSlotPage(p => Math.min(totalPages, p + 1))}
-                        className={`p-2 rounded-xl flex items-center justify-center border transition-all duration-200 cursor-pointer ${safePage === totalPages
-                          ? 'bg-transparent text-gray-300 border-gray-100 cursor-not-allowed'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:text-heritage-amber hover:border-heritage-amber hover:bg-amber-50/20 active:scale-95'
-                          }`}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
                     </div>
-                  )}
-                </>
-              );
-            })()}
+                  );
+                });
+              })()}
+            </div>
           </div>
 
           {/* Costs Breakdown & Dynamic Google Maps Sidebar Column */}
@@ -2798,7 +2712,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
       </div>
 
       {/* Tab Switcher - Premium Design */}
-      <div className="flex bg-gray-100 p-1 rounded-xl shadow-inner border border-gray-200 relative z-20">
+      <div className="hidden md:flex bg-gray-100 p-1 rounded-xl shadow-inner border border-gray-200 relative z-20">
         <button
           onClick={() => setActivePlannerTab('studio')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs md:text-sm lg:text-base font-bold transition-all duration-300 border-none cursor-pointer ${activePlannerTab === 'studio'
