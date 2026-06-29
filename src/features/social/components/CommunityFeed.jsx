@@ -218,8 +218,8 @@ export default function CommunityFeed() {
         name: d.user ? d.user.fullName : 'Traveler',
         avatar: d.user ? (d.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80') : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
         badge: {
-          vi: d.user && d.user.role === 'ADMIN' ? 'Chuyên Gia Bản Địa' : 'Thành viên Local',
-          en: d.user && d.user.role === 'ADMIN' ? 'Local Expert' : 'Local Member'
+          vi: d.user && d.user.role === 'ADMIN' ? 'Chuyên gia Văn Hóa' : 'Hội viên Tích cực',
+          en: d.user && d.user.role === 'ADMIN' ? 'Cultural Expert' : 'Active Member'
         }
       },
       category: d.category || 'healing',
@@ -839,6 +839,33 @@ export default function CommunityFeed() {
 
 
 
+  const getPostTitleAndBody = (postItem) => {
+    const textVi = postItem.content.vi || '';
+    const textEn = postItem.content.en || '';
+    const text = language === 'vi' ? textVi : textEn;
+    if (!text) return { title: '', body: '' };
+    
+    const lines = text.split('\n');
+    if (lines.length > 1 && lines[0].trim().length < 80) {
+      return {
+        title: lines[0].trim(),
+        body: lines.slice(1).join('\n').trim()
+      };
+    }
+    
+    if (postItem.spotName) {
+      return {
+        title: language === 'vi' ? `Lộ trình tại ${postItem.spotName}` : `Journey at ${postItem.spotName}`,
+        body: text
+      };
+    }
+    
+    return {
+      title: language === 'vi' ? 'Nhật ký du lịch' : 'Travel Diary',
+      body: text
+    };
+  };
+
   const renderPhotoGrid = (images) => {
     if (!images || images.length === 0) return null;
 
@@ -846,23 +873,23 @@ export default function CommunityFeed() {
 
     if (count === 1) {
       return (
-        <div 
-          className="w-full rounded-xl overflow-hidden flex justify-center relative cursor-pointer group"
+        <div
+          className="w-full aspect-video rounded-2xl overflow-hidden cursor-pointer group"
           onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}
         >
-          <img src={images[0]} alt="Post Attach" className="w-full h-auto max-h-[600px] object-cover group-hover:opacity-95 transition-opacity" />
+          <img src={images[0]} alt="Post Attach" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
         </div>
       );
     }
 
     if (count === 2) {
       return (
-        <div className="w-full aspect-square sm:aspect-video flex gap-1 rounded-xl overflow-hidden cursor-pointer">
-          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
-            <img src={images[0]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 1" />
+        <div className="w-full aspect-[2/1] flex gap-3 cursor-pointer">
+          <div className="w-1/2 h-full rounded-2xl overflow-hidden" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 0 })}>
+            <img src={images[0]} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300" alt="Post Attach 1" />
           </div>
-          <div className="w-1/2 h-full" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
-            <img src={images[1]} className="w-full h-full object-cover hover:opacity-90 transition-opacity" alt="Post Attach 2" />
+          <div className="w-1/2 h-full rounded-2xl overflow-hidden" onClick={() => setLightboxData({ isOpen: true, images, currentIndex: 1 })}>
+            <img src={images[1]} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300" alt="Post Attach 2" />
           </div>
         </div>
       );
@@ -1046,70 +1073,14 @@ export default function CommunityFeed() {
         )}
       </div>
 
-      {/* Category Filter Tabs */}
-      <div className="flex flex-col gap-2.5 border-b border-gray-100 pb-4">
-        <span className="text-xs md:text-sm text-gray-400 font-extrabold uppercase tracking-wider">{t('communityTags')}:</span>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setActiveTag('all')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
-              activeTag === 'all'
-                ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-            }`}
-          >
-            <Compass className="w-4 h-4 relative z-10" />
-            <span className="relative z-10">{t('all')}</span>
-          </button>
-          
-          {dbStyles.length > 0 ? (
-            [...dbStyles, 'Khác'].map((styleStr) => (
-              <button
-                key={styleStr}
-                onClick={() => setActiveTag(styleStr)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${
-                  activeTag === styleStr
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                }`}
-              >
-                <MapPin className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">{styleStr}</span>
-              </button>
-            ))
-          ) : (
-            [
-              { id: 'adventure', label: t('tagAdventure'), icon: Trophy },
-              { id: 'healing', label: t('tagHealing'), icon: Sparkles },
-              { id: 'scenic', label: t('tagScenic'), icon: MapPin }
-            ].map((tag) => {
-              const TagIcon = tag.icon;
-              const isActive = activeTag === tag.id;
-              return (
-                <button
-                  key={tag.id}
-                  onClick={() => setActiveTag(tag.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold border transition-all duration-300 cursor-pointer flex-shrink-0 hover:-translate-y-0.5 shimmer-trigger ${isActive
-                    ? 'bg-heritage-amber border-heritage-amber text-white shadow-md shadow-heritage-amber/15 scale-[1.02]'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                    }`}
-                >
-                  <TagIcon className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10">{tag.label}</span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
 
-      {/* Split Layout: Posts Column (8) vs Local Guide Sidebar (4) */}
+
+      {/* Split Layout: Composer (4) left | Posts Feed (8) right */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 md:p-6 lg:gap-4 md:gap-8 items-start">
 
-        {/* Main social posts Column */}
-        <div className="lg:col-span-8 flex flex-col gap-3 md:p-6">
+        {/* LEFT: Composer Sidebar (sticky on desktop) */}
+        <div className="lg:col-span-4 flex flex-col gap-3 lg:sticky lg:top-24">
 
-          {/* Advanced Local Diary Composer */}
           <form
             onSubmit={handleCreatePost}
             className="bg-gradient-to-tr from-white to-blue-50/40 border border-heritage-gold/20 p-4 sm:p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm relative overflow-hidden shimmer-trigger animate-fade-in-up [animation-delay:100ms]"
@@ -1228,41 +1199,13 @@ export default function CommunityFeed() {
               </button>
             </div>
           </form>
+        </div>
 
-          {/* Hot Trending Hashtags (Mobile Only, Below Composer) */}
-          <div className="lg:hidden mt-2 mb-2 bg-white border border-gray-200 p-3 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger">
-            <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
-              <Flame className="w-4 h-4 text-blue-500" />
-              {t('trendingHashtags')}
-            </h3>
-
-            <div className="flex flex-col gap-3 relative z-10">
-              {getTrendingHashtags().map((item, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setActiveHashtagFilter(item.tag)}
-                  className="flex justify-between items-center text-xs md:text-sm group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
-                    <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs md:text-sm text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
-                    {idx === 0 && (
-                      <span className="text-xs md:text-sm bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
-                    )}
-                    {idx > 0 && idx < 3 && (
-                      <span className="text-xs md:text-sm bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* RIGHT: Social Feed List (span-8) */}
+        <div className="lg:col-span-8 flex flex-col gap-3">
 
           {/* Social feed list items */}
-          <div className="flex flex-col gap-3 md:p-6">
+          <div className="flex flex-col gap-3">
             {filteredPosts.length === 0 ? (
               <div className="bg-white border border-dashed border-gray-200 p-3 md:p-6 md:p-12 rounded-2xl text-center text-gray-400 animate-scale-up">
                 <Compass className="w-8 h-8 mx-auto mb-2 opacity-50 animate-float" />
@@ -1287,22 +1230,12 @@ export default function CommunityFeed() {
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-outfit text-sm font-bold text-gray-900 group-hover:text-heritage-amber transition-colors">{post.user.name}</span>
-                          <span className="text-xs md:text-sm bg-ricefield-green/10 text-ricefield-green font-extrabold px-2 py-0.5 rounded-full border border-ricefield-green/20">
-                            {post.user.badge[language]}
-                          </span>
                         </div>
                         <span className="text-xs md:text-sm text-gray-400">{post.date[language]}</span>
                       </div>
                     </div>
 
-                    {/* Visual Category Badge pill */}
-                    <div className="flex items-center gap-1.5 flex-wrap justify-start md:justify-end">
-                      <span className={`text-xs md:text-sm font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border leading-none ${
-                        post.category === 'Khác' ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-heritage-amber/10 text-heritage-amber border-heritage-amber/20'
-                      }`}>
-                        {post.category || 'Khác'}
-                      </span>
-                    </div>
+
                   </div>
 
                   {post.reported && (
@@ -1319,10 +1252,22 @@ export default function CommunityFeed() {
                     </div>
                   )}
 
-                  {/* Content body text */}
-                  <p className="text-xs md:text-sm sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line font-medium relative z-10">
-                    {post.content[language]}
-                  </p>
+                  {/* Content title and body text */}
+                  {(() => {
+                    const { title, body } = getPostTitleAndBody(post);
+                    return (
+                      <div className="flex flex-col gap-1.5 relative z-10">
+                        {title && (
+                          <h3 className="font-outfit text-sm md:text-base font-extrabold text-gray-900 leading-snug">
+                            {title}
+                          </h3>
+                        )}
+                        <p className="text-xs md:text-sm text-gray-600 leading-relaxed whitespace-pre-line font-medium">
+                          {body}
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {/* Optional Linked Spot Details */}
                   {post.spot && (
@@ -1360,127 +1305,147 @@ export default function CommunityFeed() {
                     </div>
                   )}
 
-
                   {/* Images attachments */}
                   <div className="w-full relative z-10 mt-3">
                     {renderPhotoGrid(post.images)}
                   </div>
 
-                  {/* Bottom Action indicators */}
-                  <div className="flex flex-row items-center justify-between border-t border-gray-100 pt-3 text-xs md:text-sm text-gray-500 relative z-10 w-full">
-                    
-                    <div className="flex items-center gap-3 sm:gap-3 md:p-5">
-                      {/* Likes & Dislikes */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Like */}
-                        <button
-                          onClick={() => handleLike(post.id)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasLiked ? 'text-green-600 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
-                        >
-                          <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-green-600 fill-green-600' : 'text-gray-400'}`} />
-                          <span>{post.likes}</span>
-                        </button>
-
-                        {/* Dislike */}
-                        <button
-                          onClick={() => handleDislike(post.id)}
-                          className={`flex items-center gap-1 hover:text-gray-800 transition-all cursor-pointer bg-white border-none ${post.hasDisliked ? 'text-red-500 font-extrabold scale-[1.03]' : 'text-gray-500'}`}
-                        >
-                          <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                          <span>{post.dislikes}</span>
-                        </button>
+                  <div className="flex flex-col gap-2 relative z-10 w-full mt-2">
+                    {/* Row 1: Stats & 3-dots actions menu */}
+                    <div className="flex flex-row items-center justify-between text-xs text-gray-500 w-full px-1">
+                      <div className="flex items-center gap-4">
+                        {/* Likes Count */}
+                        <div className="flex items-center gap-1.5">
+                          <ThumbsUp className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-extrabold text-gray-600">{post.likes}</span>
+                        </div>
+                        {/* Comments Count */}
+                        <div className="flex items-center gap-1.5 font-semibold">
+                          <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{post.comments.length}</span>
+                          <span>{t('commentStat')}</span>
+                        </div>
                       </div>
 
-                      {/* Comments trigger */}
-                      <button
-                        onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
-                        className="flex items-center gap-1.5 hover:text-gray-800 transition-colors cursor-pointer bg-white border-none font-semibold"
-                      >
-                        <MessageSquare className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
-                        <span className="hidden sm:inline">{post.comments.length} {t('commentStat')}</span>
-                        <span className="inline sm:hidden">{post.comments.length}</span>
-                      </button>
-                    </div>
+                      {/* Actions Dropdown Button (3-dots) */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdownPostId(activeDropdownPostId === post.id ? null : post.id);
+                          }}
+                          className="flex items-center justify-center p-1.5 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
+                          title={language === 'vi' ? 'Thao tác' : 'Actions'}
+                        >
+                          <MoreHorizontal className="w-5 h-5 text-gray-400" />
+                        </button>
 
-                    {/* Actions Dropdown Button (3-dots) */}
-                    <div className="relative">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveDropdownPostId(activeDropdownPostId === post.id ? null : post.id);
-                        }}
-                        className="flex items-center gap-1.5 p-1.5 sm:p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-800 rounded-xl transition-all cursor-pointer bg-white border-none"
-                        title={language === 'vi' ? 'Thao tác' : 'Actions'}
-                      >
-                        <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                      </button>
-
-                      {activeDropdownPostId === post.id && (
-                        <div className="absolute right-0 bottom-10 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 z-50 animate-scale-up select-none">
-                          {/* Case A: Is the Owner of the post */}
-                          {post.authorId === currentUser?.id ? (
-                            <>
-                              {/* Option 1: Can DELETE if 0 likes AND 0 comments */}
-                              {post.likes === 0 && post.comments.length === 0 ? (
-                                <button
-                                  onClick={() => handleDeletePost(post.id)}
-                                  className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                  <span>{language === 'vi' ? 'Xóa bài viết' : 'Delete Post'}</span>
-                                </button>
-                              ) : (
-                                /* Option 2: Can HIDE or SHOW if likes > 0 OR comments > 0 */
-                                post.status === 'hidden' ? (
+                        {activeDropdownPostId === post.id && (
+                          <div className="absolute right-0 bottom-8 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 z-50 animate-scale-up select-none">
+                            {/* Case A: Is the Owner of the post */}
+                            {post.authorId === currentUser?.id ? (
+                              <>
+                                {/* Option 1: Can DELETE if 0 likes AND 0 comments */}
+                                {post.likes === 0 && post.comments.length === 0 ? (
                                   <button
-                                    onClick={() => handleToggleHidePost(post.id, 'public')}
-                                    className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-red-650 hover:bg-red-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
                                   >
-                                    <Eye className="w-4 h-4 text-ricefield-green" />
-                                    <span>{language === 'vi' ? 'Hiển thị bài viết' : 'Show Post'}</span>
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                    <span>{language === 'vi' ? 'Xóa bài viết' : 'Delete Post'}</span>
                                   </button>
                                 ) : (
-                                  <button
-                                    onClick={() => handleToggleHidePost(post.id, 'hidden')}
-                                    className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                                  >
-                                    <EyeOff className="w-4 h-4 text-gray-400" />
-                                    <span>{language === 'vi' ? 'Ẩn bài viết' : 'Hide Post'}</span>
-                                  </button>
-                                )
-                              )}
-                            </>
-                          ) : (
-                            /* Case B: NOT the Owner of the post */
-                            <button
-                              onClick={() => handleReportPost(post.id)}
-                              className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                            >
-                              <AlertTriangle className="w-4 h-4 text-blue-500 animate-pulse" />
-                              <span>{language === 'vi' ? 'Báo cáo vi phạm' : 'Report Post'}</span>
-                            </button>
-                          )}
+                                  /* Option 2: Can HIDE or SHOW if likes > 0 OR comments > 0 */
+                                  post.status === 'hidden' ? (
+                                    <button
+                                      onClick={() => handleToggleHidePost(post.id, 'public')}
+                                      className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                    >
+                                      <Eye className="w-4 h-4 text-ricefield-green" />
+                                      <span>{language === 'vi' ? 'Hiển thị bài viết' : 'Show Post'}</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleToggleHidePost(post.id, 'hidden')}
+                                      className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                                    >
+                                      <EyeOff className="w-4 h-4 text-gray-400" />
+                                      <span>{language === 'vi' ? 'Ẩn bài viết' : 'Hide Post'}</span>
+                                    </button>
+                                  )
+                                )}
+                              </>
+                            ) : (
+                              /* Case B: NOT the Owner of the post */
+                              <button
+                                onClick={() => handleReportPost(post.id)}
+                                className="w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                              >
+                                <AlertTriangle className="w-4 h-4 text-blue-500 animate-pulse" />
+                                <span>{language === 'vi' ? 'Báo cáo vi phạm' : 'Report Post'}</span>
+                              </button>
+                            )}
 
-                          {/* Share Link option inside menu */}
-                          <div className="border-t border-gray-100 my-1" />
-                          <button
-                            onClick={() => {
-                              handleShareLink(post.id);
-                              setActiveDropdownPostId(null);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
-                              sharedPostId === post.id ? 'text-green-600 hover:bg-green-50' : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Share2 className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {sharedPostId === post.id 
-                                ? (language === 'vi' ? 'Đã copy link!' : 'Copied!') 
-                                : (language === 'vi' ? 'Chia sẻ liên kết' : 'Copy Share Link')}
-                            </span>
-                          </button>
-                        </div>
-                      )}
+                            {/* Share Link option inside menu */}
+                            <div className="border-t border-gray-100 my-1" />
+                            <button
+                              onClick={() => {
+                                handleShareLink(post.id);
+                                setActiveDropdownPostId(null);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-xs md:text-sm font-extrabold transition-colors flex items-center gap-2 border-none bg-transparent cursor-pointer ${
+                                sharedPostId === post.id ? 'text-green-600 hover:bg-green-50' : 'text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              <Share2 className="w-4 h-4 text-gray-400" />
+                              <span>
+                                {sharedPostId === post.id 
+                                  ? (language === 'vi' ? 'Đã copy link!' : 'Copied!') 
+                                  : (language === 'vi' ? 'Chia sẻ liên kết' : 'Copy Share Link')}
+                              </span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Divider line */}
+                    <div className="border-t border-gray-150 w-full my-0.5" />
+
+                    {/* Row 2: Action Buttons */}
+                    <div className="grid grid-cols-3 w-full text-xs md:text-sm text-gray-500">
+                      {/* Thích */}
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center justify-center gap-1.5 py-2 hover:bg-gray-50 rounded-xl transition-all cursor-pointer bg-transparent border-none ${
+                          post.hasLiked ? 'text-heritage-amber font-extrabold' : 'text-gray-500 font-semibold'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasLiked ? 'text-heritage-amber fill-heritage-amber' : 'text-gray-400'}`} />
+                        <span>{language === 'vi' ? 'Thích' : 'Like'}</span>
+                      </button>
+
+                      {/* Bình luận */}
+                      <button
+                        onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
+                        className={`flex items-center justify-center gap-1.5 py-2 hover:bg-gray-50 rounded-xl transition-all cursor-pointer bg-transparent border-none text-gray-500 ${
+                          openCommentsPostId === post.id ? 'font-extrabold text-heritage-amber' : 'font-semibold'
+                        }`}
+                      >
+                        <MessageSquare className={`w-4 h-4 ${openCommentsPostId === post.id ? 'text-heritage-amber' : 'text-gray-400'}`} />
+                        <span>{language === 'vi' ? 'Bình luận' : 'Comment'}</span>
+                      </button>
+
+                      {/* Không thích */}
+                      <button
+                        onClick={() => handleDislike(post.id)}
+                        className={`flex items-center justify-center gap-1.5 py-2 hover:bg-gray-50 rounded-xl transition-all cursor-pointer bg-transparent border-none ${
+                          post.hasDisliked ? 'text-red-500 font-extrabold' : 'text-gray-500 font-semibold'
+                        }`}
+                      >
+                        <ThumbsDown className={`w-4 h-4 transition-transform duration-300 active:scale-150 ${post.hasDisliked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                        <span>{language === 'vi' ? 'Không thích' : 'Dislike'}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -1631,44 +1596,6 @@ export default function CommunityFeed() {
                 </article>
               ))
             )}
-          </div>
-
-        </div>
-
-        {/* Local Expert Sidebar Column */}
-        <div className="hidden lg:flex lg:col-span-4 flex-col gap-6 sticky top-24">
-
-          {/* Hot Trending Hashtags */}
-          <div className="bg-white border border-gray-200 p-3 md:p-5 rounded-2xl flex flex-col gap-4 shadow-sm shimmer-trigger animate-fade-in-up [animation-delay:400ms]">
-            <h3 className="font-outfit text-sm font-extrabold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5 relative z-10">
-              <Flame className="w-4 h-4 text-blue-500" />
-              {t('trendingHashtags')}
-            </h3>
-
-            <div className="flex flex-col gap-3 relative z-10">
-              {getTrendingHashtags().map((item, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setActiveHashtagFilter(item.tag)}
-                  className="flex justify-between items-center text-xs md:text-sm group cursor-pointer hover:translate-x-0.5 transition-transform duration-200"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-gray-400 group-hover:text-heritage-amber transition-colors" />
-                    <span className="font-bold text-gray-700 group-hover:text-heritage-amber transition-colors">{item.tag}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs md:text-sm text-gray-400 font-semibold">{item.likes ?? 0} likes</span>
-                    {idx === 0 && (
-                      <span className="text-xs md:text-sm bg-red-50 text-red-500 border border-red-100 px-1 rounded font-bold uppercase scale-90">Hot</span>
-                    )}
-                    {idx > 0 && idx < 3 && (
-                      <span className="text-xs md:text-sm bg-blue-50 text-blue-600 border border-blue-100 px-1 rounded font-bold uppercase scale-90">Rising</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
           </div>
 
         </div>

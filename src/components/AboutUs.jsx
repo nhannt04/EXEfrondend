@@ -12,13 +12,11 @@ export default function AboutUs() {
   const { t, language } = useLanguage();
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 heritage-pattern">
-      <div className="max-w-full w-full px-4 md:px-8 lg:px-16 space-y-10 animate-page-enter">
+    <div className="min-h-0 md:min-h-[80vh] flex flex-col items-center justify-start md:justify-center py-4 md:py-12 px-4 sm:px-6 lg:px-8 heritage-pattern">
+      <div className="max-w-full w-full px-4 md:px-8 lg:px-16 space-y-6 md:space-y-10 animate-page-enter">
 
-
-
-        {/* Main Content Glass Card */}
-        <div className="glass-panel p-8 sm:p-10 rounded-3xl space-y-8 shadow-xl relative overflow-hidden shimmer-trigger">
+        {/* Main Content Glass Card - Hidden on Mobile */}
+        <div className="hidden md:block glass-panel p-8 sm:p-10 rounded-3xl space-y-8 shadow-xl relative overflow-hidden shimmer-trigger">
           {/* Accent decoration */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-heritage-amber/5 rounded-full blur-3xl -mr-16 -mt-16" />
 
@@ -71,26 +69,20 @@ export default function AboutUs() {
           </div>
         </div>
 
-        {/* Horizontal Divider */}
-        <hr className="border-gray-200/85 my-12" />
+        {/* Horizontal Divider - Hidden on Mobile */}
+        <hr className="hidden md:block border-gray-200/85 my-12" />
 
         {/* Development Team Section */}
-        <div className="space-y-8 animate-page-enter [animation-delay:300ms]">
+        <div className="space-y-8 animate-page-enter [animation-delay:300ms] w-full">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-outfit">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-outfit uppercase">
               {language === 'vi' ? 'Đội Ngũ Phát Triển' : 'Development Team'}
             </h2>
             <div className="w-12 h-1 bg-heritage-amber mx-auto rounded-full mt-2" />
-            <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
-              {language === 'vi'
-                ? 'Những thành viên tâm huyết kiến tạo nên nền tảng số hóa di sản và du lịch thông minh.'
-                : 'The passionate members building the smart heritage and digital tourism platform.'}
-            </p>
           </div>
 
-          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide snap-x snap-mandatory sm:snap-none">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
             {[
-
               {
                 name: 'Đặng Đức Lương',
                 role: 'Team Leader',
@@ -99,7 +91,7 @@ export default function AboutUs() {
                 fbLink: 'https://www.facebook.com/luongdang2201'
               },
               {
-                name: 'Phạm Nhật Bảo Hân',
+                name: 'Phạm Nhật Bảo Hảo Hân',
                 role: 'Marketing Team',
                 desc: 'Thiết kế giao diện người dùng, thu thập dữ liệu trải nghiệm người dùng & bản đồ GPS.',
                 avatar: hanImg,
@@ -133,25 +125,24 @@ export default function AboutUs() {
                 avatar: anImg,
                 fbLink: 'https://www.facebook.com/michaelht271'
               }
-
             ].map((member, i) => (
               <a 
                 href={member.fbLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 key={i} 
-                className="flex-shrink-0 snap-center w-[260px] sm:w-full glass-panel p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-heritage-amber/10 transition-all duration-300 no-underline cursor-pointer group"
+                className="glass-panel p-4 rounded-xl flex flex-col items-center text-center space-y-3 hover:-translate-y-1 hover:shadow-xl hover:shadow-heritage-amber/10 transition-all duration-300 no-underline cursor-pointer group w-full"
               >
                 <img
                   src={member.avatar}
                   alt={member.name}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-heritage-amber/30 p-1 group-hover:scale-105 group-hover:border-heritage-amber transition-all duration-300"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-heritage-amber/30 p-1 group-hover:scale-105 group-hover:border-heritage-amber transition-all duration-300"
                 />
                 <div>
-                  <h4 className="font-outfit font-bold text-gray-900">{member.name}</h4>
-                  <span className="text-xs text-heritage-amber font-semibold">{member.role}</span>
+                  <h4 className="font-outfit font-bold text-gray-900 text-xs md:text-sm lg:text-base leading-tight">{member.name}</h4>
+                  <span className="text-[9px] md:text-xs text-blue-600 font-semibold">{member.role}</span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed group-hover:text-gray-700 transition-colors">
+                <p className="text-[10px] text-gray-500 leading-relaxed font-semibold group-hover:text-gray-700 transition-colors">
                   {language === 'vi' ? member.desc : member.role}
                 </p>
               </a>
