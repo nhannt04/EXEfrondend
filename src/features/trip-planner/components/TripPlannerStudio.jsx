@@ -2488,8 +2488,8 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                             <span className="text-xs md:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">
                               {language === 'vi' ? 'Ước tính' : 'Estimated'}
                             </span>
-                            <span className="text-sm sm:text-base font-black text-gray-900 mt-0.5 tracking-tighter w-full text-center whitespace-nowrap">
-                              {costs.totalMax >= 1000000 ? `${(costs.totalMax / 1000000).toFixed(1)}M đ` : `${(costs.totalMax).toLocaleString()}đ`}
+                            <span className="text-[10px] font-black text-gray-900 mt-0.5 tracking-tight w-full text-center leading-tight break-all">
+                              {costs.totalMax.toLocaleString('vi-VN')}đ
                             </span>
                           </div>
                         </div>
@@ -2798,7 +2798,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
               <div className="flex flex-col gap-1 relative z-10">
                 <div className="flex justify-between items-center text-xs">
                   <label className="text-xs sm:text-sm lg:text-base text-gray-400 font-extrabold uppercase tracking-wider">{t('budgetLabel')}</label>
-                  <span className="text-heritage-amber font-black text-sm">{(budget / 1000000).toFixed(1)} {language === 'vi' ? 'triệu VND' : 'M VND'}</span>
+                  <span className="text-heritage-amber font-black text-sm">{budget.toLocaleString('vi-VN')}đ</span>
                 </div>
                 <input
                   type="range"
@@ -3099,7 +3099,7 @@ export default function TripPlannerStudio({ prefill, initialTab }) {
                         <div className="w-px h-10 bg-gray-200 mx-2"></div>
                         <div className="flex flex-col flex-1">
                           <span className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 font-bold uppercase tracking-widest">{language === 'vi' ? 'Chi phí' : 'Budget'}</span>
-                          <span className="text-sm sm:text-base lg:text-lg font-black text-blue-600 mt-1">{(saved.totalBudget / 1000000).toFixed(1)}M {language === 'vi' ? 'đ' : 'VND'}</span>
+                          <span className="text-sm sm:text-base lg:text-lg font-black text-blue-600 mt-1">{(saved.totalBudget || 0).toLocaleString('vi-VN')}đ</span>
                         </div>
                       </div>
 
