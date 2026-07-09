@@ -2,6 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, Bot, Compass, MapPin, Sparkles, HelpCircle } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { getChatReply } from '../../../services/chatService';
+import mascotImg from '../../../assets/mascot.png';
+import mascotWalkImg from '../../../assets/mascot_walk.png';
+import mascotWalk2Img from '../../../assets/mascot_walk2.png';
+import mascotWalk3Img from '../../../assets/mascot_walk3.png';
+import mascotWalk4Img from '../../../assets/mascot_walk4.png';
+import mascotWalk5Img from '../../../assets/mascot_walk5.png';
+import mascotWalk6Img from '../../../assets/mascot_walk6.png';
+import mascotJumpImg from '../../../assets/mascot_jump.png';
+
+
+
+
 
 export default function ChatbotWidget() {
   const { language, t } = useLanguage();
@@ -11,15 +23,239 @@ export default function ChatbotWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Mascot Refs and States
+  const mascotRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isMascotIdle, setIsMascotIdle] = useState(true);
+  const [mascotTilt, setMascotTilt] = useState({ rotateX: 0, rotateY: 0 });
+  const [isLanding, setIsLanding] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
+  const [walkFrame, setWalkFrame] = useState(0);
+  const [isAutonomousWalking, setIsAutonomousWalking] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 = right, -1 = left
+  const [mascotAnimTransform, setMascotAnimTransform] = useState('');
+
+
+  // Coordinate references for physics loop (to avoid constant dependency updates)
+  const posRef = useRef({
+    x: window.innerWidth - 120,
+    y: window.innerHeight - 130
+  });
+  const targetPosRef = useRef({
+    x: window.innerWidth - 120,
+    y: window.innerHeight - 130
+  });
+
+  const walkAccumulator = useRef(0);
+  const lastDragPosRef = useRef(null);
+
+
+
   // Dragging states initialized to default bottom-right area
   const [position, setPosition] = useState({
-    x: window.innerWidth - 80,
-    y: window.innerHeight - 88
+    x: window.innerWidth - 120, // offset slightly to fit mascot nicely
+    y: window.innerHeight - 130
   });
   const [isDragging, setIsDragging] = useState(false);
   const [preOpenPosition, setPreOpenPosition] = useState(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
+
+
+
+
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    if (!isJumping) {
+      setIsJumping(true);
+      setTimeout(() => setIsJumping(false), 1000);
+    }
+  };
+
+
+  // 1. Inactivity & Look-At rotation effect
+  useEffect(() => {
+    if (isOpen || isDragging || isAutonomousWalking) {
+      setMascotTilt({ rotateX: 0, rotateY: 0 });
+      return;
+    }
+
+    let idleTimer;
+
+    const handleMouseMove = (e) => {
+      setIsMascotIdle(false);
+      
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        setIsMascotIdle(true);
+      }, 3000);
+
+      if (mascotRef.current) {
+        const rect = mascotRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        const angle = Math.atan2(dy, dx);
+        
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 600;
+        const intensity = Math.min(distance / maxDist, 1) * 20; // max 20 degrees
+        
+        const tiltX = -Math.sin(angle) * intensity;
+        const tiltY = Math.cos(angle) * intensity;
+        
+        setMascotTilt({ rotateX: tiltX, rotateY: tiltY });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    idleTimer = setTimeout(() => {
+      setIsMascotIdle(true);
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      clearTimeout(idleTimer);
+    };
+  }, [isOpen, isDragging, isAutonomousWalking]);
+
+  // 1.5. Autonomous Wandering Destination Planner
+  useEffect(() => {
+    if (isOpen || isDragging) return;
+
+    const planNextWander = () => {
+      const padding = 120;
+      const targetX = padding + Math.random() * (window.innerWidth - padding * 2);
+      const targetY = padding + Math.random() * (window.innerHeight - padding * 2 - 80);
+      
+      targetPosRef.current = { x: targetX, y: targetY };
+      
+      // Randomly wander every 8 to 16 seconds
+      const nextDelay = 8000 + Math.random() * 8000;
+      wanderTimeout = setTimeout(planNextWander, nextDelay);
+    };
+
+    let wanderTimeout = setTimeout(planNextWander, 5000);
+
+    return () => clearTimeout(wanderTimeout);
+  }, [isOpen, isDragging]);
+
+  // 1.6. Continuous requestAnimationFrame Physics & Movement loop
+  useEffect(() => {
+    if (isOpen) return;
+
+    let animFrame;
+    let time = 0;
+
+    const loop = () => {
+      time += 1;
+      let animStr = '';
+      
+      if (!isDragging) {
+        const dx = targetPosRef.current.x - posRef.current.x;
+        const dy = targetPosRef.current.y - posRef.current.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 2) {
+          setIsAutonomousWalking(true);
+          const currentDir = dx >= 0 ? 1 : -1;
+          setDirection(currentDir);
+          
+          // Constant walking speed (px per frame), not lerp
+          const WALK_SPEED = 1.8;
+          const step = Math.min(WALK_SPEED, dist);
+          posRef.current.x += (dx / dist) * step;
+          posRef.current.y += (dy / dist) * step;
+
+          // Frame increment linked to speed (constant rhythm)
+          walkAccumulator.current += 0.04;
+          setWalkFrame(Math.floor(walkAccumulator.current) % 10);
+
+          // Cartoon math
+          const angle = walkAccumulator.current * Math.PI;
+          const waddleRotate = Math.sin(angle) * 8;
+          const waddleY = -Math.abs(Math.sin(angle)) * 6;
+          const stretchY = 1 + Math.sin(angle * 2) * 0.05;
+          const stretchX = 1 - Math.sin(angle * 2) * 0.05; // pure squash, no dir flip here
+          animStr = `translateY(${waddleY}px) rotate(${waddleRotate}deg) scale(${stretchX}, ${stretchY})`;
+        } else {
+          setIsAutonomousWalking(false);
+          walkAccumulator.current = 0;
+          setWalkFrame(0);
+          
+          // Hover wave floating at current destination anchor
+          const waveX = Math.sin(time * 0.02) * 5;
+          const waveY = Math.cos(time * 0.02) * 5;
+          posRef.current.x += (targetPosRef.current.x + waveX - posRef.current.x) * 0.05;
+          posRef.current.y += (targetPosRef.current.y + waveY - posRef.current.y) * 0.05;
+
+          // Idle breathing wave
+          const breatheAngle = time * 0.03;
+          const breatheScaleY = 1 + Math.sin(breatheAngle) * 0.03;
+          const breatheScaleX = 1 - Math.sin(breatheAngle) * 0.02; // pure breathe, no dir flip here
+          animStr = `scale(${breatheScaleX}, ${breatheScaleY})`;
+
+          // 2% chance to jump randomly when standing still
+          if (time % 300 === 0 && Math.random() < 0.2 && !isJumping) {
+            setIsJumping(true);
+            setTimeout(() => setIsJumping(false), 1000);
+          }
+        }
+        
+        if (containerRef.current) {
+          containerRef.current.style.left = `${posRef.current.x}px`;
+          containerRef.current.style.top = `${posRef.current.y}px`;
+        }
+      } else {
+        // During dragging: posRef is already updated by handleDragMove directly
+        // DO NOT overwrite posRef.current with stale React position state!
+        // Just compute the walk animation based on how much posRef moved since last frame
+        const dragDx = posRef.current.x - (lastDragPosRef.current?.x ?? posRef.current.x);
+        const dragDy = posRef.current.y - (lastDragPosRef.current?.y ?? posRef.current.y);
+        lastDragPosRef.current = { x: posRef.current.x, y: posRef.current.y };
+        const dragDist = Math.sqrt(dragDx*dragDx + dragDy*dragDy);
+        
+        if (dragDist > 0.5) {
+          const currentDir = dragDx >= 0 ? 1 : -1;
+          setDirection(currentDir);
+          walkAccumulator.current += Math.min(0.18, dragDist * 0.015);
+          setWalkFrame(Math.floor(walkAccumulator.current) % 10);
+
+          const angle = walkAccumulator.current * Math.PI;
+          const waddleRotate = Math.sin(angle) * 8;
+          const waddleY = -Math.abs(Math.sin(angle)) * 6;
+          const stretchY = 1 + Math.sin(angle * 2) * 0.05;
+          const stretchX = 1 - Math.sin(angle * 2) * 0.05;
+          animStr = `translateY(${waddleY}px) rotate(${waddleRotate}deg) scale(${stretchX}, ${stretchY})`;
+        } else {
+          setWalkFrame(0);
+          const breatheAngle = time * 0.03;
+          const breatheScaleY = 1 + Math.sin(breatheAngle) * 0.03;
+          animStr = `scale(1, ${breatheScaleY})`;
+        }
+      }
+      
+      setMascotAnimTransform(animStr);
+      animFrame = requestAnimationFrame(loop);
+    };
+
+    animFrame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animFrame);
+  }, [isOpen, isDragging, direction, isJumping]);
+
+
+  // 2. Soft landing effect on close/load
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLanding(true);
+      const timer = setTimeout(() => setIsLanding(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
 
   // Initialize welcome message based on language
   useEffect(() => {
@@ -153,6 +389,7 @@ export default function ChatbotWidget() {
     const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
     
     dragStartRef.current = { x: clientX, y: clientY };
+    lastDragPosRef.current = null; // reset drag velocity tracker
     
     const rect = e.currentTarget.closest('.fixed-widget-container').getBoundingClientRect();
     elementStartRef.current = { x: rect.left, y: rect.top };
@@ -179,7 +416,12 @@ export default function ChatbotWidget() {
     newX = Math.max(10, Math.min(newX, maxX));
     newY = Math.max(10, Math.min(newY, maxY));
     
-    setPosition({ x: newX, y: newY });
+    posRef.current = { x: newX, y: newY };
+    targetPosRef.current = { x: newX, y: newY };
+    if (containerRef.current) {
+      containerRef.current.style.left = `${newX}px`;
+      containerRef.current.style.top = `${newY}px`;
+    }
   };
 
   const handleDragEnd = (e) => {
@@ -189,13 +431,20 @@ export default function ChatbotWidget() {
     const clientX = e.clientX !== undefined ? e.clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0);
     const clientY = e.clientY !== undefined ? e.clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0);
     
-    const dist = Math.sqrt(Math.pow(clientX - dragStartRef.current.x, 2) + Math.pow(clientY - dragStartRef.current.y, 2));
+    // Sync React state once at the end of dragging
+    setPosition({ x: posRef.current.x, y: posRef.current.y });
+    
+    // Calculate total movement to distinguish click from drag
+    const dist = Math.sqrt(
+      Math.pow(clientX - dragStartRef.current.x, 2) +
+      Math.pow(clientY - dragStartRef.current.y, 2)
+    );
+    
     // If click (little movement), open chat window
     if (dist < 6) {
-      if (e.currentTarget.tagName === 'BUTTON') {
-        setIsOpen(true);
-      }
+      setIsOpen(true);
     }
+
   };
 
   useEffect(() => {
@@ -274,21 +523,84 @@ export default function ChatbotWidget() {
 
   return (
     <div 
-      className="fixed-widget-container fixed z-[100] flex flex-col items-end"
+      ref={containerRef}
+      className={`fixed-widget-container fixed z-[100] flex flex-col items-end ${
+        !isOpen && !isDragging && !isAutonomousWalking ? 'animate-mascot-float' : ''
+      }`}
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
       {/* Floating Action Button */}
       {!isOpen && (
-        <button
+        <div
+          ref={mascotRef}
           onMouseDown={handleDragStart}
           onTouchStart={handleDragStart}
           onMouseUp={handleDragEnd}
           onTouchEnd={handleDragEnd}
-          className="w-14 h-14 rounded-full bg-heritage-amber hover:bg-heritage-gold text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse-gold cursor-move border-none select-none touch-none"
+          onDoubleClick={handleDoubleClick}
+          className={`mascot-character select-none touch-none ${
+            isJumping ? 'mascot-jump' : ''
+          } ${isLanding ? 'mascot-landing' : ''}`}
+          style={{
+            transform: `rotateX(${mascotTilt.rotateX}deg) rotateY(${mascotTilt.rotateY}deg) ${mascotAnimTransform}`,
+            perspective: '1000px',
+            transformStyle: 'preserve-3d'
+          }}
         >
-          <Bot className="w-7 h-7 text-white pointer-events-none" />
-        </button>
+        {/* Walk cycle frames lookup - 8 frames for smooth cycle */}
+          {(() => {
+            const FRAMES = [
+              mascotImg,       // 0: idle / contact (both feet down)
+              mascotWalk5Img,  // 1: push-off (weight shifting, back toes lifting)
+              mascotWalkImg,   // 2: right leg high stride
+              mascotWalk4Img,  // 3: weight transfer / body dipping
+              mascotWalk3Img,  // 4: legs crossing / lowest point
+              mascotWalk6Img,  // 5: heel strike (right foot landing forward)
+              mascotWalk2Img,  // 6: left leg high stride
+              mascotWalk4Img,  // 7: weight transfer / body dipping (mirror)
+              mascotWalk3Img,  // 8: legs crossing / lowest (mirror)
+              mascotWalk6Img,  // 9: heel strike (left foot landing)
+            ];
+            const isWalking = isDragging || isAutonomousWalking;
+            const currentSrc = isJumping ? mascotJumpImg : (isWalking ? FRAMES[walkFrame] : mascotImg);
+            const prevFrame = ((walkFrame - 1) + 10) % 10;
+            const prevSrc = isJumping ? mascotJumpImg : (isWalking ? FRAMES[prevFrame] : mascotImg);
+            return (
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                {/* Previous frame fading out */}
+                <img
+                  key={`prev-${prevSrc}`}
+                  src={prevSrc}
+                  alt=""
+                  className="w-full h-full object-contain pointer-events-none"
+                  draggable="false"
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    transform: `scaleX(${-direction})`,
+                    opacity: 0,
+                    transition: 'opacity 0.08s ease'
+                  }}
+                />
+                {/* Current frame fading in */}
+                <img
+                  key={`cur-${currentSrc}`}
+                  src={currentSrc}
+                  alt="Chatbot Mascot"
+                  className="w-full h-full object-contain pointer-events-none"
+                  draggable="false"
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    transform: `scaleX(${-direction})`,
+                    opacity: 1,
+                    transition: 'opacity 0.08s ease'
+                  }}
+                />
+              </div>
+            );
+          })()}
+        </div>
       )}
+
 
       {/* Chat Window */}
       {isOpen && (
@@ -300,8 +612,8 @@ export default function ChatbotWidget() {
             className="bg-heritage-amber text-white p-4 flex items-center justify-between shadow-sm cursor-move select-none touch-none"
           >
             <div className="flex items-center gap-2.5 pointer-events-none">
-              <div className="bg-white/20 p-2 rounded-xl text-white">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/20 flex-shrink-0">
+                <img src={mascotImg} alt="Mascot" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h4 className="font-outfit text-sm font-extrabold tracking-tight">{t('botTitle')}</h4>
@@ -329,8 +641,8 @@ export default function ChatbotWidget() {
               >
                 {/* Bot Icon */}
                 {msg.sender === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-heritage-amber/10 border border-heritage-amber/20 text-heritage-amber flex items-center justify-center flex-shrink-0">
-                    <Compass className="w-4 h-4 text-heritage-amber" />
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-heritage-amber/10 border border-heritage-amber/20 flex-shrink-0">
+                    <img src={mascotImg} alt="Mascot" className="w-full h-full object-contain" />
                   </div>
                 )}
                 
@@ -355,8 +667,8 @@ export default function ChatbotWidget() {
             {/* Typing Indicator */}
             {isTyping && (
               <div className="flex gap-2.5 self-start max-w-[80%] items-center">
-                <div className="w-7 h-7 rounded-full bg-heritage-amber/10 border border-heritage-amber/20 text-heritage-amber flex items-center justify-center flex-shrink-0">
-                  <Compass className="w-4 h-4 animate-spin-slow text-heritage-amber" />
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-heritage-amber/10 border border-heritage-amber/20 flex-shrink-0">
+                  <img src={mascotImg} alt="Mascot" className="w-full h-full object-contain animate-pulse" />
                 </div>
                 <div className="bg-white border border-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center gap-1 shadow-sm">
                   <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
