@@ -704,7 +704,7 @@ export default function LandingPage({ activeTab, setActiveTab, setPlannerPrefill
               </div>
 
               {/* Bottom Right Text */}
-              <div className="text-right hidden lg:block" style={{fontFamily: "'Dancing Script', cursive"}}>
+              <div className="text-right hidden lg:block mr-12" style={{fontFamily: "'Dancing Script', cursive"}}>
                 <div className="text-4xl text-white drop-shadow-md">{language === 'vi' ? 'Đi để cảm nhận' : 'Travel to feel'}</div>
                 <div className="text-5xl font-bold text-[#FFC107] drop-shadow-md mt-2">{language === 'vi' ? 'Sống để nhớ mãi' : 'Live to remember'}</div>
               </div>
