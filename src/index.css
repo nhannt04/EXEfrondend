@@ -361,110 +361,13 @@ body { top: 0 !important; }
 .goog-te-combo { padding: 4px 8px; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 12px; outline: none; background: #fff; cursor: pointer; color: #6b7280; font-weight: bold; height: 30px; font-family: 'Outfit', sans-serif; }
 .goog-te-gadget { color: transparent !important; font-size: 0px; }
 
-/* Mascot Animation and Custom Styles */
+/* Mascot Custom Styles */
 .mascot-character {
-  width: 90px;
-  height: 90px;
-  cursor: grab;
+  width: 140px;
+  height: 140px;
+  cursor: pointer;
   transform-origin: center bottom;
-  transition: transform 0.15s ease-out;
   pointer-events: auto;
-}
-
-.mascot-character:active {
-  cursor: grabbing;
-}
-
-.mascot-idle {
-  animation: mascot-breathe 3s ease-in-out infinite;
-}
-
-.mascot-landing {
-  animation: mascot-landing-bounce 0.8s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-@keyframes mascot-breathe {
-  0%, 100% {
-    transform: scale(1) translateY(0);
-  }
-  50% {
-    transform: scale(1.05, 0.95) translateY(4px);
-  }
-}
-
-@keyframes mascot-landing-bounce {
-  0% {
-    transform: translateY(-50px) scale(0.9, 1.1);
-  }
-  50% {
-    transform: translateY(8px) scale(1.1, 0.9);
-  }
-  75% {
-    transform: translateY(-4px) scale(0.98, 1.02);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-mascot-float {
-  animation: mascot-antigravity-float 6s ease-in-out infinite;
-}
-
-@keyframes mascot-antigravity-float {
-  0%, 100% {
-    transform: translate(0px, 0px);
-  }
-  25% {
-    transform: translate(8px, -15px);
-  }
-  50% {
-    transform: translate(-5px, 10px);
-  }
-  75% {
-    transform: translate(-12px, -8px);
-  }
-}
-
-.mascot-walk {
-  animation: mascot-waddle 0.6s ease-in-out infinite;
-}
-
-@keyframes mascot-waddle {
-  0%, 100% {
-    transform: translateY(0) rotate(-6deg) scale(1, 1);
-  }
-  25% {
-    transform: translateY(-5px) rotate(-3deg) scale(0.95, 1.05); /* stretching up */
-  }
-  50% {
-    transform: translateY(-8px) rotate(6deg) scale(0.9, 1.1); /* peak height */
-  }
-  75% {
-    transform: translateY(-2px) rotate(3deg) scale(1.05, 0.95); /* landing squash impact */
-  }
-}
-
-.mascot-jump {
-  animation: mascot-jump-anim 1s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-@keyframes mascot-jump-anim {
-  0%, 100% {
-    transform: translateY(0) scale(1, 1) rotate(0deg);
-  }
-  15% {
-    transform: translateY(4px) scale(1.15, 0.85) rotate(-3deg); /* squashing down prep */
-  }
-  45% {
-    transform: translateY(-90px) scale(0.85, 1.15) rotate(15deg); /* stretching up in air */
-  }
-  70% {
-    transform: translateY(-90px) scale(0.9, 1.1) rotate(-10deg); /* peak twist */
-  }
-  85% {
-    transform: translateY(6px) scale(1.2, 0.8) rotate(3deg); /* landing squash impact */
-  }
 }
 
 
